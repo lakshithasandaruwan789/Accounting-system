@@ -300,27 +300,43 @@
             .nav-item { margin-bottom: 5px; }
 
             /* Topbar */
-            .topbar { flex-direction: column; gap: 15px; align-items: flex-start; padding: 15px; }
-            .topbar > div:first-child { flex-direction: column; align-items: flex-start; width:100%; }
+            .topbar { 
+                flex-direction: column; 
+                gap: 12px; 
+                padding: 12px 15px; 
+                position: sticky; 
+                top: 0; 
+                background: rgba(255, 255, 255, 0.95); 
+                backdrop-filter: blur(10px); 
+                z-index: 900; 
+                border-bottom: 1px solid #e2e8f0;
+            }
+            
+            .topbar > div:first-child { 
+                flex-direction: row; 
+                align-items: center; 
+                width: 100%; 
+                gap: 12px; 
+            }
             
             /* Beautiful horizontally scrollable filter bar */
             .topbar-controls { 
                 display: flex;
                 flex-direction: row; 
-                width: calc(100% + 30px); 
-                margin-left: -15px; 
-                padding: 5px 15px 15px 15px; 
-                gap: 12px; 
+                width: 100%; 
+                gap: 10px; 
                 overflow-x: auto; 
                 -webkit-overflow-scrolling: touch;
                 scrollbar-width: none; /* Firefox */
+                padding: 0;
+                align-items: center;
             }
             .topbar-controls::-webkit-scrollbar { display: none; } /* Safari/Chrome */
 
             .control-group { 
                 flex-direction: row; 
                 align-items: center; 
-                padding: 8px 16px; 
+                padding: 6px 14px; 
                 margin-bottom: 0; 
                 flex-shrink: 0; 
                 border-radius: 30px; /* Pill shape */
