@@ -301,22 +301,23 @@
 
             /* Topbar */
             .topbar { 
-                flex-direction: column; 
-                gap: 12px; 
-                padding: 12px 15px; 
+                flex-direction: row; 
+                gap: 0; 
+                padding: 10px 15px; 
                 position: sticky; 
                 top: 0; 
                 background: rgba(255, 255, 255, 0.95); 
                 backdrop-filter: blur(10px); 
                 z-index: 900; 
                 border-bottom: 1px solid #e2e8f0;
+                align-items: center;
             }
             
             .topbar > div:first-child { 
                 flex-direction: row; 
                 align-items: center; 
                 width: 100%; 
-                gap: 12px; 
+                gap: 0; 
             }
             
             /* Beautiful horizontally scrollable filter bar */
@@ -324,11 +325,12 @@
                 display: flex;
                 flex-direction: row; 
                 width: 100%; 
-                gap: 10px; 
+                gap: 8px; 
                 overflow-x: auto; 
                 -webkit-overflow-scrolling: touch;
                 scrollbar-width: none; /* Firefox */
                 padding: 0;
+                margin-left: 10px;
                 align-items: center;
             }
             .topbar-controls::-webkit-scrollbar { display: none; } /* Safari/Chrome */
@@ -336,7 +338,7 @@
             .control-group { 
                 flex-direction: row; 
                 align-items: center; 
-                padding: 6px 14px; 
+                padding: 6px 12px; 
                 margin-bottom: 0; 
                 flex-shrink: 0; 
                 border-radius: 30px; /* Pill shape */
@@ -367,9 +369,9 @@
             .date-inputs .btn-export { padding: 4px 12px !important; font-size: 12px !important; border-radius: 20px !important; margin: 0 !important; }
 
             
-            .hamburger-btn { padding: 8px 12px !important; background: #f1f5f9 !important; border-radius: 8px !important; display: inline-block; margin-bottom: 10px; width: auto !important;}
-            .export-btns-container { width: 100%; justify-content: space-between; }
-            .export-btns-container .btn-export { flex: 1; justify-content: center; }
+            .hamburger-btn { padding: 8px 12px !important; background: #f1f5f9 !important; border-radius: 8px !important; display: inline-block; margin-bottom: 0 !important; width: auto !important;}
+            .export-btns-container { display: none !important; }
+            .topbar-controls .export-group { padding: 4px; gap: 5px; background: transparent; border: none; }
 
             .two-col-layout, .dash-tables, .stats-grid { grid-template-columns: 1fr; }
             
@@ -461,8 +463,8 @@
     
     <!-- TOPBAR -->
     <header class="topbar">
-        <div style="display:flex; align-items:center; gap:20px; width: 100%;">
-            <button class="hamburger-btn" onclick="toggleSidebar()" style="background:none; border:none; font-size:24px; cursor:pointer; color:var(--text-main); padding:0;" title="Toggle Sidebar">☰</button>
+        <div style="display:flex; align-items:center; width: 100%;">
+            <button class="hamburger-btn" onclick="toggleSidebar()" style="background:none; border:none; font-size:24px; cursor:pointer; color:var(--text-main); padding:0; flex-shrink:0;" title="Toggle Sidebar">☰</button>
             <div class="topbar-controls">
                 <div class="control-group">
                     <label style="white-space:nowrap;">Filter:</label>
@@ -482,11 +484,11 @@
                         <button class="btn-export" style="background:#f1f5f9; padding:6px 12px; margin:0;" onclick="clearDateFilter()">Clear</button>
                     </div>
                 </div>
+                <div class="control-group export-group" style="gap:5px;">
+                    <button class="btn-export" style="color:var(--success); border-color:#86efac; padding:4px 10px; margin:0; font-size:12px;" onclick="exportToCSV()">📄 CSV</button>
+                    <button class="btn-export" style="color:var(--danger); border-color:#fca5a5; padding:4px 10px; margin:0; font-size:12px;" onclick="exportToPDF()">📑 PDF</button>
+                </div>
             </div>
-        </div>
-        <div class="export-btns-container" style="display:flex; gap:10px;">
-            <button class="btn-export" style="color:var(--success); border-color:#86efac;" onclick="exportToCSV()">📄 CSV</button>
-            <button class="btn-export" style="color:var(--danger); border-color:#fca5a5;" onclick="exportToPDF()">📑 PDF</button>
         </div>
     </header>
 
