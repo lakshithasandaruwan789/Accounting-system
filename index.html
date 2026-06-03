@@ -1,0 +1,1558 @@
+<!DOCTYPE html>
+<html lang="si">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Premium Budget & Lead Dashboard - Lakshitha Sandaruwan</title>
+    <!-- Dexie for Offline Database -->
+    <script src="https://unpkg.com/dexie@latest/dist/dexie.js"></script>
+    <!-- Chart.js for Visual Dashboards -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- html2pdf for PDF Export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            /* V11 Vibrant Cloud Theme Variables */
+            --bg-main: #f8fafc;
+            --bg-gradient: linear-gradient(135deg, #f8fafc 0%, #eff6ff 100%);
+            --card-bg: rgba(255, 255, 255, 0.95);
+            --card-border: rgba(255, 255, 255, 0.6);
+            --card-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.05);
+            
+            --primary: #4f46e5; /* Indigo */
+            --primary-light: #e0e7ff;
+            --success: #10b981; /* Emerald */
+            --warning: #f59e0b; /* Amber */
+            --danger: #ef4444; /* Rose */
+            --accent: #d946ef; /* Fuchsia */
+            
+            --text-main: #1e293b; /* Slate 800 */
+            --text-muted: #64748b; /* Slate 500 */
+            
+            --sidebar-bg: #ffffff;
+            --sidebar-hover: #f1f5f9;
+            --sidebar-active: #4f46e5;
+        }
+
+        body {
+            color-scheme: light;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background: var(--bg-gradient);
+            color: var(--text-main);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        h1, h2, h3, h4, h5, h6 {
+            font-family: 'Outfit', sans-serif;
+        }
+
+        /* --- SCROLLBAR --- */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+        /* --- LOGIN OVERLAY --- */
+        .login-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(135deg, #a8c0ff 0%, #3f2b96 100%);
+            display: flex; justify-content: center; align-items: center; z-index: 10000;
+        }
+        .login-card {
+            background: #ffffff; padding: 40px; border-radius: 24px;
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); width: 100%; max-width: 380px;
+            text-align: center; border: 1px solid rgba(255,255,255,0.8);
+            animation: bounceIn 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        @keyframes bounceIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        .login-card h2 { margin-top: 0; color: var(--text-main); font-size: 28px; font-weight: 800; background: linear-gradient(90deg, #4f46e5, #d946ef); -webkit-background-clip: text; -webkit-text-fill-color: transparent;}
+        .login-card p { color: var(--text-muted); font-size: 15px; margin-bottom: 30px; }
+
+        /* --- SIDEBAR --- */
+        .sidebar {
+            width: 260px;
+            background: var(--sidebar-bg);
+            border-right: 1px solid #e2e8f0;
+            display: flex;
+            flex-direction: column;
+            z-index: 100;
+            box-shadow: 5px 0 30px rgba(0,0,0,0.02);
+            transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .sidebar.collapsed { width: 85px; }
+
+        .sidebar-header {
+            padding: 30px 20px;
+            border-bottom: 1px solid #f1f5f9;
+            text-align: center;
+        }
+
+        .sidebar-header h2 { margin: 0; color: var(--primary); font-size: 22px; font-weight: 800; letter-spacing: 0.5px; }
+        .sidebar-header p { margin: 5px 0 0 0; font-size: 12px; color: var(--text-muted); font-weight: 600;}
+
+        .nav-menu {
+            list-style: none; padding: 20px 15px; margin: 0; flex: 1; display:flex; flex-direction:column; gap: 5px;
+        }
+
+        .nav-item {
+            padding: 14px 20px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--text-muted);
+            border-radius: 12px;
+            white-space: nowrap;
+        }
+
+        .sidebar.collapsed .nav-item { padding: 14px 0; justify-content: center; }
+        .sidebar.collapsed .nav-text { display: none; }
+        .sidebar.collapsed .sidebar-header h2 { font-size: 14px; }
+        .sidebar.collapsed .sidebar-header p { display: none; }
+
+        .nav-item:hover {
+            background-color: var(--sidebar-hover);
+            color: var(--primary);
+            transform: translateX(5px);
+        }
+
+        .nav-item.active {
+            background-color: var(--primary);
+            color: #ffffff;
+            box-shadow: 0 4px 15px rgba(79, 70, 229, 0.3);
+        }
+        
+        .nav-item.active:hover { transform: none; }
+
+        .nav-icon { font-size: 18px; }
+
+        /* --- MAIN CONTENT --- */
+        .main-content {
+            flex: 1; display: flex; flex-direction: column; overflow: hidden; position: relative;
+        }
+
+        /* --- TOPBAR --- */
+        .topbar {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(10px);
+            padding: 15px 30px; 
+            border-bottom: 1px solid #e2e8f0;
+            display: flex; justify-content: space-between; align-items: center; z-index: 90;
+        }
+
+        .topbar-controls { display: flex; gap: 20px; align-items: center; }
+
+        .control-group {
+            display: flex; align-items: center; gap: 10px; background: #ffffff;
+            padding: 8px 18px; border-radius: 12px; border: 1px solid #e2e8f0;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.02);
+        }
+        .control-group label { font-weight: 700; font-size: 13px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;}
+        .control-group select, .control-group input { 
+            background: transparent; color: var(--text-main); border: none; padding: 4px; outline: none; font-family: inherit; font-size: 14px; font-weight: 600;
+        }
+
+        .btn-export {
+            background: #ffffff; color: var(--text-main); border: 1px solid #e2e8f0; padding: 10px 18px;
+            border-radius: 10px; cursor: pointer; font-weight: 700; font-size: 13px; transition: all 0.2s;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.02);
+        }
+        .btn-export:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,0,0,0.05); }
+
+        /* --- PAGE CONTAINER --- */
+        .page-container { padding: 30px 40px; overflow-y: auto; flex: 1; }
+
+        .page { display: none; animation: fadeUp 0.4s ease-out; }
+        .page.active { display: block; }
+
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(15px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* --- COMPONENTS --- */
+        .stats-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 25px; margin-bottom: 35px;
+        }
+
+        .stat-card {
+            background: var(--card-bg); padding: 25px; border-radius: 20px;
+            border: 1px solid #e2e8f0;
+            box-shadow: var(--card-shadow);
+            transition: all 0.3s ease;
+            position: relative; overflow: hidden;
+            display: flex; flex-direction: column; justify-content: center;
+        }
+        
+        .stat-card::after {
+            content: ''; position: absolute; right: -20px; top: -20px; width: 100px; height: 100px;
+            border-radius: 50%; background: var(--primary-light); opacity: 0.5; z-index: 0;
+            transition: all 0.4s ease;
+        }
+        .stat-card:hover::after { transform: scale(1.5); }
+        .stat-card:nth-child(2)::after { background: #d1fae5; }
+        .stat-card:nth-child(3)::after { background: #fef3c7; }
+        .stat-card:nth-child(4)::after { background: #fae8ff; }
+
+        .stat-card:hover { transform: translateY(-5px); box-shadow: 0 15px 35px -5px rgba(0,0,0,0.1); }
+
+        .stat-card h3 { margin: 0; font-size: 13px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; font-weight: 700; position: relative; z-index: 1;}
+        .stat-card p { margin: 12px 0 0 0; font-size: 32px; font-family: 'Outfit', sans-serif; font-weight: 800; color: var(--text-main); position: relative; z-index: 1;}
+
+        /* Forms & Layout */
+        .two-col-layout { display: grid; grid-template-columns: 1fr 2fr; gap: 35px; align-items: start; }
+        
+        .form-card, .table-card { 
+            background: var(--card-bg); padding: 30px; border-radius: 24px; 
+            border: 1px solid #e2e8f0;
+            box-shadow: var(--card-shadow);
+        }
+
+        .form-card h2, .table-card h2 { 
+            margin-top: 0; font-size: 18px; border-bottom: 2px solid #f1f5f9; 
+            padding-bottom: 15px; margin-bottom: 25px; color: var(--text-main); font-weight: 700;
+        }
+
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; margin-bottom: 8px; font-weight: 700; font-size: 13px; color: var(--text-main); }
+        
+        .form-group input, .form-group select { 
+            width: 100%; padding: 14px 16px; background: #f8fafc; 
+            border: 1px solid #cbd5e1; border-radius: 12px; 
+            box-sizing: border-box; font-size: 15px; color: var(--text-main);
+            transition: all 0.3s; font-weight: 500;
+        }
+        .form-group input:focus, .form-group select:focus { 
+            border-color: var(--primary); box-shadow: 0 0 0 4px var(--primary-light); background: #ffffff; outline: none;
+        }
+
+        button.action-btn {
+            background: var(--primary); color: white; 
+            border: none; padding: 14px 20px; border-radius: 12px;
+            cursor: pointer; font-weight: 700; width: 100%; font-size: 15px;
+            box-shadow: 0 4px 15px rgba(79, 70, 229, 0.3); transition: all 0.2s;
+        }
+        button.action-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(79, 70, 229, 0.4); }
+        button.action-btn:active { transform: translateY(0); }
+
+        /* Tables */
+        .table-card { overflow-x: auto; }
+        table { width: 100%; border-collapse: separate; border-spacing: 0 8px; text-align: left; }
+        th, td { padding: 16px 15px; font-size: 14px;}
+        th { color: var(--text-muted); font-weight: 700; text-transform: uppercase; font-size: 11px; letter-spacing: 1px; padding-bottom: 5px;}
+        
+        tbody tr { background: #f8fafc; transition: all 0.2s; }
+        tbody tr td:first-child { border-top-left-radius: 12px; border-bottom-left-radius: 12px; }
+        tbody tr td:last-child { border-top-right-radius: 12px; border-bottom-right-radius: 12px; }
+        tbody tr:hover { background: #f1f5f9; transform: scale(1.01); box-shadow: 0 4px 10px rgba(0,0,0,0.02); }
+
+        .btn-delete { background: #fee2e2; border: none; padding: 6px 14px; font-size: 12px; font-weight: 600; color: var(--danger); border-radius: 8px; cursor: pointer; transition: all 0.2s;}
+        .btn-delete:hover { background: var(--danger); color: #fff; }
+        
+        .btn-edit { background: #fef3c7; border: none; padding: 6px 14px; font-size: 12px; font-weight: 600; color: var(--warning); border-radius: 8px; cursor: pointer; margin-right: 5px; transition: all 0.2s;}
+        .btn-edit:hover { background: var(--warning); color: #fff; }
+
+        .notification {
+            position: fixed; bottom: 30px; right: 30px; background: var(--text-main); color: white; padding: 16px 28px;
+            border-radius: 12px; box-shadow: 0 15px 30px rgba(0,0,0,0.2); font-weight: 600; transform: translateY(100px);
+            opacity: 0; transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55); z-index: 10000; font-size: 14px;
+        }
+        .notification.show { transform: translateY(0); opacity: 1; }
+        
+        .badge { background: #fef3c7; color: var(--warning); padding: 4px 12px; border-radius: 20px; font-size: 10px; font-weight: 800; margin-left: 10px; text-transform: uppercase; letter-spacing: 1px;}
+        .hidden { display: none !important; }
+
+        /* Checkbox styling for Staff Permissions */
+        .perm-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; background: #f8fafc; padding: 15px; border-radius: 12px; border: 1px solid #e2e8f0; }
+        .perm-lbl { display:flex; align-items:center; gap:10px; font-weight:600; background: #ffffff; padding:12px 15px; border-radius:8px; border:1px solid #e2e8f0; cursor:pointer; font-size:13px; transition: all 0.2s; color: var(--text-main);}
+        .perm-lbl:hover { border-color: var(--primary); background: var(--primary-light); }
+        .perm-lbl input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--primary); cursor: pointer;}
+
+        /* Dashboard specific layout */
+        .dash-tables { display: grid; grid-template-columns: 1fr 1fr; gap: 35px; margin-top: 35px; }
+
+        /* Mobile */
+        @media (max-width: 900px) {
+            body { flex-direction: column; }
+            .sidebar { width: 100%; flex-direction: row; height: auto; overflow-x: auto; padding: 10px; border-right: none; border-bottom: 1px solid #e2e8f0; }
+            .sidebar-header { display: none; }
+            .nav-menu { display: flex; padding: 0; flex-direction:row; }
+            .nav-item { padding: 10px 15px; margin: 0 5px;}
+            .two-col-layout { grid-template-columns: 1fr; }
+            .dash-tables { grid-template-columns: 1fr; }
+            .page-container { padding: 20px; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- LOGIN OVERLAY -->
+<div id="login-screen" class="login-overlay">
+    <div class="login-card">
+        <h2>Lakshitha Sandaruwan</h2>
+        <p>Manager Portal v11</p>
+        <form onsubmit="performLogin(event)">
+            <div class="form-group" style="text-align:left;">
+                <label>Email Address</label>
+                <input type="email" id="login-user" name="email" autocomplete="username" placeholder="e.g. admin@company.com" required>
+            </div>
+            <div class="form-group" style="text-align:left; margin-bottom: 15px;">
+                <label>Password</label>
+                <input type="password" id="login-pass" name="password" autocomplete="current-password" placeholder="Enter password" required>
+            </div>
+            <div style="text-align:left; margin-bottom:30px;">
+                <label style="display:flex; align-items:center; gap:8px; font-size:13px; color:var(--text-muted); cursor:pointer;">
+                    <input type="checkbox" id="login-remember" style="width:16px; height:16px; accent-color:var(--primary);"> 
+                    Keep me logged in
+                </label>
+            </div>
+            <button type="submit" class="action-btn">Access Workspace</button>
+        </form>
+    </div>
+</div>
+
+<!-- SIDEBAR -->
+<aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+        <h2 style="font-size: 18px; line-height: 1.2;">Lakshitha Sandaruwan</h2>
+        <p>Manager Portal v11</p>
+    </div>
+    <ul class="nav-menu">
+        <li class="nav-item active" onclick="navigate('dashboard')" id="nav-dashboard">
+            <span class="nav-icon">📊</span> <span class="nav-text">Dashboard</span>
+        </li>
+        <li class="nav-item" onclick="navigate('leads')" id="nav-leads">
+            <span class="nav-icon">🎯</span> <span class="nav-text">Daily Leads</span>
+        </li>
+        <li class="nav-item" onclick="navigate('purchases')" id="nav-purchases">
+            <span class="nav-icon">📦</span> <span class="nav-text">Purchases & GRN</span>
+        </li>
+        <li class="nav-item" onclick="navigate('packaging')" id="nav-packaging">
+            <span class="nav-icon">🏷️</span> <span class="nav-text">Packaging & Other</span>
+        </li>
+        <li class="nav-item" onclick="navigate('profit')" id="nav-profit">
+            <span class="nav-icon">💰</span> <span class="nav-text">Expenses & Profit</span>
+        </li>
+        <li class="nav-item" onclick="navigate('catalog')" id="nav-catalog">
+            <span class="nav-icon">⚙️</span> <span class="nav-text">Product Catalog</span>
+        </li>
+        <li class="nav-item" onclick="navigate('staff')" id="nav-staff">
+            <span class="nav-icon">👥</span> <span class="nav-text">Staff Management</span>
+        </li>
+        
+        <li class="nav-item" onclick="performLogout()" id="nav-logout" style="margin-top:auto; color: var(--danger); background: #fee2e2; overflow:hidden;">
+            <span class="nav-icon">🚪</span> 
+            <span class="nav-text" style="display:flex; flex-direction:column; line-height:1.2; overflow:hidden;">
+                <span>Logout</span>
+                <span id="lbl-current-user" style="font-size:11px; opacity:0.8; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; width:100%;"></span>
+            </span>
+        </li>
+    </ul>
+</aside>
+
+<!-- MAIN CONTENT -->
+<main class="main-content">
+    
+    <!-- TOPBAR -->
+    <header class="topbar">
+        <div style="display:flex; align-items:center; gap:20px;">
+            <button onclick="toggleSidebar()" style="background:none; border:none; font-size:22px; cursor:pointer; color:var(--text-main); padding:0; width:auto;" title="Toggle Sidebar">☰</button>
+            <div class="topbar-controls">
+                <div class="control-group">
+                    <label>Filter:</label>
+                    <select id="active-week" onchange="handleContextChange()">
+                        <option value="Week 1">Week 1</option>
+                        <option value="Week 2">Week 2</option>
+                        <option value="Week 3">Week 3</option>
+                        <option value="Week 4">Week 4</option>
+                        <option value="Month Overview" style="color:var(--danger); font-weight:700;">Month Overview</option>
+                    </select>
+                </div>
+                <div class="control-group" id="date-picker-group">
+                    <label>Date:</label>
+                    <input type="date" id="global-date" onchange="handleDateChange()">
+                    <button class="btn-export" style="background:var(--success); color:white; padding:6px 12px; margin-left:5px; border:none;" onclick="applyDateFilter()">Apply</button>
+                    <button class="btn-export" style="background:#f1f5f9; padding:6px 12px; margin-left:5px;" onclick="clearDateFilter()">Clear</button>
+                </div>
+            </div>
+        </div>
+        <div style="display:flex; gap:10px;">
+            <button class="btn-export" style="color:var(--success); border-color:#86efac;" onclick="exportToCSV()">📄 CSV</button>
+            <button class="btn-export" style="color:var(--danger); border-color:#fca5a5;" onclick="exportToPDF()">📑 PDF</button>
+        </div>
+    </header>
+
+    <div class="page-container">
+        
+        <!-- PAGE 1: DASHBOARD -->
+        <div id="page-dashboard" class="page active">
+            <h2 style="margin-top:0; font-family:'Outfit', sans-serif; font-weight:800; font-size:28px; color:var(--text-main);" id="dash-title">Week 1 Overview</h2>
+            
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <h3 id="lbl-sum-leads-title">Total Leads</h3>
+                    <p id="lbl-sum-leads" style="color: var(--primary);">0</p>
+                </div>
+                <div class="stat-card">
+                    <h3 id="lbl-sum-confirmed-title">Total Confirmed</h3>
+                    <p id="lbl-sum-confirmed" style="color: var(--success);">0</p>
+                </div>
+                <div class="stat-card">
+                    <h3 id="lbl-sum-cost-title">Total Product Cost</h3>
+                    <p id="lbl-sum-cost" style="color: var(--warning);">Rs. 0.00</p>
+                </div>
+                <div class="stat-card">
+                    <h3 id="lbl-sum-profit-title">Net Profit</h3>
+                    <p id="lbl-sum-profit" style="color: var(--accent);">Rs. 0.00</p>
+                </div>
+            </div>
+
+            <!-- CHARTS SECTION -->
+            <div class="table-card" style="margin-bottom: 35px;">
+                <h2>📈 Profit & Expenses Trend</h2>
+                <div style="height:300px;">
+                    <canvas id="profitChart"></canvas>
+                </div>
+            </div>
+
+            <div class="table-card" style="margin-bottom:35px;">
+                <h2>📋 Lead Records</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th class="col-week hidden">Week</th>
+                            <th>Date</th>
+                            <th>Ads Budget</th>
+                            <th>Leads</th>
+                            <th>Confirmed</th>
+                            <th style="color:var(--primary)">Cost/Lead</th>
+                            <th style="color:var(--success)">Cost/Confirmed</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbl-dash-leads"></tbody>
+                </table>
+            </div>
+
+            <div class="dash-tables">
+                <div class="table-card">
+                    <h2>📦 Product Purchases</h2>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th class="col-week hidden">Week</th>
+                                <th>Date</th>
+                                <th>Product</th>
+                                <th>Qty</th>
+                                <th>Total Cost</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbl-dash-products"></tbody>
+                    </table>
+                </div>
+
+                <div class="table-card">
+                    <h2>💸 Profit History</h2>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th class="col-week hidden">Week</th>
+                                <th style="color:var(--success)">Received</th>
+                                <th>Ads</th>
+                                <th>Prod Cost</th>
+                                <th>Other (Pack)</th>
+                                <th style="color:var(--accent)">Profit</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbl-dash-expenses"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- PAGE 2: DAILY LEADS -->
+        <div id="page-leads" class="page">
+            <div class="two-col-layout">
+                <div class="form-card">
+                    <h2>🎯 Daily Leads Entry <span id="lead-status-badge" class="badge" style="display:none;">Editing</span></h2>
+                    <div class="form-group">
+                        <label>Daily Ads Budget (Rs)</label>
+                        <input type="number" id="lead-budget" placeholder="0.00">
+                    </div>
+                    <div class="form-group">
+                        <label>Total Leads Received</label>
+                        <input type="number" id="lead-count" placeholder="0">
+                    </div>
+                    <div class="form-group">
+                        <label>Confirmed Leads</label>
+                        <input type="number" id="lead-confirmed" placeholder="0">
+                    </div>
+                    <button class="action-btn" id="btn-save-lead" onclick="saveLeadData()">Save Lead Data</button>
+                </div>
+                
+                <div class="table-card">
+                    <h2>📋 Lead Records</h2>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Ads Budget</th>
+                                <th>Leads</th>
+                                <th>Confirmed</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbl-manage-leads"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- PAGE 3: PRODUCT PURCHASES -->
+        <div id="page-purchases" class="page">
+            <div class="two-col-layout">
+                <div class="form-card">
+                    <h2>📦 Factory Purchases</h2>
+                    <div class="form-group">
+                        <label>Product Name</label>
+                        <select id="prod-name" onchange="updateProductPrice()">
+                            <option value="">-- Select Product --</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Factory Price (Rs)</label>
+                        <input type="number" id="prod-price" value="0" readonly style="background:#f1f5f9; color:var(--text-muted);">
+                    </div>
+                    <div class="form-group">
+                        <label>Quantity Bought</label>
+                        <input type="number" id="prod-qty" placeholder="0">
+                    </div>
+                    <button class="action-btn" style="background:var(--warning); box-shadow:0 4px 15px rgba(245, 158, 11, 0.3); color:#fff;" onclick="saveProductPurchase()">Add Purchase</button>
+                </div>
+
+                <div class="table-card">
+                    <h2>📦 Purchase History</h2>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Product</th>
+                                <th>Qty</th>
+                                <th>Total Cost</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbl-manage-products"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- PAGE 4: PACKAGING & OTHER COSTS -->
+        <div id="page-packaging" class="page">
+            <div class="two-col-layout">
+                <div class="form-card">
+                    <h2>🏷️ Packaging & Other Costs</h2>
+                    <p style="font-size:13px; color:var(--text-muted); margin-top:-15px;">Enter costs for Bubble Wrap, Tape, Labels, Bags, etc. here.</p>
+                    <div class="form-group">
+                        <label>Item Description</label>
+                        <input type="text" id="pack-name" placeholder="e.g. Bubble Wrap Roll">
+                    </div>
+                    <div class="form-group">
+                        <label>Quantity Bought</label>
+                        <input type="number" id="pack-qty" placeholder="0">
+                    </div>
+                    <div class="form-group">
+                        <label>Total Cost (Rs)</label>
+                        <input type="number" id="pack-cost" placeholder="0.00">
+                    </div>
+                    <button class="action-btn" style="background:var(--accent); box-shadow:0 4px 15px rgba(217, 70, 239, 0.3);" onclick="savePackaging()">Add Cost</button>
+                </div>
+
+                <div class="table-card">
+                    <h2>🏷️ Costs History</h2>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Item</th>
+                                <th>Qty</th>
+                                <th>Cost</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbl-manage-packaging"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- PAGE 5: WEEKLY PROFIT -->
+        <div id="page-profit" class="page">
+            <div class="two-col-layout">
+                <div class="form-card">
+                    <h2>💰 Weekly Profit Calculator</h2>
+                    <div class="form-group">
+                        <label style="color: var(--success); font-size: 14px;">Sale Profit / Received Payment (Rs)</label>
+                        <input type="number" id="exp-received" placeholder="0.00" style="border: 2px solid var(--success); background:#f0fdf4; font-size:16px;">
+                    </div>
+                    <div class="form-group">
+                        <label>Total Ads Spent (Rs) <span style="font-size:11px; color:var(--text-muted); font-weight:normal;">(Auto)</span></label>
+                        <input type="number" id="exp-ads" placeholder="0.00" readonly style="background:#fef2f2; color:var(--danger); font-weight:bold;">
+                    </div>
+                    <div class="form-group">
+                        <label>Total Product Cost (Rs) <span style="font-size:11px; color:var(--text-muted); font-weight:normal;">(Auto)</span></label>
+                        <input type="number" id="exp-prod" placeholder="0.00" readonly style="background:#fffbeb; color:var(--warning); font-weight:bold;">
+                    </div>
+                    <div class="form-group">
+                        <label>Packaging & Other Costs (Rs) <span style="font-size:11px; color:var(--text-muted); font-weight:normal;">(Auto)</span></label>
+                        <input type="number" id="exp-other" placeholder="0.00" readonly style="background:#fdf4ff; color:var(--accent); font-weight:bold;">
+                    </div>
+                    <button class="action-btn" style="background:var(--success); box-shadow:0 4px 15px rgba(16, 185, 129, 0.3);" onclick="saveExpenses()">Save Weekly Profit</button>
+                </div>
+
+                <div class="table-card">
+                    <h2>💸 Profit Records</h2>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Week</th>
+                                <th style="color:var(--success)">Received</th>
+                                <th>Ads</th>
+                                <th>Prod Cost</th>
+                                <th>Other (Pack)</th>
+                                <th style="color:var(--accent)">Profit</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbl-manage-expenses"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- PAGE 6: PRODUCT CATALOG -->
+        <div id="page-catalog" class="page">
+            <div class="two-col-layout">
+                <div class="form-card">
+                    <h2>⚙️ Manage Product Catalog <span id="catalog-status-badge" class="badge" style="display:none;">Editing</span></h2>
+                    <p style="font-size:13px; color:var(--text-muted); margin-top:-15px;">Add products here to make them available in the Purchases dropdown.</p>
+                    
+                    <div class="form-group">
+                        <label>Product Name</label>
+                        <input type="text" id="cat-name" placeholder="e.g. New Herbal Soap">
+                    </div>
+                    <div class="form-group">
+                        <label>Default Factory Price (Rs)</label>
+                        <input type="number" id="cat-price" placeholder="0.00">
+                    </div>
+                    
+                    <button class="action-btn" id="btn-save-catalog" style="background:var(--text-main); box-shadow:0 4px 15px rgba(30, 41, 59, 0.3);" onclick="saveCatalogProduct()">Save to Catalog</button>
+                </div>
+
+                <div class="table-card">
+                    <h2>📚 Active Product Catalog</h2>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Product Name</th>
+                                <th>Factory Price</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbl-manage-catalog"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- PAGE 7: STAFF MANAGEMENT -->
+        <div id="page-staff" class="page">
+            <div class="two-col-layout">
+                <div class="form-card">
+                    <h2>👥 Add / Edit User <span id="staff-status-badge" class="badge" style="display:none;">Editing</span></h2>
+                    <p style="font-size:13px; color:var(--text-muted); margin-top:-15px;">Create accounts for your staff and restrict what they can see.</p>
+                    
+                    <div class="form-group">
+                        <label>Email Address</label>
+                        <input type="email" id="staff-user" placeholder="e.g. staff@company.com">
+                    </div>
+                    <div class="form-group">
+                        <label>Password</label>
+                        <input type="text" id="staff-pass" placeholder="Password">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Permissions (Tick what they can access)</label>
+                        <div class="perm-grid">
+                            <label class="perm-lbl"><input type="checkbox" class="perm-chk" value="dashboard"> 📊 Dashboard</label>
+                            <label class="perm-lbl"><input type="checkbox" class="perm-chk" value="leads"> 🎯 Daily Leads</label>
+                            <label class="perm-lbl"><input type="checkbox" class="perm-chk" value="purchases"> 📦 Purchases</label>
+                            <label class="perm-lbl"><input type="checkbox" class="perm-chk" value="packaging"> 🏷️ Packaging</label>
+                            <label class="perm-lbl"><input type="checkbox" class="perm-chk" value="profit"> 💰 Profit</label>
+                            <label class="perm-lbl"><input type="checkbox" class="perm-chk" value="catalog"> ⚙️ Catalog</label>
+                            <label class="perm-lbl" style="grid-column: 1/-1; background:#fee2e2; border-color:#fca5a5; color:var(--danger);">
+                                <input type="checkbox" class="perm-chk" value="staff"> 👥 Staff Management (Admin Only)
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <button class="action-btn" id="btn-save-staff" onclick="saveStaffUser()">Save User Account</button>
+                </div>
+
+                <div style="display:flex; flex-direction:column; gap:35px;">
+                    <div class="table-card">
+                        <h2>📚 Active Users</h2>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Email Address</th>
+                                    <th>Permissions</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tbl-manage-staff"></tbody>
+                        </table>
+                    </div>
+
+                    <div class="table-card" style="border: 2px solid #fecaca; background: #fff5f5;">
+                        <h2 style="color:var(--danger); margin-top:0;">⚠️ Data Management</h2>
+                        <p style="font-size:13px; color:var(--text-muted); margin-top:-15px;">Clear data if you made a mistake or want to start a new month. Catalog and Users will NOT be deleted.</p>
+                        <div style="display:flex; gap:15px; margin-top:25px;">
+                            <button class="action-btn" style="background:var(--warning); box-shadow:0 4px 15px rgba(245, 158, 11, 0.3); font-size:13px;" onclick="resetCurrentWeek()">🗑️ Clear Week</button>
+                            <button class="action-btn" style="background:var(--danger); box-shadow:0 4px 15px rgba(239, 68, 68, 0.3); font-size:13px;" onclick="resetAllData()">🚨 Wipe All Data</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</main>
+
+<div id="notification" class="notification">Action Successful!</div>
+
+<script>
+    // --- CHART.JS CLOUD MODE DEFAULTS ---
+    Chart.defaults.color = '#64748b';
+    Chart.defaults.borderColor = '#e2e8f0';
+    Chart.defaults.font.family = "'Plus Jakarta Sans', sans-serif";
+
+    // --- STATE ---
+    let currentPage = 'dashboard';
+    let currentLeadId = null;
+    let currentCatalogId = null;
+    let currentStaffId = null;
+    let isDateFilterApplied = false;
+    let currentUser = null; 
+
+    function applyDateFilter() {
+        const date = document.getElementById('global-date').value;
+        if(!date) return notify("Please select a date first!", true);
+        isDateFilterApplied = true;
+        loadAllData();
+        notify("Date filter applied!");
+    }
+
+    function clearDateFilter() {
+        isDateFilterApplied = false;
+        loadAllData();
+        notify("Date filter cleared!");
+    }
+
+    let profitChartInstance = null;
+
+    function toggleSidebar() {
+        document.getElementById('sidebar').classList.toggle('collapsed');
+        setTimeout(() => { if(profitChartInstance) profitChartInstance.resize(); }, 300);
+    }
+
+    function notify(message, isError=false) {
+        const notif = document.getElementById('notification');
+        notif.textContent = message;
+        notif.style.background = isError ? "var(--danger)" : "var(--text-main)";
+        notif.classList.add('show');
+        setTimeout(() => notif.classList.remove('show'), 3000);
+    }
+
+    // --- DATABASE SETUP (DEXIE V6) ---
+    const db = new Dexie("MonthlyBudgetSystemDB");
+    db.version(6).stores({
+        leads: "++id, date, week, dailyBudget, totalLeads, confirmedLeads",
+        products: "++id, date, week, productName, price, qty",
+        expenses: "++id, week, received, adsSpent, productCost, otherCosts",
+        product_catalog: "++id, name, price",
+        users: "++id, username, password, *permissions",
+        packaging: "++id, date, week, itemName, cost"
+    });
+
+    const formatRs = (val) => "Rs. " + parseFloat(val).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+
+    db.on('ready', async function() {
+        const catalogCount = await db.product_catalog.count();
+        if (catalogCount === 0) {
+            await db.product_catalog.bulkAdd([
+                {name: "Herbal crown", price: 210},
+                {name: "Medaharani", price: 420},
+                {name: "Kesharaja", price: 410},
+                {name: "Mass Go", price: 550},
+                {name: "Asthma capsule", price: 600}
+            ]);
+        }
+        
+        const userCount = await db.users.count();
+        if (userCount === 0) {
+            await db.users.add({
+                username: "admin@company.com",
+                password: "123",
+                permissions: ["dashboard", "leads", "purchases", "packaging", "profit", "catalog", "staff"]
+            });
+        } else {
+            const adminUser = await db.users.where('username').equals('admin').first();
+            if (adminUser) {
+                await db.users.update(adminUser.id, { username: 'admin@company.com' });
+            }
+        }
+        
+        await loadCatalogToDropdown();
+        checkLoginSession(); 
+    });
+
+    function checkLoginSession() {
+        const localStr = localStorage.getItem('ag_user');
+        const sessionStr = sessionStorage.getItem('ag_user');
+        
+        const savedEmail = localStorage.getItem('ag_last_email');
+        const savedPass = localStorage.getItem('ag_last_pass');
+        if(savedEmail) document.getElementById('login-user').value = savedEmail;
+        if(savedPass) document.getElementById('login-pass').value = savedPass;
+
+        if(localStr) {
+            currentUser = JSON.parse(localStr);
+            finalizeLogin();
+        } else if(sessionStr) {
+            currentUser = JSON.parse(sessionStr);
+            finalizeLogin();
+        } else {
+            document.getElementById('login-screen').style.display = 'flex';
+        }
+    }
+
+    window.performLogin = async function(event) {
+        if (event) event.preventDefault();
+        const u = document.getElementById('login-user').value.trim();
+        const p = document.getElementById('login-pass').value.trim();
+        const remember = document.getElementById('login-remember').checked;
+        
+        if(!u || !p) return notify("Enter Email and Password", true);
+        
+        const user = await db.users.where({username: u, password: p}).first();
+        if(user) {
+            currentUser = user;
+            localStorage.setItem('ag_last_email', u);
+            localStorage.setItem('ag_last_pass', p);
+            if(remember) {
+                localStorage.setItem('ag_user', JSON.stringify(user));
+            } else {
+                sessionStorage.setItem('ag_user', JSON.stringify(user));
+            }
+            document.getElementById('login-pass').value = '';
+            finalizeLogin();
+            notify(`Welcome back!`);
+        } else {
+            notify("Invalid Credentials!", true);
+        }
+    }
+
+    function finalizeLogin() {
+        document.getElementById('login-screen').style.display = 'none';
+        document.getElementById('lbl-current-user').textContent = currentUser.username;
+        applyPermissions();
+    }
+
+    window.performLogout = function() {
+        localStorage.removeItem('ag_user');
+        sessionStorage.removeItem('ag_user');
+        currentUser = null;
+        
+        const savedEmail = localStorage.getItem('ag_last_email');
+        const savedPass = localStorage.getItem('ag_last_pass');
+        if(savedEmail) document.getElementById('login-user').value = savedEmail;
+        if(savedPass) document.getElementById('login-pass').value = savedPass;
+        
+        document.getElementById('login-screen').style.display = 'flex';
+        document.querySelectorAll('.page').forEach(el => el.classList.remove('active'));
+        notify("Logged out successfully");
+    }
+
+    function applyPermissions() {
+        if(!currentUser) return;
+        let perms = currentUser.permissions || [];
+        
+        if(currentUser.username === 'admin' || currentUser.username === 'admin@company.com') {
+            perms = ["dashboard", "leads", "purchases", "packaging", "profit", "catalog", "staff"];
+            currentUser.permissions = perms; 
+        }
+        
+        document.querySelectorAll('.nav-item').forEach(item => {
+            if(item.id !== 'nav-logout' && item.id !== '') {
+                const pageId = item.id.replace('nav-', '');
+                if(perms.includes(pageId)) {
+                    item.style.display = 'flex';
+                } else {
+                    item.style.display = 'none';
+                }
+            }
+        });
+
+        if(perms.length > 0) {
+            navigate(perms[0]);
+        }
+    }
+
+    function navigate(pageId) {
+        if(!currentUser) return;
+        
+        let perms = currentUser.permissions || [];
+        if(currentUser.username === 'admin' || currentUser.username === 'admin@company.com') {
+            perms = ["dashboard", "leads", "purchases", "packaging", "profit", "catalog", "staff"];
+        }
+
+        if(!perms.includes(pageId)) return notify("Access Denied! You don't have permission.", true);
+
+        currentPage = pageId;
+        
+        document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+        const navItem = document.getElementById(`nav-${pageId}`);
+        if(navItem) navItem.classList.add('active');
+
+        document.querySelectorAll('.page').forEach(el => el.classList.remove('active'));
+        document.getElementById(`page-${pageId}`).classList.add('active');
+
+        loadAllData();
+    }
+
+    function handleContextChange() {
+        const week = document.getElementById('active-week').value;
+        const isMonth = week === 'Month Overview';
+
+        document.getElementById('date-picker-group').style.display = isMonth ? 'none' : 'flex';
+        document.getElementById('dash-title').textContent = isMonth ? "All-Time Month Summary" : `${week} Overview`;
+        document.querySelectorAll('.col-week').forEach(el => isMonth ? el.classList.remove('hidden') : el.classList.add('hidden'));
+
+        if(isMonth && currentPage !== 'dashboard' && currentUser.permissions.includes('dashboard')) {
+            navigate('dashboard');
+        }
+
+        handleDateChange(); 
+        loadAllData();
+    }
+
+    async function handleDateChange() {
+        const week = document.getElementById('active-week').value;
+        if(week === 'Month Overview') return; 
+
+        const date = document.getElementById('global-date').value;
+        if(!date) return;
+        
+        const existingLead = await db.leads.where('date').equals(date).first();
+        const badge = document.getElementById('lead-status-badge');
+        const btn = document.getElementById('btn-save-lead');
+        
+        if (existingLead && existingLead.week === week) {
+            document.getElementById('lead-budget').value = existingLead.dailyBudget;
+            document.getElementById('lead-count').value = existingLead.totalLeads;
+            document.getElementById('lead-confirmed').value = existingLead.confirmedLeads;
+            currentLeadId = existingLead.id; 
+            badge.style.display = 'inline-block';
+            btn.textContent = 'Update Lead Data';
+            btn.style.background = 'var(--warning)';
+            btn.style.boxShadow = '0 4px 15px rgba(245, 158, 11, 0.3)';
+        } else {
+            document.getElementById('lead-budget').value = '';
+            document.getElementById('lead-count').value = '';
+            document.getElementById('lead-confirmed').value = '';
+            currentLeadId = null;
+            badge.style.display = 'none';
+            btn.textContent = 'Save Lead Data';
+            btn.style.background = 'var(--primary)';
+            btn.style.boxShadow = '0 4px 15px rgba(79, 70, 229, 0.3)';
+        }
+    }
+
+    window.saveStaffUser = async function() {
+        const u = document.getElementById('staff-user').value.trim();
+        const p = document.getElementById('staff-pass').value.trim();
+        
+        const perms = [];
+        document.querySelectorAll('.perm-chk:checked').forEach(chk => { perms.push(chk.value); });
+
+        if(!u || !p) return notify("Please fill Username and Password!", true);
+        if(perms.length === 0) return notify("Please select at least one permission!", true);
+
+        const payload = { username: u, password: p, permissions: perms };
+
+        if(currentStaffId) {
+            await db.users.update(currentStaffId, payload);
+            notify("User updated successfully!");
+        } else {
+            const existing = await db.users.where('username').equals(u).first();
+            if(existing) return notify("Username already exists!", true);
+            await db.users.add(payload);
+            notify("New user created!");
+        }
+
+        document.getElementById('staff-user').value = '';
+        document.getElementById('staff-pass').value = '';
+        document.querySelectorAll('.perm-chk').forEach(chk => chk.checked = false);
+        currentStaffId = null;
+        document.getElementById('staff-status-badge').style.display = 'none';
+        document.getElementById('btn-save-staff').textContent = "Save User Account";
+        
+        loadStaffTable();
+    }
+
+    window.editStaff = async function(id) {
+        const user = await db.users.get(id);
+        if(!user) return;
+
+        currentStaffId = user.id;
+        document.getElementById('staff-user').value = user.username;
+        document.getElementById('staff-pass').value = user.password;
+        
+        document.querySelectorAll('.perm-chk').forEach(chk => {
+            chk.checked = user.permissions.includes(chk.value);
+        });
+
+        document.getElementById('staff-status-badge').style.display = 'inline-block';
+        document.getElementById('btn-save-staff').textContent = "Update User Account";
+    }
+
+    async function loadStaffTable() {
+        if(!currentUser || !currentUser.permissions.includes('staff')) return;
+        const users = await db.users.toArray();
+        const tbody = document.getElementById('tbl-manage-staff');
+        tbody.innerHTML = '';
+        users.forEach(u => {
+            const isMe = u.username === currentUser.username;
+            const delBtn = isMe ? `<span style="font-size:11px;color:var(--primary);font-weight:bold;">(You)</span>` : `<button class="btn-delete" onclick="deleteRecord('users', ${u.id})">Del</button>`;
+            
+            tbody.innerHTML += `
+                <tr>
+                    <td style="font-weight:bold; color:var(--text-main);">${u.username}</td>
+                    <td style="font-size:12px; color:var(--text-muted);">${u.permissions.join(', ')}</td>
+                    <td>
+                        <button class="btn-edit" onclick="editStaff(${u.id})">Edit</button>
+                        ${delBtn}
+                    </td>
+                </tr>
+            `;
+        });
+    }
+
+    async function loadCatalogToDropdown() {
+        const catalog = await db.product_catalog.toArray();
+        const select = document.getElementById('prod-name');
+        select.innerHTML = '<option value="">-- Select Product --</option>';
+        catalog.forEach(p => {
+            select.innerHTML += `<option value="${p.name}" data-price="${p.price}">${p.name}</option>`;
+        });
+        
+        const tbody = document.getElementById('tbl-manage-catalog');
+        if(tbody) {
+            tbody.innerHTML = '';
+            catalog.forEach(p => {
+                tbody.innerHTML += `
+                    <tr>
+                        <td style="color:var(--text-muted);">#${p.id}</td>
+                        <td style="font-weight:bold; color:var(--text-main);">${p.name}</td>
+                        <td style="color:var(--success); font-weight:bold;">${formatRs(p.price)}</td>
+                        <td>
+                            <button class="btn-edit" onclick="editCatalog(${p.id}, '${p.name}', ${p.price})">Edit</button>
+                            <button class="btn-delete" onclick="deleteRecord('product_catalog', ${p.id})">Del</button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+    }
+
+    function updateProductPrice() {
+        const select = document.getElementById('prod-name');
+        if(select.selectedIndex > 0) {
+            const option = select.options[select.selectedIndex];
+            document.getElementById('prod-price').value = option.dataset.price || 0;
+        } else {
+            document.getElementById('prod-price').value = 0;
+        }
+    }
+
+    window.editCatalog = function(id, name, price) {
+        currentCatalogId = id;
+        document.getElementById('cat-name').value = name;
+        document.getElementById('cat-price').value = price;
+        document.getElementById('catalog-status-badge').style.display = 'inline-block';
+        document.getElementById('btn-save-catalog').textContent = "Update Catalog";
+    }
+
+    window.saveCatalogProduct = async function() {
+        const name = document.getElementById('cat-name').value;
+        const price = document.getElementById('cat-price').value;
+
+        if(!name || !price) return notify("Please fill both Name and Price!", true);
+
+        const payload = { name: name, price: parseFloat(price) };
+
+        if(currentCatalogId) {
+            await db.product_catalog.update(currentCatalogId, payload);
+            notify("Product updated in catalog!");
+        } else {
+            await db.product_catalog.add(payload);
+            notify("New Product added to catalog!");
+        }
+
+        document.getElementById('cat-name').value = '';
+        document.getElementById('cat-price').value = '';
+        currentCatalogId = null;
+        document.getElementById('catalog-status-badge').style.display = 'none';
+        document.getElementById('btn-save-catalog').textContent = "Save to Catalog";
+        
+        loadCatalogToDropdown();
+    }
+
+    function renderCharts(isMonth, leadsArray, productsArray, expensesArray, activeWeek) {
+        if(!currentUser || !currentUser.permissions.includes('dashboard')) return;
+
+        if(profitChartInstance) profitChartInstance.destroy();
+
+        const ctxProfit = document.getElementById('profitChart').getContext('2d');
+        let profitLabels = [], dataAds = [], dataProd = [], dataProfit = [];
+        
+        if (isMonth) {
+            const weeks = ["Week 1", "Week 2", "Week 3", "Week 4"];
+            profitLabels = weeks;
+            weeks.forEach(w => {
+                const e = expensesArray.find(x => x.week === w) || {adsSpent: 0, productCost: 0, received: 0, otherCosts: 0};
+                dataAds.push(e.adsSpent);
+                dataProd.push(e.productCost);
+                dataProfit.push(e.received - (e.adsSpent + e.productCost + e.otherCosts));
+            });
+        } else {
+            profitLabels = [activeWeek];
+            const e = expensesArray.find(x => x.week === activeWeek) || {adsSpent: 0, productCost: 0, received: 0, otherCosts: 0};
+            dataAds.push(e.adsSpent);
+            dataProd.push(e.productCost);
+            dataProfit.push(e.received - (e.adsSpent + e.productCost + e.otherCosts));
+        }
+
+        profitChartInstance = new Chart(ctxProfit, {
+            type: 'bar',
+            data: {
+                labels: profitLabels,
+                datasets: [
+                    { label: 'Ads Spent', data: dataAds, backgroundColor: '#ef4444', borderRadius: 6 },
+                    { label: 'Product Cost', data: dataProd, backgroundColor: '#f59e0b', borderRadius: 6 },
+                    { label: 'Net Profit', data: dataProfit, backgroundColor: '#10b981', borderRadius: 6 }
+                ]
+            },
+            options: { 
+                responsive: true, 
+                maintainAspectRatio: false, 
+                scales: { 
+                    y: { beginAtZero: true, grid: { color: '#f1f5f9' } },
+                    x: { grid: { display: false } }
+                },
+                plugins: { legend: { labels: { color: '#1e293b', font: { weight: '600' } } } }
+            }
+        });
+    }
+
+    async function loadAllData() {
+        if(!currentUser) return; 
+
+        const week = document.getElementById('active-week').value;
+        const isMonth = week === 'Month Overview';
+        const selectedDate = document.getElementById('global-date').value;
+        
+        // --- 1. PRODUCTS ---
+        let allProducts = await db.products.orderBy('date').reverse().toArray();
+        if(!isMonth) allProducts = allProducts.filter(p => p.week === week);
+        
+        let weeklyProductTotal = allProducts.reduce((sum, p) => sum + (p.price * p.qty), 0);
+
+        let products = allProducts;
+        if(isDateFilterApplied && selectedDate && !isMonth) {
+            products = products.filter(p => p.date === selectedDate);
+        }
+        
+        let totalProductCostAmount = 0;
+        let pBodyDash = '', pBodyManage = '';
+
+        products.forEach(p => {
+            const total = p.price * p.qty;
+            totalProductCostAmount += total;
+            
+            const isSelected = p.date === selectedDate && !isMonth ? 'background-color: #fffbeb;' : '';
+            const weekTd = isMonth ? `<td style="color:var(--text-muted); font-weight:600;">${p.week || 'Week 1'}</td>` : '';
+            const row = `<tr style="${isSelected}">${weekTd}<td>${p.date}</td><td style="font-weight:600;">${p.productName}</td><td>${p.qty}</td><td style="font-weight:bold; color:var(--warning);">${formatRs(total)}</td></tr>`;
+            pBodyDash += row;
+            pBodyManage += `<tr style="${isSelected}"><td>${p.date}</td><td style="font-weight:600;">${p.productName}</td><td>${p.qty}</td><td style="font-weight:bold; color:var(--warning);">${formatRs(total)}</td><td><button class="btn-delete" onclick="deleteRecord('products', ${p.id})">Del</button></td></tr>`;
+        });
+        document.getElementById('tbl-dash-products').innerHTML = pBodyDash;
+        document.getElementById('tbl-manage-products').innerHTML = pBodyManage;
+
+        // --- 2. LEADS ---
+        let allLeads = await db.leads.orderBy('date').reverse().toArray();
+        if(!isMonth) allLeads = allLeads.filter(l => l.week === week);
+        
+        let weeklyAdsTotal = allLeads.reduce((sum, l) => sum + l.dailyBudget, 0);
+
+        let leads = allLeads;
+        if(isDateFilterApplied && selectedDate && !isMonth) {
+            leads = leads.filter(l => l.date === selectedDate);
+        }
+        
+        let totalLeadsCount = 0, totalConfirmedCount = 0, totalAdsSpentAmount = 0;
+        let lBodyDash = '', lBodyManage = '';
+
+        leads.forEach(l => {
+            totalLeadsCount += l.totalLeads;
+            totalConfirmedCount += l.confirmedLeads;
+            totalAdsSpentAmount += l.dailyBudget;
+            
+            const costPerLead = l.totalLeads > 0 ? (l.dailyBudget / l.totalLeads) : 0;
+            const costPerConfirmed = l.confirmedLeads > 0 ? (l.dailyBudget / l.confirmedLeads) : 0;
+            const isSelected = l.date === selectedDate && !isMonth ? 'background-color: #e0e7ff;' : '';
+            const weekTd = isMonth ? `<td style="color:var(--text-muted); font-weight:600;">${l.week || 'Week 1'}</td>` : '';
+
+            lBodyDash += `<tr style="${isSelected}">${weekTd}<td><strong>${l.date}</strong></td><td style="font-weight:600;">${formatRs(l.dailyBudget)}</td><td>${l.totalLeads}</td><td><strong style="color:var(--success);">${l.confirmedLeads}</strong></td><td style="color:var(--primary); font-weight:bold;">${formatRs(costPerLead)}</td><td style="color:var(--success); font-weight:bold;">${formatRs(costPerConfirmed)}</td></tr>`;
+            lBodyManage += `<tr style="${isSelected}"><td><strong>${l.date}</strong></td><td style="font-weight:600;">${formatRs(l.dailyBudget)}</td><td>${l.totalLeads}</td><td><strong style="color:var(--success);">${l.confirmedLeads}</strong></td><td><button class="btn-delete" onclick="deleteRecord('leads', ${l.id})">Del</button></td></tr>`;
+        });
+        document.getElementById('tbl-dash-leads').innerHTML = lBodyDash;
+        document.getElementById('tbl-manage-leads').innerHTML = lBodyManage;
+
+        // --- 3. PACKAGING COSTS ---
+        let allPackaging = await db.packaging.orderBy('date').reverse().toArray();
+        if(!isMonth) allPackaging = allPackaging.filter(pk => pk.week === week);
+        
+        let weeklyPackagingTotal = allPackaging.reduce((sum, pk) => sum + pk.cost, 0);
+        
+        let packaging = allPackaging;
+        if(isDateFilterApplied && selectedDate && !isMonth) {
+            packaging = packaging.filter(pk => pk.date === selectedDate);
+        }
+
+        let packBodyManage = '';
+        packaging.forEach(pk => {
+            const isSelected = pk.date === selectedDate && !isMonth ? 'background-color: #fae8ff;' : '';
+            const pkQty = pk.qty || '-';
+            packBodyManage += `<tr style="${isSelected}"><td>${pk.date}</td><td style="font-weight:600;">${pk.itemName}</td><td>${pkQty}</td><td style="font-weight:bold; color:var(--accent);">${formatRs(pk.cost)}</td><td><button class="btn-delete" onclick="deleteRecord('packaging', ${pk.id})">Del</button></td></tr>`;
+        });
+        document.getElementById('tbl-manage-packaging').innerHTML = packBodyManage;
+
+        // --- 4. EXPENSES & PROFIT ---
+        let expenses = await db.expenses.toArray();
+        if(!isMonth) expenses = expenses.filter(e => e.week === week);
+        expenses.sort((a, b) => (a.week || '').localeCompare(b.week || ''));
+        
+        let totalExpensesProfit = 0;
+        let eBodyDash = '', eBodyManage = '';
+
+        expenses.forEach(e => {
+            const received = e.received || 0;
+            const totalSpent = e.adsSpent + e.productCost + e.otherCosts; 
+            const profit = received - totalSpent;
+            totalExpensesProfit += profit;
+            
+            const weekTd = isMonth ? `<td><strong style="color:var(--text-muted);">${e.week || 'Week 1'}</strong></td>` : '';
+
+            eBodyDash += `<tr>${weekTd}<td style="color:var(--success); font-weight:bold;">${formatRs(received)}</td><td style="font-weight:600;">${formatRs(e.adsSpent)}</td><td style="font-weight:600;">${formatRs(e.productCost)}</td><td style="font-weight:600;">${formatRs(e.otherCosts)}</td><td style="color:var(--primary); font-weight:bold;">${formatRs(profit)}</td></tr>`;
+            eBodyManage += `<tr><td><strong style="color:var(--text-muted);">${e.week || 'Week 1'}</strong></td><td style="color:var(--success); font-weight:bold;">${formatRs(received)}</td><td style="font-weight:600;">${formatRs(e.adsSpent)}</td><td style="font-weight:600;">${formatRs(e.productCost)}</td><td style="font-weight:600;">${formatRs(e.otherCosts)}</td><td style="color:var(--primary); font-weight:bold;">${formatRs(profit)}</td><td><button class="btn-delete" onclick="deleteRecord('expenses', ${e.id})">Del</button></td></tr>`;
+        });
+        document.getElementById('tbl-dash-expenses').innerHTML = eBodyDash;
+        document.getElementById('tbl-manage-expenses').innerHTML = eBodyManage;
+        
+        // Auto-load forms
+        if (!isMonth) {
+            const exp = expenses.find(e => e.week === week);
+            if(exp) {
+                document.getElementById('exp-received').value = exp.received || '';
+            } else {
+                document.getElementById('exp-received').value = '';
+            }
+            
+            // AUTO-FILL
+            document.getElementById('exp-prod').value = weeklyProductTotal;
+            document.getElementById('exp-ads').value = weeklyAdsTotal;
+            document.getElementById('exp-other').value = weeklyPackagingTotal;
+        }
+
+        // --- 5. UPDATE DASHBOARD SUMMARIES ---
+        document.getElementById('lbl-sum-leads').textContent = totalLeadsCount;
+        document.getElementById('lbl-sum-confirmed').textContent = totalConfirmedCount;
+        document.getElementById('lbl-sum-cost').textContent = formatRs(totalProductCostAmount);
+        document.getElementById('lbl-sum-profit').textContent = formatRs(totalExpensesProfit);
+
+        // --- 6. RENDER CHARTS ---
+        if(currentUser.permissions.includes('dashboard')) {
+            renderCharts(isMonth, leads, products, expenses, week);
+        }
+
+        // --- 7. LOAD STAFF TABLE ---
+        if(currentPage === 'staff') {
+            loadStaffTable();
+        }
+    }
+
+    // --- DATA SAVING LOGIC ---
+    window.resetCurrentWeek = async function() {
+        const week = document.getElementById('active-week').value;
+        if(week === 'Month Overview') return notify("Select a specific week to clear!", true);
+        
+        if(confirm(`Are you SURE you want to permanently delete all Leads, Purchases, Packaging, and Profit data for ${week}?`)) {
+            const leads = await db.leads.toArray();
+            await db.leads.bulkDelete(leads.filter(x => x.week === week).map(x => x.id));
+            
+            const products = await db.products.toArray();
+            await db.products.bulkDelete(products.filter(x => x.week === week).map(x => x.id));
+            
+            const packaging = await db.packaging.toArray();
+            await db.packaging.bulkDelete(packaging.filter(x => x.week === week).map(x => x.id));
+            
+            const expenses = await db.expenses.toArray();
+            await db.expenses.bulkDelete(expenses.filter(x => x.week === week).map(x => x.id));
+            
+            notify(`${week} data cleared successfully!`);
+            loadAllData();
+        }
+    }
+
+    window.resetAllData = async function() {
+        if(confirm(`🚨 WARNING: Are you SURE you want to delete ALL data for ALL weeks? This will give you a fresh system for a new month. (Catalog and Users will NOT be deleted).`)) {
+            if(confirm(`Are you 100% sure? This action cannot be undone.`)) {
+                await db.leads.clear();
+                await db.products.clear();
+                await db.packaging.clear();
+                await db.expenses.clear();
+                
+                notify(`All monthly data has been wiped! Fresh start ready.`);
+                
+                document.getElementById('active-week').value = 'Week 1';
+                handleContextChange();
+            }
+        }
+    }
+
+    window.deleteRecord = async function(table, id) {
+        if(confirm('Are you sure you want to delete this record?')) {
+            await db[table].delete(id);
+            notify('Record deleted successfully');
+            if(table === 'leads') handleDateChange();
+            else if(table === 'product_catalog') loadCatalogToDropdown();
+            else if(table === 'users') loadStaffTable();
+            else loadAllData();
+        }
+    }
+
+    window.saveLeadData = async function() {
+        const week = document.getElementById('active-week').value;
+        if(week === 'Month Overview') return notify("Cannot add data in Month Overview!", true);
+
+        const date = document.getElementById('global-date').value;
+        const budget = document.getElementById('lead-budget').value;
+        const count = document.getElementById('lead-count').value;
+        const confirmed = document.getElementById('lead-confirmed').value;
+
+        if(!date) return notify("Please select a Date!", true);
+        if(!budget || !count || !confirmed) return notify("Please fill all Lead fields!", true);
+
+        const payload = {
+            week: week,
+            date: date,
+            dailyBudget: parseFloat(budget),
+            totalLeads: parseInt(count),
+            confirmedLeads: parseInt(confirmed)
+        };
+
+        if (currentLeadId) {
+            await db.leads.update(currentLeadId, payload);
+            notify(`Lead data UPDATED for ${week}!`);
+        } else {
+            await db.leads.add(payload);
+            notify(`New Lead SAVED for ${week}!`);
+        }
+        
+        document.getElementById('lead-budget').value = '';
+        document.getElementById('lead-count').value = '';
+        document.getElementById('lead-confirmed').value = '';
+        currentLeadId = null;
+        document.getElementById('lead-status-badge').style.display = 'none';
+        const btn = document.getElementById('btn-save-lead');
+        btn.textContent = 'Save Lead Data';
+        btn.style.background = 'var(--primary)';
+        btn.style.boxShadow = '0 4px 15px rgba(79, 70, 229, 0.3)';
+        
+        loadAllData();
+    }
+
+    window.saveProductPurchase = async function() {
+        const week = document.getElementById('active-week').value;
+        if(week === 'Month Overview') return notify("Cannot add data in Month Overview!", true);
+
+        const date = document.getElementById('global-date').value;
+        const name = document.getElementById('prod-name').value;
+        const price = document.getElementById('prod-price').value;
+        const qty = document.getElementById('prod-qty').value;
+
+        if(!date) return notify("Please select a Date!", true);
+        if(!name || !qty || qty <= 0) return notify("Please fill Product Name and Quantity!", true);
+
+        await db.products.add({
+            week: week,
+            date: date,
+            productName: name,
+            price: parseFloat(price),
+            qty: parseInt(qty)
+        });
+
+        document.getElementById('prod-name').value = '';
+        document.getElementById('prod-price').value = '0';
+        document.getElementById('prod-qty').value = '';
+
+        notify(`Product purchase added to ${week}!`);
+        loadAllData();
+    }
+
+    window.savePackaging = async function() {
+        const week = document.getElementById('active-week').value;
+        if(week === 'Month Overview') return notify("Cannot add data in Month Overview!", true);
+
+        const date = document.getElementById('global-date').value;
+        const name = document.getElementById('pack-name').value;
+        const qty = document.getElementById('pack-qty').value;
+        const cost = document.getElementById('pack-cost').value;
+
+        if(!date) return notify("Please select a Date!", true);
+        if(!name || !cost || cost <= 0) return notify("Please fill Item Description and Cost!", true);
+
+        await db.packaging.add({
+            week: week,
+            date: date,
+            itemName: name,
+            qty: qty ? parseInt(qty) : 1,
+            cost: parseFloat(cost)
+        });
+
+        document.getElementById('pack-name').value = '';
+        document.getElementById('pack-qty').value = '';
+        document.getElementById('pack-cost').value = '';
+
+        notify(`Packaging cost added to ${week}!`);
+        loadAllData();
+    }
+
+    window.saveExpenses = async function() {
+        const week = document.getElementById('active-week').value;
+        if(week === 'Month Overview') return notify("Cannot add data in Month Overview!", true);
+
+        const received = document.getElementById('exp-received').value;
+        const autoAdsCost = document.getElementById('exp-ads').value; 
+        const autoProdCost = document.getElementById('exp-prod').value; 
+        const autoOtherCost = document.getElementById('exp-other').value;
+
+        if(!received) {
+            return notify("Please fill Received Payment!", true);
+        }
+
+        const payload = {
+            week: week,
+            received: parseFloat(received),
+            adsSpent: parseFloat(autoAdsCost) || 0,
+            productCost: parseFloat(autoProdCost) || 0, 
+            otherCosts: parseFloat(autoOtherCost) || 0
+        };
+
+        const existingExp = await db.expenses.where('week').equals(week).first();
+        if (existingExp) {
+            await db.expenses.update(existingExp.id, payload);
+            notify(`Profit & Expenses UPDATED for ${week}!`);
+        } else {
+            await db.expenses.add(payload);
+            notify(`Profit & Expenses SAVED for ${week}!`);
+        }
+
+        loadAllData();
+    }
+    
+    // --- EXPORTS ---
+    window.exportToCSV = async function() {
+        let csvContent = "data:text/csv;charset=utf-8,";
+        csvContent += "--- LEADS ---\nWeek,Date,Budget,Total Leads,Confirmed Leads\n";
+        const leads = await db.leads.toArray();
+        leads.forEach(l => { csvContent += `${l.week||''},${l.date},${l.dailyBudget},${l.totalLeads},${l.confirmedLeads}\n`; });
+        
+        csvContent += "\n--- PRODUCT PURCHASES ---\nWeek,Date,Product Name,Factory Price,Quantity\n";
+        const products = await db.products.toArray();
+        products.forEach(p => { csvContent += `${p.week||''},${p.date},${p.productName},${p.price},${p.qty}\n`; });
+
+        csvContent += "\n--- PACKAGING & OTHER COSTS ---\nWeek,Date,Item Name,Qty,Total Cost\n";
+        const packaging = await db.packaging.toArray();
+        packaging.forEach(pk => { csvContent += `${pk.week||''},${pk.date},${pk.itemName},${pk.qty||1},${pk.cost}\n`; });
+
+        csvContent += "\n--- WEEKLY PROFIT & EXPENSES ---\nWeek,Received,Ads Spent,Product Cost,Other Costs(Packaging),Final Profit\n";
+        const expenses = await db.expenses.toArray();
+        expenses.forEach(e => { 
+            const profit = e.received - (e.adsSpent + e.productCost + e.otherCosts);
+            csvContent += `${e.week||''},${e.received},${e.adsSpent},${e.productCost},${e.otherCosts},${profit}\n`; 
+        });
+
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", "Lakshitha_Sandaruwan_Data.csv");
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+
+    window.exportToPDF = function() {
+        notify("Generating PDF, please wait...");
+        const element = document.querySelector('.page.active');
+        const actionBtns = element.querySelectorAll('button');
+        const originalDisplays = [];
+        actionBtns.forEach((btn, index) => {
+            originalDisplays[index] = btn.style.display;
+            btn.style.display = 'none';
+        });
+
+        const opt = {
+            margin:       0.3,
+            filename:     'Lakshitha_Sandaruwan_Report.pdf',
+            image:        { type: 'jpeg', quality: 0.98 },
+            html2canvas:  { scale: 2, useCORS: true, backgroundColor: '#f8fafc' },
+            jsPDF:        { unit: 'in', format: 'a4', orientation: 'landscape' }
+        };
+
+        html2pdf().set(opt).from(element).save().then(() => {
+            actionBtns.forEach((btn, index) => {
+                btn.style.display = originalDisplays[index];
+            });
+            notify("PDF Exported Successfully!");
+        });
+    }
+
+    document.getElementById('global-date').valueAsDate = new Date();
+</script>
+</body>
+</html>
