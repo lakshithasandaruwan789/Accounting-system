@@ -302,9 +302,54 @@
             /* Topbar */
             .topbar { flex-direction: column; gap: 15px; align-items: flex-start; padding: 15px; }
             .topbar > div:first-child { flex-direction: column; align-items: flex-start; width:100%; }
-            .topbar-controls { flex-direction: column; width: 100%; gap: 10px; }
-            .control-group { flex-direction: column; align-items: stretch; padding: 12px; margin-bottom: 5px; }
-            .control-group label { margin-bottom: 5px; font-weight:bold; }
+            
+            /* Beautiful horizontally scrollable filter bar */
+            .topbar-controls { 
+                display: flex;
+                flex-direction: row; 
+                width: calc(100% + 30px); 
+                margin-left: -15px; 
+                padding: 5px 15px 15px 15px; 
+                gap: 12px; 
+                overflow-x: auto; 
+                -webkit-overflow-scrolling: touch;
+                scrollbar-width: none; /* Firefox */
+            }
+            .topbar-controls::-webkit-scrollbar { display: none; } /* Safari/Chrome */
+
+            .control-group { 
+                flex-direction: row; 
+                align-items: center; 
+                padding: 8px 16px; 
+                margin-bottom: 0; 
+                flex-shrink: 0; 
+                border-radius: 30px; /* Pill shape */
+                background: #f8fafc;
+                border: 1px solid #e2e8f0;
+                box-shadow: none;
+            }
+            .control-group label { 
+                margin-bottom: 0; 
+                margin-right: 8px; 
+                font-weight: 700; 
+                font-size: 11px; 
+                text-transform: uppercase; 
+                letter-spacing: 0.5px; 
+                color: var(--primary); 
+            }
+            .control-group select, .control-group input[type="date"] {
+                border: none;
+                background: transparent;
+                outline: none;
+                font-weight: 600;
+                font-size: 14px;
+                padding: 0;
+                color: var(--text-main);
+            }
+            
+            .date-inputs { gap: 8px !important; align-items: center; }
+            .date-inputs .btn-export { padding: 4px 12px !important; font-size: 12px !important; border-radius: 20px !important; margin: 0 !important; }
+
             
             .hamburger-btn { padding: 8px 12px !important; background: #f1f5f9 !important; border-radius: 8px !important; display: inline-block; margin-bottom: 10px; width: auto !important;}
             .export-btns-container { width: 100%; justify-content: space-between; }
