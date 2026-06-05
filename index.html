@@ -1457,7 +1457,7 @@
         let allPackaging = await db.packaging.orderBy('date').reverse().toArray();
         if(!isMonth) allPackaging = allPackaging.filter(pk => pk.week === week);
         
-        let weeklyPackagingTotal = allPackaging.reduce((sum, pk) => sum + pk.cost, 0);
+        let weeklyPackagingTotal = allPackaging.reduce((sum, pk) => sum + (pk.cost * (pk.qty || 1)), 0);
         
         let packaging = allPackaging;
         if(isDateFilterApplied && selectedDate && !isMonth) {
@@ -1467,8 +1467,9 @@
         let packBodyManage = '';
         packaging.forEach(pk => {
             const isSelected = pk.date === selectedDate && !isMonth ? 'background-color: #fae8ff;' : '';
-            const pkQty = pk.qty || '-';
-            packBodyManage += `<tr style="${isSelected}"><td>${pk.date}</td><td style="font-weight:600;">${pk.itemName}</td><td>${pkQty}</td><td style="font-weight:bold; color:var(--accent);">${formatRs(pk.cost)}</td><td><button class="btn-delete" onclick="deleteRecord('packaging', ${pk.id})">Del</button></td></tr>`;
+            const pkQty = pk.qty || 1;
+            const totalCost = pk.cost * pkQty;
+            packBodyManage += `<tr style="${isSelected}"><td>${pk.date}</td><td style="font-weight:600;">${pk.itemName}</td><td>${pkQty}</td><td style="font-weight:bold; color:var(--accent);">${formatRs(totalCost)}</td><td><button class="btn-delete" onclick="deleteRecord('packaging', ${pk.id})">Del</button></td></tr>`;
         });
         document.getElementById('tbl-manage-packaging').innerHTML = packBodyManage;
 
