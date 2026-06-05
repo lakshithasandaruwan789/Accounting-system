@@ -1775,6 +1775,12 @@
             btn.style.display = 'none';
         });
 
+        // Disable animations to prevent html2canvas from capturing the element mid-fade (which causes faded/light colors)
+        const originalAnimation = element.style.animation;
+        const originalTransition = element.style.transition;
+        element.style.animation = 'none';
+        element.style.transition = 'none';
+
         const opt = {
             margin:       0.3,
             filename:     'Lakshitha_Sandaruwan_Report.pdf',
@@ -1784,6 +1790,8 @@
         };
 
         html2pdf().set(opt).from(element).save().then(() => {
+            element.style.animation = originalAnimation;
+            element.style.transition = originalTransition;
             actionBtns.forEach((btn, index) => {
                 btn.style.display = originalDisplays[index];
             });
