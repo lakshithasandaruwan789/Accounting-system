@@ -1409,11 +1409,16 @@
             const total = p.price * p.qty;
             totalProductCostAmount += total;
             
+            const isSettled = p.isSettled || false;
+            const settleBtnHtml = isSettled 
+                ? `<button class="action-btn" style="background:#10b981; color:white; padding:4px 8px; font-size:12px; margin-right:5px; margin-bottom:5px; border:none;" onclick="toggleSettlePurchase(${p.id}, false)">✅ Settled</button>`
+                : `<button class="action-btn" style="background:#f59e0b; color:white; padding:4px 8px; font-size:12px; margin-right:5px; margin-bottom:5px; border:none;" onclick="toggleSettlePurchase(${p.id}, true)">⏳ Pay/Settle</button>`;
+
             const isSelected = p.date === selectedDate && !isMonth ? 'background-color: #fffbeb;' : '';
             const weekTd = isMonth ? `<td style="color:var(--text-muted); font-weight:600;">${p.week || 'Week 1'}</td>` : '';
             const row = `<tr style="${isSelected}">${weekTd}<td>${p.date}</td><td style="font-weight:600;">${p.productName}</td><td>${p.qty}</td><td style="font-weight:bold; color:var(--warning);">${formatRs(total)}</td></tr>`;
             pBodyDash += row;
-            pBodyManage += `<tr style="${isSelected}"><td>${p.date}</td><td style="font-weight:600;">${p.productName}</td><td>${p.qty}</td><td style="font-weight:bold; color:var(--warning);">${formatRs(total)}</td><td><button class="action-btn" style="background:var(--primary); padding:4px 8px; font-size:12px; margin-right:5px; margin-bottom:5px;" onclick="printInvoice('${p.date}', '${p.productName}', ${p.price}, ${p.qty}, ${total}, ${p.id})">📄 Invoice</button><button class="btn-delete" onclick="deleteRecord('products', ${p.id})">Del</button></td></tr>`;
+            pBodyManage += `<tr style="${isSelected}"><td>${p.date}</td><td style="font-weight:600;">${p.productName}</td><td>${p.qty}</td><td style="font-weight:bold; color:var(--warning);">${formatRs(total)}</td><td>${settleBtnHtml}<button class="action-btn" style="background:var(--primary); padding:4px 8px; font-size:12px; margin-right:5px; margin-bottom:5px;" onclick="printInvoice('${p.date}', '${p.productName}', ${p.price}, ${p.qty}, ${total}, ${p.id})">📄 Invoice</button><button class="btn-delete" onclick="deleteRecord('products', ${p.id})">Del</button></td></tr>`;
         });
         document.getElementById('tbl-dash-products').innerHTML = pBodyDash;
         document.getElementById('tbl-manage-products').innerHTML = pBodyManage;
@@ -1569,6 +1574,12 @@
             else if(table === 'users') loadStaffTable();
             else loadAllData();
         }
+    }
+
+    window.toggleSettlePurchase = async function(id, state) {
+        await db.products.update(id, { isSettled: state });
+        notify(state ? "Purchase marked as Settled!" : "Purchase marked as Unsettled!");
+        loadAllData();
     }
 
     window.saveLeadData = async function() {
