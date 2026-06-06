@@ -951,6 +951,13 @@
                         <option value="6">Saturday</option>
                     </select>
                 </div>
+                <div class="form-group" style="max-width: 400px; margin-top:20px;">
+                    <label style="display:flex; align-items:center; gap:10px; cursor:pointer;">
+                        <input type="checkbox" id="setting-hide-financials" style="width:20px; height:20px; cursor:pointer;">
+                        Hide Financials (Ads Budget & Prices) from Staff
+                    </label>
+                    <p style="font-size:12px; color:var(--text-muted); margin-top:5px;">If ticked, staff accounts will see "***" instead of actual prices and budgets.</p>
+                </div>
                 <button class="action-btn" style="max-width:200px; margin-top:20px;" onclick="saveSystemSettings()">Save Settings</button>
             </div>
         </div>
@@ -1016,17 +1023,20 @@
             });
         }
 
+        let systemConfig = { weekStartDay: 3, hideFinancials: true };
         const configSnap = await db.collection('config').doc('system').get();
-        if (configSnap.exists) {
-            window.systemConfig = configSnap.data();
-            if(window.systemConfig.weekStartDay === undefined) window.systemConfig.weekStartDay = 3;
+        if(configSnap.exists) {
+            systemConfig = { ...systemConfig, ...configSnap.data() };
         } else {
-            window.systemConfig = { weekStartDay: 3 };
-            await db.collection('config').doc('system').set(window.systemConfig);
+            await db.collection('config').doc('system').set(systemConfig);
         }
+        window.systemConfig = systemConfig;
         
-        const selectSetting = document.getElementById('setting-week-start');
-        if(selectSetting) selectSetting.value = window.systemConfig.weekStartDay;
+        const weekSelect = document.getElementById('setting-week-start');
+        if(weekSelect) weekSelect.value = systemConfig.weekStartDay.toString();
+        
+        const hideChk = document.getElementById('setting-hide-financials');
+        if(hideChk) hideChk.checked = systemConfig.hideFinancials;
 
         await loadCatalogToDropdown();
         checkLoginSession(); 
@@ -1500,11 +1510,8 @@
         const selectedDate = document.getElementById('global-date').value;
         const isDateFilterApplied = document.getElementById('global-date').dataset.filtered === "true";
         const isAdmin = currentUser.username === 'admin' || currentUser.username === 'admin@company.com';
+        const showFinancials = isAdmin || !window.systemConfig.hideFinancials;
 
-        if(document.getElementById('fg-prod-price')) {
-            document.getElementById('fg-prod-price').style.display = isAdmin ? 'block' : 'none';
-        }
-        
         // --- 1. PRODUCTS ---
         const pSnap = await db.collection('products').orderBy('date', 'desc').get();
         let allProducts = pSnap.docs.map(d => ({id: d.id, ...d.data()}));
@@ -1526,13 +1533,13 @@
             
             const isSettled = p.isSettled || false;
             const settleBtnHtml = isSettled 
-                ? `<button class="action-btn" style="background:#10b981; color:white; padding:4px 8px; font-size:12px; margin-right:5px; margin-bottom:5px; border:none;" onclick="toggleSettlePurchase(${p.id}, false)">✅ Settled</button>`
-                : `<button class="action-btn" style="background:#f59e0b; color:white; padding:4px 8px; font-size:12px; margin-right:5px; margin-bottom:5px; border:none;" onclick="toggleSettlePurchase(${p.id}, true)">⏳ Pay/Settle</button>`;
+                ? `<button class="action-btn" style="background:#10b981; color:white; padding:4px 8px; font-size:12px; margin-right:5px; margin-bottom:5px; border:none;" onclick="toggleSettlePurchase('${p.id}', false)">✅ Settled</button>`
+                : `<button class="action-btn" style="background:#f59e0b; color:white; padding:4px 8px; font-size:12px; margin-right:5px; margin-bottom:5px; border:none;" onclick="toggleSettlePurchase('${p.id}', true)">⏳ Pay/Settle</button>`;
 
             const isSelected = p.date === selectedDate && !isMonth ? 'background-color: #fffbeb;' : '';
             const weekTd = isMonth ? `<td style="color:var(--text-muted); font-weight:600;">${p.week || 'Week 1'}</td>` : '';
-            const displayTotal = isAdmin ? formatRs(total) : '***';
-            const displayPrice = isAdmin ? formatRs(p.price) : '***';
+            const displayTotal = showFinancials ? formatRs(total) : '***';
+            const displayPrice = showFinancials ? formatRs(p.price) : '***';
             const row = `<tr style="${isSelected}">${weekTd}<td>${p.date}</td><td style="font-weight:600;">${p.productName}</td><td>${p.qty}</td><td style="font-weight:bold; color:var(--warning);">${displayTotal}</td></tr>`;
             pBodyDash += row;
             pBodyManage += `<tr style="${isSelected}"><td>${p.date}</td><td style="font-weight:600;">${p.productName}</td><td>${p.qty}</td><td style="font-weight:bold; color:var(--warning);">${displayTotal}</td><td>${settleBtnHtml}<button class="action-btn" style="background:var(--primary); padding:4px 8px; font-size:12px; margin-right:5px; margin-bottom:5px;" onclick="printInvoice('${p.date}', '${p.productName}', ${p.price}, ${p.qty}, ${total}, '${p.id}')">📄 Invoice</button><button class="btn-delete" onclick="deleteRecord('products', '${p.id}')">Del</button></td></tr>`;
@@ -1565,9 +1572,9 @@
             const isSelected = l.date === selectedDate && !isMonth ? 'background-color: #e0e7ff;' : '';
             const weekTd = isMonth ? `<td style="color:var(--text-muted); font-weight:600;">${l.week || 'Week 1'}</td>` : '';
 
-            const dBudget = isAdmin ? formatRs(l.dailyBudget) : '***';
-            const dCPL = isAdmin ? formatRs(costPerLead) : '***';
-            const dCPC = isAdmin ? formatRs(costPerConfirmed) : '***';
+            const dBudget = showFinancials ? formatRs(l.dailyBudget) : '***';
+            const dCPL = showFinancials ? formatRs(costPerLead) : '***';
+            const dCPC = showFinancials ? formatRs(costPerConfirmed) : '***';
 
             lBodyDash += `<tr style="${isSelected}">${weekTd}<td><strong>${l.date}</strong></td><td style="font-weight:600;">${dBudget}</td><td>${l.totalLeads}</td><td><strong style="color:var(--success);">${l.confirmedLeads}</strong></td><td style="color:var(--primary); font-weight:bold;">${dCPL}</td><td style="color:var(--success); font-weight:bold;">${dCPC}</td></tr>`;
             lBodyManage += `<tr style="${isSelected}"><td><strong>${l.date}</strong></td><td style="font-weight:600;">${dBudget}</td><td>${l.totalLeads}</td><td><strong style="color:var(--success);">${l.confirmedLeads}</strong></td><td style="color:var(--primary); font-weight:bold;">${dCPL}</td><td style="color:var(--success); font-weight:bold;">${dCPC}</td><td><button class="btn-delete" onclick="deleteRecord('leads', '${l.id}')">Del</button></td></tr>`;
@@ -1592,7 +1599,7 @@
             const isSelected = pk.date === selectedDate && !isMonth ? 'background-color: #fae8ff;' : '';
             const pkQty = pk.qty || 1;
             const totalCost = pk.cost * pkQty;
-            const dCost = isAdmin ? formatRs(totalCost) : '***';
+            const dCost = showFinancials ? formatRs(totalCost) : '***';
             packBodyManage += `<tr style="${isSelected}"><td>${pk.date}</td><td style="font-weight:600;">${pk.itemName}</td><td>${pkQty}</td><td style="font-weight:bold; color:var(--accent);">${dCost}</td><td><button class="btn-delete" onclick="deleteRecord('packaging', '${pk.id}')">Del</button></td></tr>`;
         });
         document.getElementById('tbl-manage-packaging').innerHTML = packBodyManage;
@@ -1613,11 +1620,11 @@
             totalExpensesProfit += profit;
             
             const weekTd = isMonth ? `<td><strong style="color:var(--text-muted);">${e.week || 'Week 1'}</strong></td>` : '';
-            const dRec = isAdmin ? formatRs(received) : '***';
-            const dAds = isAdmin ? formatRs(e.adsSpent) : '***';
-            const dProd = isAdmin ? formatRs(e.productCost) : '***';
-            const dOth = isAdmin ? formatRs(e.otherCosts) : '***';
-            const dProf = isAdmin ? formatRs(profit) : '***';
+            const dRec = showFinancials ? formatRs(received) : '***';
+            const dAds = showFinancials ? formatRs(e.adsSpent) : '***';
+            const dProd = showFinancials ? formatRs(e.productCost) : '***';
+            const dOth = showFinancials ? formatRs(e.otherCosts) : '***';
+            const dProf = showFinancials ? formatRs(profit) : '***';
 
             eBodyDash += `<tr>${weekTd}<td style="color:var(--success); font-weight:bold;">${dRec}</td><td style="font-weight:600;">${dAds}</td><td style="font-weight:600;">${dProd}</td><td style="font-weight:600;">${dOth}</td><td style="color:var(--primary); font-weight:bold;">${dProf}</td></tr>`;
             eBodyManage += `<tr><td><strong style="color:var(--text-muted);">${e.week || 'Week 1'}</strong></td><td style="color:var(--success); font-weight:bold;">${dRec}</td><td style="font-weight:600;">${dAds}</td><td style="font-weight:600;">${dProd}</td><td style="font-weight:600;">${dOth}</td><td style="color:var(--primary); font-weight:bold;">${dProf}</td><td><button class="btn-delete" onclick="deleteRecord('expenses', '${e.id}')">Del</button></td></tr>`;
@@ -1643,8 +1650,8 @@
         // --- 5. UPDATE DASHBOARD SUMMARIES ---
         document.getElementById('lbl-sum-leads').textContent = totalLeadsCount;
         document.getElementById('lbl-sum-confirmed').textContent = totalConfirmedCount;
-        document.getElementById('lbl-sum-cost').textContent = isAdmin ? formatRs(totalProductCostAmount) : '***';
-        document.getElementById('lbl-sum-profit').textContent = isAdmin ? formatRs(totalExpensesProfit) : '***';
+        document.getElementById('lbl-sum-cost').textContent = showFinancials ? formatRs(totalProductCostAmount) : '***';
+        document.getElementById('lbl-sum-profit').textContent = showFinancials ? formatRs(totalExpensesProfit) : '***';
 
         // --- 6. RENDER CHARTS ---
         if(currentUser.permissions.includes('dashboard')) {
@@ -1796,13 +1803,14 @@
 
     window.printInvoice = function(date, productName, price, qty, total, invoiceId) {
         const isAdmin = currentUser.username === 'admin' || currentUser.username === 'admin@company.com';
+        const showFinancials = isAdmin || !window.systemConfig.hideFinancials;
         document.getElementById('inv-date').textContent = date;
         document.getElementById('inv-user').textContent = currentUser ? currentUser.username : "Manager";
         document.getElementById('inv-no').textContent = invoiceId;
         document.getElementById('inv-product').textContent = productName;
-        document.getElementById('inv-price').textContent = isAdmin ? parseFloat(price).toLocaleString('en-US', {minimumFractionDigits: 2}) : '***';
+        document.getElementById('inv-price').textContent = showFinancials ? parseFloat(price).toLocaleString('en-US', {minimumFractionDigits: 2}) : '***';
         document.getElementById('inv-qty').textContent = qty;
-        document.getElementById('inv-total').textContent = isAdmin ? parseFloat(total).toLocaleString('en-US', {minimumFractionDigits: 2}) : '***';
+        document.getElementById('inv-total').textContent = showFinancials ? parseFloat(total).toLocaleString('en-US', {minimumFractionDigits: 2}) : '***';
         
         const printArea = document.getElementById('invoice-print-area');
         printArea.style.display = 'block';
@@ -1940,19 +1948,6 @@
         });
     }
 
-    window.saveSystemSettings = async function() {
-        const val = parseInt(document.getElementById('setting-week-start').value);
-        try {
-            await db.collection('config').doc('system').set({ weekStartDay: val }, { merge: true });
-            window.systemConfig = { weekStartDay: val };
-            notify("System Settings Saved Successfully!");
-            // Re-evaluate context since the calendar definition changed
-            await handleContextChange();
-        } catch(e) {
-            console.error(e);
-            notify("Error saving settings", true);
-        }
-    }
 
     window.autoSelectWeek = async function() {
         try {
