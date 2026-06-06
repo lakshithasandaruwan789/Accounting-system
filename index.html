@@ -723,7 +723,7 @@
                             <option value="">-- Select Product --</option>
                         </select>
                     </div>
-                    <div class="form-group">
+                    <div class="form-group" id="fg-prod-price">
                         <label>Factory Price (Rs)</label>
                         <input type="number" id="prod-price" value="0" readonly style="background:#f1f5f9; color:var(--text-muted);">
                     </div>
@@ -1473,6 +1473,12 @@
         const week = document.getElementById('active-week').value;
         const isMonth = week === 'Month Overview';
         const selectedDate = document.getElementById('global-date').value;
+        const isDateFilterApplied = document.getElementById('global-date').dataset.filtered === "true";
+        const isAdmin = currentUser.username === 'admin' || currentUser.username === 'admin@company.com';
+
+        if(document.getElementById('fg-prod-price')) {
+            document.getElementById('fg-prod-price').style.display = isAdmin ? 'block' : 'none';
+        }
         
         // --- 1. PRODUCTS ---
         const pSnap = await db.collection('products').orderBy('date', 'desc').get();
@@ -1500,9 +1506,11 @@
 
             const isSelected = p.date === selectedDate && !isMonth ? 'background-color: #fffbeb;' : '';
             const weekTd = isMonth ? `<td style="color:var(--text-muted); font-weight:600;">${p.week || 'Week 1'}</td>` : '';
-            const row = `<tr style="${isSelected}">${weekTd}<td>${p.date}</td><td style="font-weight:600;">${p.productName}</td><td>${p.qty}</td><td style="font-weight:bold; color:var(--warning);">${formatRs(total)}</td></tr>`;
+            const displayTotal = isAdmin ? formatRs(total) : '***';
+            const displayPrice = isAdmin ? formatRs(p.price) : '***';
+            const row = `<tr style="${isSelected}">${weekTd}<td>${p.date}</td><td style="font-weight:600;">${p.productName}</td><td>${p.qty}</td><td style="font-weight:bold; color:var(--warning);">${displayTotal}</td></tr>`;
             pBodyDash += row;
-            pBodyManage += `<tr style="${isSelected}"><td>${p.date}</td><td style="font-weight:600;">${p.productName}</td><td>${p.qty}</td><td style="font-weight:bold; color:var(--warning);">${formatRs(total)}</td><td>${settleBtnHtml}<button class="action-btn" style="background:var(--primary); padding:4px 8px; font-size:12px; margin-right:5px; margin-bottom:5px;" onclick="printInvoice('${p.date}', '${p.productName}', ${p.price}, ${p.qty}, ${total}, '${p.id}')">📄 Invoice</button><button class="btn-delete" onclick="deleteRecord('products', '${p.id}')">Del</button></td></tr>`;
+            pBodyManage += `<tr style="${isSelected}"><td>${p.date}</td><td style="font-weight:600;">${p.productName}</td><td>${p.qty}</td><td style="font-weight:bold; color:var(--warning);">${displayTotal}</td><td>${settleBtnHtml}<button class="action-btn" style="background:var(--primary); padding:4px 8px; font-size:12px; margin-right:5px; margin-bottom:5px;" onclick="printInvoice('${p.date}', '${p.productName}', ${p.price}, ${p.qty}, ${total}, '${p.id}')">📄 Invoice</button><button class="btn-delete" onclick="deleteRecord('products', '${p.id}')">Del</button></td></tr>`;
         });
         document.getElementById('tbl-dash-products').innerHTML = pBodyDash;
         document.getElementById('tbl-manage-products').innerHTML = pBodyManage;
@@ -1532,8 +1540,12 @@
             const isSelected = l.date === selectedDate && !isMonth ? 'background-color: #e0e7ff;' : '';
             const weekTd = isMonth ? `<td style="color:var(--text-muted); font-weight:600;">${l.week || 'Week 1'}</td>` : '';
 
-            lBodyDash += `<tr style="${isSelected}">${weekTd}<td><strong>${l.date}</strong></td><td style="font-weight:600;">${formatRs(l.dailyBudget)}</td><td>${l.totalLeads}</td><td><strong style="color:var(--success);">${l.confirmedLeads}</strong></td><td style="color:var(--primary); font-weight:bold;">${formatRs(costPerLead)}</td><td style="color:var(--success); font-weight:bold;">${formatRs(costPerConfirmed)}</td></tr>`;
-            lBodyManage += `<tr style="${isSelected}"><td><strong>${l.date}</strong></td><td style="font-weight:600;">${formatRs(l.dailyBudget)}</td><td>${l.totalLeads}</td><td><strong style="color:var(--success);">${l.confirmedLeads}</strong></td><td><button class="btn-delete" onclick="deleteRecord('leads', '${l.id}')">Del</button></td></tr>`;
+            const dBudget = isAdmin ? formatRs(l.dailyBudget) : '***';
+            const dCPL = isAdmin ? formatRs(costPerLead) : '***';
+            const dCPC = isAdmin ? formatRs(costPerConfirmed) : '***';
+
+            lBodyDash += `<tr style="${isSelected}">${weekTd}<td><strong>${l.date}</strong></td><td style="font-weight:600;">${dBudget}</td><td>${l.totalLeads}</td><td><strong style="color:var(--success);">${l.confirmedLeads}</strong></td><td style="color:var(--primary); font-weight:bold;">${dCPL}</td><td style="color:var(--success); font-weight:bold;">${dCPC}</td></tr>`;
+            lBodyManage += `<tr style="${isSelected}"><td><strong>${l.date}</strong></td><td style="font-weight:600;">${dBudget}</td><td>${l.totalLeads}</td><td><strong style="color:var(--success);">${l.confirmedLeads}</strong></td><td><button class="btn-delete" onclick="deleteRecord('leads', '${l.id}')">Del</button></td></tr>`;
         });
         document.getElementById('tbl-dash-leads').innerHTML = lBodyDash;
         document.getElementById('tbl-manage-leads').innerHTML = lBodyManage;
@@ -1555,7 +1567,8 @@
             const isSelected = pk.date === selectedDate && !isMonth ? 'background-color: #fae8ff;' : '';
             const pkQty = pk.qty || 1;
             const totalCost = pk.cost * pkQty;
-            packBodyManage += `<tr style="${isSelected}"><td>${pk.date}</td><td style="font-weight:600;">${pk.itemName}</td><td>${pkQty}</td><td style="font-weight:bold; color:var(--accent);">${formatRs(totalCost)}</td><td><button class="btn-delete" onclick="deleteRecord('packaging', '${pk.id}')">Del</button></td></tr>`;
+            const dCost = isAdmin ? formatRs(totalCost) : '***';
+            packBodyManage += `<tr style="${isSelected}"><td>${pk.date}</td><td style="font-weight:600;">${pk.itemName}</td><td>${pkQty}</td><td style="font-weight:bold; color:var(--accent);">${dCost}</td><td><button class="btn-delete" onclick="deleteRecord('packaging', '${pk.id}')">Del</button></td></tr>`;
         });
         document.getElementById('tbl-manage-packaging').innerHTML = packBodyManage;
 
@@ -1575,9 +1588,14 @@
             totalExpensesProfit += profit;
             
             const weekTd = isMonth ? `<td><strong style="color:var(--text-muted);">${e.week || 'Week 1'}</strong></td>` : '';
+            const dRec = isAdmin ? formatRs(received) : '***';
+            const dAds = isAdmin ? formatRs(e.adsSpent) : '***';
+            const dProd = isAdmin ? formatRs(e.productCost) : '***';
+            const dOth = isAdmin ? formatRs(e.otherCosts) : '***';
+            const dProf = isAdmin ? formatRs(profit) : '***';
 
-            eBodyDash += `<tr>${weekTd}<td style="color:var(--success); font-weight:bold;">${formatRs(received)}</td><td style="font-weight:600;">${formatRs(e.adsSpent)}</td><td style="font-weight:600;">${formatRs(e.productCost)}</td><td style="font-weight:600;">${formatRs(e.otherCosts)}</td><td style="color:var(--primary); font-weight:bold;">${formatRs(profit)}</td></tr>`;
-            eBodyManage += `<tr><td><strong style="color:var(--text-muted);">${e.week || 'Week 1'}</strong></td><td style="color:var(--success); font-weight:bold;">${formatRs(received)}</td><td style="font-weight:600;">${formatRs(e.adsSpent)}</td><td style="font-weight:600;">${formatRs(e.productCost)}</td><td style="font-weight:600;">${formatRs(e.otherCosts)}</td><td style="color:var(--primary); font-weight:bold;">${formatRs(profit)}</td><td><button class="btn-delete" onclick="deleteRecord('expenses', '${e.id}')">Del</button></td></tr>`;
+            eBodyDash += `<tr>${weekTd}<td style="color:var(--success); font-weight:bold;">${dRec}</td><td style="font-weight:600;">${dAds}</td><td style="font-weight:600;">${dProd}</td><td style="font-weight:600;">${dOth}</td><td style="color:var(--primary); font-weight:bold;">${dProf}</td></tr>`;
+            eBodyManage += `<tr><td><strong style="color:var(--text-muted);">${e.week || 'Week 1'}</strong></td><td style="color:var(--success); font-weight:bold;">${dRec}</td><td style="font-weight:600;">${dAds}</td><td style="font-weight:600;">${dProd}</td><td style="font-weight:600;">${dOth}</td><td style="color:var(--primary); font-weight:bold;">${dProf}</td><td><button class="btn-delete" onclick="deleteRecord('expenses', '${e.id}')">Del</button></td></tr>`;
         });
         document.getElementById('tbl-dash-expenses').innerHTML = eBodyDash;
         document.getElementById('tbl-manage-expenses').innerHTML = eBodyManage;
@@ -1600,8 +1618,8 @@
         // --- 5. UPDATE DASHBOARD SUMMARIES ---
         document.getElementById('lbl-sum-leads').textContent = totalLeadsCount;
         document.getElementById('lbl-sum-confirmed').textContent = totalConfirmedCount;
-        document.getElementById('lbl-sum-cost').textContent = formatRs(totalProductCostAmount);
-        document.getElementById('lbl-sum-profit').textContent = formatRs(totalExpensesProfit);
+        document.getElementById('lbl-sum-cost').textContent = isAdmin ? formatRs(totalProductCostAmount) : '***';
+        document.getElementById('lbl-sum-profit').textContent = isAdmin ? formatRs(totalExpensesProfit) : '***';
 
         // --- 6. RENDER CHARTS ---
         if(currentUser.permissions.includes('dashboard')) {
@@ -1748,13 +1766,14 @@
     }
 
     window.printInvoice = function(date, productName, price, qty, total, invoiceId) {
+        const isAdmin = currentUser.username === 'admin' || currentUser.username === 'admin@company.com';
         document.getElementById('inv-date').textContent = date;
         document.getElementById('inv-user').textContent = currentUser ? currentUser.username : "Manager";
         document.getElementById('inv-no').textContent = invoiceId;
         document.getElementById('inv-product').textContent = productName;
-        document.getElementById('inv-price').textContent = parseFloat(price).toLocaleString('en-US', {minimumFractionDigits: 2});
+        document.getElementById('inv-price').textContent = isAdmin ? parseFloat(price).toLocaleString('en-US', {minimumFractionDigits: 2}) : '***';
         document.getElementById('inv-qty').textContent = qty;
-        document.getElementById('inv-total').textContent = parseFloat(total).toLocaleString('en-US', {minimumFractionDigits: 2});
+        document.getElementById('inv-total').textContent = isAdmin ? parseFloat(total).toLocaleString('en-US', {minimumFractionDigits: 2}) : '***';
         
         const printArea = document.getElementById('invoice-print-area');
         printArea.style.display = 'block';
