@@ -703,6 +703,8 @@
                                 <th>Ads Budget</th>
                                 <th>Leads</th>
                                 <th>Confirmed</th>
+                                <th>CPA (Cost/Lead)</th>
+                                <th>Cost/Confirmed</th>
                                 <th>Action</th>
                             </tr>
                         </thead>
@@ -1568,7 +1570,7 @@
             const dCPC = isAdmin ? formatRs(costPerConfirmed) : '***';
 
             lBodyDash += `<tr style="${isSelected}">${weekTd}<td><strong>${l.date}</strong></td><td style="font-weight:600;">${dBudget}</td><td>${l.totalLeads}</td><td><strong style="color:var(--success);">${l.confirmedLeads}</strong></td><td style="color:var(--primary); font-weight:bold;">${dCPL}</td><td style="color:var(--success); font-weight:bold;">${dCPC}</td></tr>`;
-            lBodyManage += `<tr style="${isSelected}"><td><strong>${l.date}</strong></td><td style="font-weight:600;">${dBudget}</td><td>${l.totalLeads}</td><td><strong style="color:var(--success);">${l.confirmedLeads}</strong></td><td><button class="btn-delete" onclick="deleteRecord('leads', '${l.id}')">Del</button></td></tr>`;
+            lBodyManage += `<tr style="${isSelected}"><td><strong>${l.date}</strong></td><td style="font-weight:600;">${dBudget}</td><td>${l.totalLeads}</td><td><strong style="color:var(--success);">${l.confirmedLeads}</strong></td><td style="color:var(--primary); font-weight:bold;">${dCPL}</td><td style="color:var(--success); font-weight:bold;">${dCPC}</td><td><button class="btn-delete" onclick="deleteRecord('leads', '${l.id}')">Del</button></td></tr>`;
         });
         document.getElementById('tbl-dash-leads').innerHTML = lBodyDash;
         document.getElementById('tbl-manage-leads').innerHTML = lBodyManage;
