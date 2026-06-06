@@ -1087,6 +1087,7 @@
         document.getElementById('login-screen').style.display = 'none';
         document.getElementById('lbl-current-user').textContent = currentUser.username;
         applyPermissions();
+        if(typeof autoSelectWeek === 'function') autoSelectWeek();
     }
 
     window.performLogout = function() {
@@ -1640,6 +1641,7 @@
         btn.style.boxShadow = '0 4px 15px rgba(79, 70, 229, 0.3)';
         
         loadAllData();
+        if(typeof autoSelectWeek === 'function') autoSelectWeek();
     }
 
     window.saveProductPurchase = async function() {
@@ -1816,6 +1818,29 @@
             });
             notify("PDF Exported Successfully!");
         });
+    }
+
+    window.autoSelectWeek = async function() {
+        try {
+            const snap = await db.collection('leads').get();
+            if(snap.empty) return;
+            
+            const dates = new Set();
+            snap.docs.forEach(d => dates.add(d.data().date));
+            const totalDays = dates.size;
+            
+            // Auto advance week after every 7 days
+            let targetWeekNum = Math.floor(totalDays / 7) + 1;
+            if(targetWeekNum > 4) targetWeekNum = 4;
+            const targetWeek = "Week " + targetWeekNum;
+            
+            const select = document.getElementById('active-week');
+            if(select.value !== targetWeek && select.value !== 'Month Overview') {
+                select.value = targetWeek;
+                handleContextChange();
+                notify(`Automatically advanced to ${targetWeek}!`);
+            }
+        } catch(e) { console.error("Auto Week Error:", e); }
     }
 
     document.getElementById('global-date').valueAsDate = new Date();
