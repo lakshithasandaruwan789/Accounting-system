@@ -681,15 +681,15 @@
                     <h2>🎯 Daily Leads Entry <span id="lead-status-badge" class="badge" style="display:none;">Editing</span></h2>
                     <div class="form-group">
                         <label>Daily Ads Budget (Rs)</label>
-                        <input type="number" id="lead-budget" placeholder="0.00">
+                        <input type="text" id="lead-budget" placeholder="0.00" oninput="formatNumberInput(event)">
                     </div>
                     <div class="form-group">
                         <label>Total Leads Received</label>
-                        <input type="number" id="lead-count" placeholder="0">
+                        <input type="text" id="lead-count" placeholder="0" oninput="formatNumberInput(event)">
                     </div>
                     <div class="form-group">
                         <label>Confirmed Leads</label>
-                        <input type="number" id="lead-confirmed" placeholder="0">
+                        <input type="text" id="lead-confirmed" placeholder="0" oninput="formatNumberInput(event)">
                     </div>
                     <button class="action-btn" id="btn-save-lead" onclick="saveLeadData()">Save Lead Data</button>
                 </div>
@@ -965,6 +965,16 @@
     Chart.defaults.font.family = "'Plus Jakarta Sans', sans-serif";
 
     // --- DATABASE SETUP (FIREBASE) ---
+    function formatNumberInput(e) {
+        let val = e.target.value.replace(/[^0-9.]/g, '');
+        let parts = val.split('.');
+        if(parts.length > 2) parts.pop();
+        if(parts[0]) {
+            parts[0] = parseInt(parts[0], 10).toLocaleString('en-US');
+        }
+        e.target.value = parts.join('.');
+    }
+
     const firebaseConfig = {
       apiKey: "AIzaSyBxNzd_rKWalcdHWzxUz5l0T1YTa9EMszE",
       authDomain: "herbalcrown-system.firebaseapp.com",
@@ -1270,9 +1280,9 @@
         const btn = document.getElementById('btn-save-lead');
         
         if (existingLead && existingLead.week === week) {
-            document.getElementById('lead-budget').value = existingLead.dailyBudget;
-            document.getElementById('lead-count').value = existingLead.totalLeads;
-            document.getElementById('lead-confirmed').value = existingLead.confirmedLeads;
+            document.getElementById('lead-budget').value = existingLead.dailyBudget.toLocaleString('en-US');
+            document.getElementById('lead-count').value = existingLead.totalLeads.toLocaleString('en-US');
+            document.getElementById('lead-confirmed').value = existingLead.confirmedLeads.toLocaleString('en-US');
             currentLeadId = existingLead.id; 
             badge.style.display = 'inline-block';
             btn.textContent = 'Update Lead Data';
@@ -1710,19 +1720,19 @@
         if(week === 'Month Overview') return notify("Cannot add data in Month Overview!", true);
 
         const date = document.getElementById('global-date').value;
-        const budget = document.getElementById('lead-budget').value;
-        const count = document.getElementById('lead-count').value;
-        const confirmed = document.getElementById('lead-confirmed').value;
+        const budgetStr = document.getElementById('lead-budget').value.replace(/,/g, '');
+        const countStr = document.getElementById('lead-count').value.replace(/,/g, '');
+        const confirmedStr = document.getElementById('lead-confirmed').value.replace(/,/g, '');
 
         if(!date) return notify("Please select a Date!", true);
-        if(!budget || !count || !confirmed) return notify("Please fill all Lead fields!", true);
+        if(!budgetStr || !countStr || !confirmedStr) return notify("Please fill all Lead fields!", true);
 
         const payload = {
             week: week,
             date: date,
-            dailyBudget: parseFloat(budget),
-            totalLeads: parseInt(count),
-            confirmedLeads: parseInt(confirmed)
+            dailyBudget: parseFloat(budgetStr),
+            totalLeads: parseInt(countStr),
+            confirmedLeads: parseInt(confirmedStr)
         };
 
         if (currentLeadId) {
