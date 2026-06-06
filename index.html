@@ -1068,25 +1068,29 @@
         
         if(!u || !p) return notify("Enter Email and Password", true);
         
-        const userSnap = await db.collection('users').where('username', '==', u).where('password', '==', p).get();
+        const userSnap = await db.collection('users').where('username', '==', u).get();
         if(!userSnap.empty) {
-            const user = {id: userSnap.docs[0].id, ...userSnap.docs[0].data()};
-            currentUser = user;
-            localStorage.setItem('ag_last_email', u);
-            localStorage.setItem('ag_last_pass', p);
-            if(remember) {
-                localStorage.setItem('ag_user', JSON.stringify(user));
-                localStorage.removeItem('ag_user_expiry');
-            } else {
-                localStorage.setItem('ag_user', JSON.stringify(user));
-                localStorage.setItem('ag_user_expiry', Date.now() + 5 * 60 * 1000);
+            const userDoc = userSnap.docs[0].data();
+            if(userDoc.password === p) {
+                const user = {id: userSnap.docs[0].id, ...userDoc};
+                currentUser = user;
+                localStorage.setItem('ag_last_email', u);
+                localStorage.setItem('ag_last_pass', p);
+                if(remember) {
+                    localStorage.setItem('ag_user', JSON.stringify(user));
+                    localStorage.removeItem('ag_user_expiry');
+                } else {
+                    localStorage.setItem('ag_user', JSON.stringify(user));
+                    localStorage.setItem('ag_user_expiry', Date.now() + 5 * 60 * 1000);
+                }
+                document.getElementById('login-pass').value = '';
+                finalizeLogin();
+                notify(`Welcome back!`);
+                return;
             }
-            document.getElementById('login-pass').value = '';
-            finalizeLogin();
-            notify(`Welcome back!`);
-        } else {
-            notify("Invalid Credentials!", true);
         }
+        
+        notify("Invalid Credentials!", true);
     }
 
     function finalizeLogin() {
