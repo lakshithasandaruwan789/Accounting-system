@@ -1174,13 +1174,15 @@
     }
 
     async function handleDateChange() {
+        await autoSelectWeek();
         const week = document.getElementById('active-week').value;
         if(week === 'Month Overview') return; 
 
         const date = document.getElementById('global-date').value;
         if(!date) return;
         
-        const existingLead = await db.leads.where('date').equals(date).first();
+        const lSnap = await db.collection('leads').where('date', '==', date).get();
+        const existingLead = lSnap.empty ? null : {id: lSnap.docs[0].id, ...lSnap.docs[0].data()};
         const badge = document.getElementById('lead-status-badge');
         const btn = document.getElementById('btn-save-lead');
         
@@ -1822,23 +1824,28 @@
 
     window.autoSelectWeek = async function() {
         try {
-            const snap = await db.collection('leads').get();
-            if(snap.empty) return;
+            const selectedDate = document.getElementById('global-date').value;
+            if(!selectedDate) return;
             
+            const snap = await db.collection('leads').get();
             const dates = new Set();
             snap.docs.forEach(d => dates.add(d.data().date));
-            const totalDays = dates.size;
+            dates.add(selectedDate);
             
-            // Auto advance week after every 7 days
-            let targetWeekNum = Math.floor(totalDays / 7) + 1;
+            const sortedDates = Array.from(dates).sort();
+            const index = sortedDates.indexOf(selectedDate);
+            
+            let targetWeekNum = Math.floor(index / 7) + 1;
             if(targetWeekNum > 4) targetWeekNum = 4;
             const targetWeek = "Week " + targetWeekNum;
             
             const select = document.getElementById('active-week');
             if(select.value !== targetWeek && select.value !== 'Month Overview') {
                 select.value = targetWeek;
-                handleContextChange();
-                notify(`Automatically advanced to ${targetWeek}!`);
+                // Avoid infinite loop if handleContextChange calls loadAllData which calls autoSelectWeek
+                // Wait, we can just change the dropdown and let handleDateChange do its thing.
+                document.getElementById('dash-title').textContent = `${targetWeek} Overview`;
+                notify(`Auto-switched to ${targetWeek}!`);
             }
         } catch(e) { console.error("Auto Week Error:", e); }
     }
