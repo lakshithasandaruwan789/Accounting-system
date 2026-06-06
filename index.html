@@ -4,8 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Premium Budget & Lead Dashboard - Lakshitha Sandaruwan</title>
-    <!-- Dexie for Offline Database -->
-    <script src="https://unpkg.com/dexie@latest/dist/dexie.js"></script>
+    <!-- Firebase Compat SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
     <!-- Chart.js for Visual Dashboards -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <!-- html2pdf for PDF Export -->
@@ -939,6 +940,53 @@
     Chart.defaults.borderColor = '#e2e8f0';
     Chart.defaults.font.family = "'Plus Jakarta Sans', sans-serif";
 
+    // --- DATABASE SETUP (FIREBASE) ---
+    const firebaseConfig = {
+      apiKey: "AIzaSyBxNzd_rKWalcdHWzxUz5l0T1YTa9EMszE",
+      authDomain: "herbalcrown-system.firebaseapp.com",
+      projectId: "herbalcrown-system",
+      storageBucket: "herbalcrown-system.firebasestorage.app",
+      messagingSenderId: "638288258970",
+      appId: "1:638288258970:web:061d9e96cc4dbbed143c23",
+      measurementId: "G-ESWB7KE1BN"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    const formatRs = (val) => "Rs. " + parseFloat(val).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+
+    async function initDB() {
+        const catalogSnap = await db.collection('product_catalog').get();
+        if (catalogSnap.empty) {
+            const defaults = [
+                {name: "Herbal crown", price: 210},
+                {name: "Medaharani", price: 420},
+                {name: "Kesharaja", price: 410},
+                {name: "Mass Go", price: 550},
+                {name: "Asthma capsule", price: 600}
+            ];
+            for(let d of defaults) {
+                await db.collection('product_catalog').add(d);
+            }
+        }
+        
+        const userSnap = await db.collection('users').get();
+        if (userSnap.empty) {
+            await db.collection('users').add({
+                username: "admin@company.com",
+                password: "123",
+                permissions: ["dashboard", "leads", "purchases", "packaging", "profit", "catalog", "staff"]
+            });
+        }
+
+        await loadCatalogToDropdown();
+        checkLoginSession(); 
+    }
+
+    // Call init on load
+    initDB();
+
     // --- STATE ---
     let currentPage = 'dashboard';
     let currentLeadId = null;
@@ -987,48 +1035,6 @@
         setTimeout(() => notif.classList.remove('show'), 3000);
     }
 
-    // --- DATABASE SETUP (DEXIE V6) ---
-    const db = new Dexie("MonthlyBudgetSystemDB");
-    db.version(6).stores({
-        leads: "++id, date, week, dailyBudget, totalLeads, confirmedLeads",
-        products: "++id, date, week, productName, price, qty",
-        expenses: "++id, week, received, adsSpent, productCost, otherCosts",
-        product_catalog: "++id, name, price",
-        users: "++id, username, password, *permissions",
-        packaging: "++id, date, week, itemName, cost"
-    });
-
-    const formatRs = (val) => "Rs. " + parseFloat(val).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
-
-    db.on('ready', async function() {
-        const catalogCount = await db.product_catalog.count();
-        if (catalogCount === 0) {
-            await db.product_catalog.bulkAdd([
-                {name: "Herbal crown", price: 210},
-                {name: "Medaharani", price: 420},
-                {name: "Kesharaja", price: 410},
-                {name: "Mass Go", price: 550},
-                {name: "Asthma capsule", price: 600}
-            ]);
-        }
-        
-        const userCount = await db.users.count();
-        if (userCount === 0) {
-            await db.users.add({
-                username: "admin@company.com",
-                password: "123",
-                permissions: ["dashboard", "leads", "purchases", "packaging", "profit", "catalog", "staff"]
-            });
-        } else {
-            const adminUser = await db.users.where('username').equals('admin').first();
-            if (adminUser) {
-                await db.users.update(adminUser.id, { username: 'admin@company.com' });
-            }
-        }
-        
-        await loadCatalogToDropdown();
-        checkLoginSession(); 
-    });
 
     function checkLoginSession() {
         const localStr = localStorage.getItem('ag_user');
@@ -1058,8 +1064,9 @@
         
         if(!u || !p) return notify("Enter Email and Password", true);
         
-        const user = await db.users.where({username: u, password: p}).first();
-        if(user) {
+        const userSnap = await db.collection('users').where('username', '==', u).where('password', '==', p).get();
+        if(!userSnap.empty) {
+            const user = {id: userSnap.docs[0].id, ...userSnap.docs[0].data()};
             currentUser = user;
             localStorage.setItem('ag_last_email', u);
             localStorage.setItem('ag_last_pass', p);
@@ -1210,12 +1217,12 @@
         const payload = { username: u, password: p, permissions: perms };
 
         if(currentStaffId) {
-            await db.users.update(currentStaffId, payload);
+            await db.collection('users').doc(currentStaffId).update(payload);
             notify("User updated successfully!");
         } else {
-            const existing = await db.users.where('username').equals(u).first();
-            if(existing) return notify("Username already exists!", true);
-            await db.users.add(payload);
+            const eSnap = await db.collection('users').where('username', '==', u).get();
+            if(!eSnap.empty) return notify("Username already exists!", true);
+            await db.collection('users').add(payload);
             notify("New user created!");
         }
 
@@ -1230,8 +1237,9 @@
     }
 
     window.editStaff = async function(id) {
-        const user = await db.users.get(id);
-        if(!user) return;
+        const d = await db.collection('users').doc(id).get();
+        if(!d.exists) return;
+        const user = {id: d.id, ...d.data()};
 
         currentStaffId = user.id;
         document.getElementById('staff-user').value = user.username;
@@ -1247,19 +1255,20 @@
 
     async function loadStaffTable() {
         if(!currentUser || !currentUser.permissions.includes('staff')) return;
-        const users = await db.users.toArray();
+        const snap = await db.collection('users').get();
+        const users = snap.docs.map(d => ({id: d.id, ...d.data()}));
         const tbody = document.getElementById('tbl-manage-staff');
         tbody.innerHTML = '';
         users.forEach(u => {
             const isMe = u.username === currentUser.username;
-            const delBtn = isMe ? `<span style="font-size:11px;color:var(--primary);font-weight:bold;">(You)</span>` : `<button class="btn-delete" onclick="deleteRecord('users', ${u.id})">Del</button>`;
+            const delBtn = isMe ? `<span style="font-size:11px;color:var(--primary);font-weight:bold;">(You)</span>` : `<button class="btn-delete" onclick="deleteRecord('users', '${u.id}')">Del</button>`;
             
             tbody.innerHTML += `
                 <tr>
                     <td style="font-weight:bold; color:var(--text-main);">${u.username}</td>
                     <td style="font-size:12px; color:var(--text-muted);">${u.permissions.join(', ')}</td>
                     <td>
-                        <button class="btn-edit" onclick="editStaff(${u.id})">Edit</button>
+                        <button class="btn-edit" onclick="editStaff('${u.id}')">Edit</button>
                         ${delBtn}
                     </td>
                 </tr>
@@ -1268,7 +1277,8 @@
     }
 
     async function loadCatalogToDropdown() {
-        const catalog = await db.product_catalog.toArray();
+        const snap = await db.collection('product_catalog').get();
+        const catalog = snap.docs.map(d => ({id: d.id, ...d.data()}));
         const select = document.getElementById('prod-name');
         select.innerHTML = '<option value="">-- Select Product --</option>';
         catalog.forEach(p => {
@@ -1285,8 +1295,8 @@
                         <td style="font-weight:bold; color:var(--text-main);">${p.name}</td>
                         <td style="color:var(--success); font-weight:bold;">${formatRs(p.price)}</td>
                         <td>
-                            <button class="btn-edit" onclick="editCatalog(${p.id}, '${p.name}', ${p.price})">Edit</button>
-                            <button class="btn-delete" onclick="deleteRecord('product_catalog', ${p.id})">Del</button>
+                            <button class="btn-edit" onclick="editCatalog('${p.id}', '${p.name}', ${p.price})">Edit</button>
+                            <button class="btn-delete" onclick="deleteRecord('product_catalog', '${p.id}')">Del</button>
                         </td>
                     </tr>
                 `;
@@ -1321,10 +1331,10 @@
         const payload = { name: name, price: parseFloat(price) };
 
         if(currentCatalogId) {
-            await db.product_catalog.update(currentCatalogId, payload);
+            await db.collection('product_catalog').doc(currentCatalogId).update(payload);
             notify("Product updated in catalog!");
         } else {
-            await db.product_catalog.add(payload);
+            await db.collection('product_catalog').add(payload);
             notify("New Product added to catalog!");
         }
 
@@ -1392,7 +1402,8 @@
         const selectedDate = document.getElementById('global-date').value;
         
         // --- 1. PRODUCTS ---
-        let allProducts = await db.products.orderBy('date').reverse().toArray();
+        const pSnap = await db.collection('products').orderBy('date', 'desc').get();
+        let allProducts = pSnap.docs.map(d => ({id: d.id, ...d.data()}));
         if(!isMonth) allProducts = allProducts.filter(p => p.week === week);
         
         let weeklyProductTotal = allProducts.reduce((sum, p) => sum + (p.price * p.qty), 0);
@@ -1418,13 +1429,14 @@
             const weekTd = isMonth ? `<td style="color:var(--text-muted); font-weight:600;">${p.week || 'Week 1'}</td>` : '';
             const row = `<tr style="${isSelected}">${weekTd}<td>${p.date}</td><td style="font-weight:600;">${p.productName}</td><td>${p.qty}</td><td style="font-weight:bold; color:var(--warning);">${formatRs(total)}</td></tr>`;
             pBodyDash += row;
-            pBodyManage += `<tr style="${isSelected}"><td>${p.date}</td><td style="font-weight:600;">${p.productName}</td><td>${p.qty}</td><td style="font-weight:bold; color:var(--warning);">${formatRs(total)}</td><td>${settleBtnHtml}<button class="action-btn" style="background:var(--primary); padding:4px 8px; font-size:12px; margin-right:5px; margin-bottom:5px;" onclick="printInvoice('${p.date}', '${p.productName}', ${p.price}, ${p.qty}, ${total}, ${p.id})">📄 Invoice</button><button class="btn-delete" onclick="deleteRecord('products', ${p.id})">Del</button></td></tr>`;
+            pBodyManage += `<tr style="${isSelected}"><td>${p.date}</td><td style="font-weight:600;">${p.productName}</td><td>${p.qty}</td><td style="font-weight:bold; color:var(--warning);">${formatRs(total)}</td><td>${settleBtnHtml}<button class="action-btn" style="background:var(--primary); padding:4px 8px; font-size:12px; margin-right:5px; margin-bottom:5px;" onclick="printInvoice('${p.date}', '${p.productName}', ${p.price}, ${p.qty}, ${total}, '${p.id}')">📄 Invoice</button><button class="btn-delete" onclick="deleteRecord('products', '${p.id}')">Del</button></td></tr>`;
         });
         document.getElementById('tbl-dash-products').innerHTML = pBodyDash;
         document.getElementById('tbl-manage-products').innerHTML = pBodyManage;
 
         // --- 2. LEADS ---
-        let allLeads = await db.leads.orderBy('date').reverse().toArray();
+        const lSnap = await db.collection('leads').orderBy('date', 'desc').get();
+        let allLeads = lSnap.docs.map(d => ({id: d.id, ...d.data()}));
         if(!isMonth) allLeads = allLeads.filter(l => l.week === week);
         
         let weeklyAdsTotal = allLeads.reduce((sum, l) => sum + l.dailyBudget, 0);
@@ -1448,13 +1460,14 @@
             const weekTd = isMonth ? `<td style="color:var(--text-muted); font-weight:600;">${l.week || 'Week 1'}</td>` : '';
 
             lBodyDash += `<tr style="${isSelected}">${weekTd}<td><strong>${l.date}</strong></td><td style="font-weight:600;">${formatRs(l.dailyBudget)}</td><td>${l.totalLeads}</td><td><strong style="color:var(--success);">${l.confirmedLeads}</strong></td><td style="color:var(--primary); font-weight:bold;">${formatRs(costPerLead)}</td><td style="color:var(--success); font-weight:bold;">${formatRs(costPerConfirmed)}</td></tr>`;
-            lBodyManage += `<tr style="${isSelected}"><td><strong>${l.date}</strong></td><td style="font-weight:600;">${formatRs(l.dailyBudget)}</td><td>${l.totalLeads}</td><td><strong style="color:var(--success);">${l.confirmedLeads}</strong></td><td><button class="btn-delete" onclick="deleteRecord('leads', ${l.id})">Del</button></td></tr>`;
+            lBodyManage += `<tr style="${isSelected}"><td><strong>${l.date}</strong></td><td style="font-weight:600;">${formatRs(l.dailyBudget)}</td><td>${l.totalLeads}</td><td><strong style="color:var(--success);">${l.confirmedLeads}</strong></td><td><button class="btn-delete" onclick="deleteRecord('leads', '${l.id}')">Del</button></td></tr>`;
         });
         document.getElementById('tbl-dash-leads').innerHTML = lBodyDash;
         document.getElementById('tbl-manage-leads').innerHTML = lBodyManage;
 
         // --- 3. PACKAGING COSTS ---
-        let allPackaging = await db.packaging.orderBy('date').reverse().toArray();
+        const pkSnap = await db.collection('packaging').orderBy('date', 'desc').get();
+        let allPackaging = pkSnap.docs.map(d => ({id: d.id, ...d.data()}));
         if(!isMonth) allPackaging = allPackaging.filter(pk => pk.week === week);
         
         let weeklyPackagingTotal = allPackaging.reduce((sum, pk) => sum + (pk.cost * (pk.qty || 1)), 0);
@@ -1469,12 +1482,13 @@
             const isSelected = pk.date === selectedDate && !isMonth ? 'background-color: #fae8ff;' : '';
             const pkQty = pk.qty || 1;
             const totalCost = pk.cost * pkQty;
-            packBodyManage += `<tr style="${isSelected}"><td>${pk.date}</td><td style="font-weight:600;">${pk.itemName}</td><td>${pkQty}</td><td style="font-weight:bold; color:var(--accent);">${formatRs(totalCost)}</td><td><button class="btn-delete" onclick="deleteRecord('packaging', ${pk.id})">Del</button></td></tr>`;
+            packBodyManage += `<tr style="${isSelected}"><td>${pk.date}</td><td style="font-weight:600;">${pk.itemName}</td><td>${pkQty}</td><td style="font-weight:bold; color:var(--accent);">${formatRs(totalCost)}</td><td><button class="btn-delete" onclick="deleteRecord('packaging', '${pk.id}')">Del</button></td></tr>`;
         });
         document.getElementById('tbl-manage-packaging').innerHTML = packBodyManage;
 
         // --- 4. EXPENSES & PROFIT ---
-        let expenses = await db.expenses.toArray();
+        const eSnap = await db.collection('expenses').get();
+        let expenses = eSnap.docs.map(d => ({id: d.id, ...d.data()}));
         if(!isMonth) expenses = expenses.filter(e => e.week === week);
         expenses.sort((a, b) => (a.week || '').localeCompare(b.week || ''));
         
@@ -1490,7 +1504,7 @@
             const weekTd = isMonth ? `<td><strong style="color:var(--text-muted);">${e.week || 'Week 1'}</strong></td>` : '';
 
             eBodyDash += `<tr>${weekTd}<td style="color:var(--success); font-weight:bold;">${formatRs(received)}</td><td style="font-weight:600;">${formatRs(e.adsSpent)}</td><td style="font-weight:600;">${formatRs(e.productCost)}</td><td style="font-weight:600;">${formatRs(e.otherCosts)}</td><td style="color:var(--primary); font-weight:bold;">${formatRs(profit)}</td></tr>`;
-            eBodyManage += `<tr><td><strong style="color:var(--text-muted);">${e.week || 'Week 1'}</strong></td><td style="color:var(--success); font-weight:bold;">${formatRs(received)}</td><td style="font-weight:600;">${formatRs(e.adsSpent)}</td><td style="font-weight:600;">${formatRs(e.productCost)}</td><td style="font-weight:600;">${formatRs(e.otherCosts)}</td><td style="color:var(--primary); font-weight:bold;">${formatRs(profit)}</td><td><button class="btn-delete" onclick="deleteRecord('expenses', ${e.id})">Del</button></td></tr>`;
+            eBodyManage += `<tr><td><strong style="color:var(--text-muted);">${e.week || 'Week 1'}</strong></td><td style="color:var(--success); font-weight:bold;">${formatRs(received)}</td><td style="font-weight:600;">${formatRs(e.adsSpent)}</td><td style="font-weight:600;">${formatRs(e.productCost)}</td><td style="font-weight:600;">${formatRs(e.otherCosts)}</td><td style="color:var(--primary); font-weight:bold;">${formatRs(profit)}</td><td><button class="btn-delete" onclick="deleteRecord('expenses', '${e.id}')">Del</button></td></tr>`;
         });
         document.getElementById('tbl-dash-expenses').innerHTML = eBodyDash;
         document.getElementById('tbl-manage-expenses').innerHTML = eBodyManage;
@@ -1533,17 +1547,17 @@
         if(week === 'Month Overview') return notify("Select a specific week to clear!", true);
         
         if(confirm(`Are you SURE you want to permanently delete all Leads, Purchases, Packaging, and Profit data for ${week}?`)) {
-            const leads = await db.leads.toArray();
-            await db.leads.bulkDelete(leads.filter(x => x.week === week).map(x => x.id));
+            const leads = (await db.collection('leads').get()).docs.map(d => ({id: d.id, ...d.data()}));
+            for(let id of leads.filter(x => x.week === week).map(x => x.id)) await db.collection('leads').doc(id).delete();
             
-            const products = await db.products.toArray();
-            await db.products.bulkDelete(products.filter(x => x.week === week).map(x => x.id));
+            const products = (await db.collection('products').get()).docs.map(d => ({id: d.id, ...d.data()}));
+            for(let id of products.filter(x => x.week === week).map(x => x.id)) await db.collection('products').doc(id).delete();
             
-            const packaging = await db.packaging.toArray();
-            await db.packaging.bulkDelete(packaging.filter(x => x.week === week).map(x => x.id));
+            const packaging = (await db.collection('packaging').get()).docs.map(d => ({id: d.id, ...d.data()}));
+            for(let id of packaging.filter(x => x.week === week).map(x => x.id)) await db.collection('packaging').doc(id).delete();
             
-            const expenses = await db.expenses.toArray();
-            await db.expenses.bulkDelete(expenses.filter(x => x.week === week).map(x => x.id));
+            const expenses = (await db.collection('expenses').get()).docs.map(d => ({id: d.id, ...d.data()}));
+            for(let id of expenses.filter(x => x.week === week).map(x => x.id)) await db.collection('expenses').doc(id).delete();
             
             notify(`${week} data cleared successfully!`);
             loadAllData();
@@ -1553,10 +1567,14 @@
     window.resetAllData = async function() {
         if(confirm(`🚨 WARNING: Are you SURE you want to delete ALL data for ALL weeks? This will give you a fresh system for a new month. (Catalog and Users will NOT be deleted).`)) {
             if(confirm(`Are you 100% sure? This action cannot be undone.`)) {
-                await db.leads.clear();
-                await db.products.clear();
-                await db.packaging.clear();
-                await db.expenses.clear();
+                const leads = (await db.collection('leads').get()).docs.map(d => ({id: d.id}));
+                for(let l of leads) await db.collection('leads').doc(l.id).delete();
+                const products = (await db.collection('products').get()).docs.map(d => ({id: d.id}));
+                for(let p of products) await db.collection('products').doc(p.id).delete();
+                const packaging = (await db.collection('packaging').get()).docs.map(d => ({id: d.id}));
+                for(let pk of packaging) await db.collection('packaging').doc(pk.id).delete();
+                const expenses = (await db.collection('expenses').get()).docs.map(d => ({id: d.id}));
+                for(let e of expenses) await db.collection('expenses').doc(e.id).delete();
                 
                 notify(`All monthly data has been wiped! Fresh start ready.`);
                 
@@ -1568,7 +1586,7 @@
 
     window.deleteRecord = async function(table, id) {
         if(confirm('Are you sure you want to delete this record?')) {
-            await db[table].delete(id);
+            await db.collection(table).doc(id).delete();
             notify('Record deleted successfully');
             if(table === 'leads') handleDateChange();
             else if(table === 'product_catalog') loadCatalogToDropdown();
@@ -1578,7 +1596,7 @@
     }
 
     window.toggleSettlePurchase = async function(id, state) {
-        await db.products.update(id, { isSettled: state });
+        await db.collection('products').doc(id).update({ isSettled: state });
         notify(state ? "Purchase marked as Settled!" : "Purchase marked as Unsettled!");
         loadAllData();
     }
@@ -1604,10 +1622,10 @@
         };
 
         if (currentLeadId) {
-            await db.leads.update(currentLeadId, payload);
+            await db.collection('leads').doc(currentLeadId).update(payload);
             notify(`Lead data UPDATED for ${week}!`);
         } else {
-            await db.leads.add(payload);
+            await db.collection('leads').add(payload);
             notify(`New Lead SAVED for ${week}!`);
         }
         
@@ -1636,7 +1654,7 @@
         if(!date) return notify("Please select a Date!", true);
         if(!name || !qty || qty <= 0) return notify("Please fill Product Name and Quantity!", true);
 
-        await db.products.add({
+        await db.collection('products').add({
             week: week,
             date: date,
             productName: name,
@@ -1686,7 +1704,7 @@
         if(!date) return notify("Please select a Date!", true);
         if(!name || !cost || cost <= 0) return notify("Please fill Item Description and Cost!", true);
 
-        await db.packaging.add({
+        await db.collection('packaging').add({
             week: week,
             date: date,
             itemName: name,
@@ -1723,12 +1741,12 @@
             otherCosts: parseFloat(autoOtherCost) || 0
         };
 
-        const existingExp = await db.expenses.where('week').equals(week).first();
-        if (existingExp) {
-            await db.expenses.update(existingExp.id, payload);
+        const expSnap = await db.collection('expenses').where('week', '==', week).get();
+        if (!expSnap.empty) {
+            await db.collection('expenses').doc(expSnap.docs[0].id).update(payload);
             notify(`Profit & Expenses UPDATED for ${week}!`);
         } else {
-            await db.expenses.add(payload);
+            await db.collection('expenses').add(payload);
             notify(`Profit & Expenses SAVED for ${week}!`);
         }
 
@@ -1739,19 +1757,19 @@
     window.exportToCSV = async function() {
         let csvContent = "data:text/csv;charset=utf-8,";
         csvContent += "--- LEADS ---\nWeek,Date,Budget,Total Leads,Confirmed Leads\n";
-        const leads = await db.leads.toArray();
+        const leads = (await db.collection('leads').get()).docs.map(d => ({id: d.id, ...d.data()}));
         leads.forEach(l => { csvContent += `${l.week||''},${l.date},${l.dailyBudget},${l.totalLeads},${l.confirmedLeads}\n`; });
         
         csvContent += "\n--- PRODUCT PURCHASES ---\nWeek,Date,Product Name,Factory Price,Quantity\n";
-        const products = await db.products.toArray();
+        const products = (await db.collection('products').get()).docs.map(d => ({id: d.id, ...d.data()}));
         products.forEach(p => { csvContent += `${p.week||''},${p.date},${p.productName},${p.price},${p.qty}\n`; });
 
         csvContent += "\n--- PACKAGING & OTHER COSTS ---\nWeek,Date,Item Name,Qty,Total Cost\n";
-        const packaging = await db.packaging.toArray();
+        const packaging = (await db.collection('packaging').get()).docs.map(d => ({id: d.id, ...d.data()}));
         packaging.forEach(pk => { csvContent += `${pk.week||''},${pk.date},${pk.itemName},${pk.qty||1},${pk.cost}\n`; });
 
         csvContent += "\n--- WEEKLY PROFIT & EXPENSES ---\nWeek,Received,Ads Spent,Product Cost,Other Costs(Packaging),Final Profit\n";
-        const expenses = await db.expenses.toArray();
+        const expenses = (await db.collection('expenses').get()).docs.map(d => ({id: d.id, ...d.data()}));
         expenses.forEach(e => { 
             const profit = e.received - (e.adsSpent + e.productCost + e.otherCosts);
             csvContent += `${e.week||''},${e.received},${e.adsSpent},${e.productCost},${e.otherCosts},${profit}\n`; 
