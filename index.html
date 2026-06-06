@@ -1038,7 +1038,7 @@
 
     function checkLoginSession() {
         const localStr = localStorage.getItem('ag_user');
-        const sessionStr = sessionStorage.getItem('ag_user');
+        const expiryStr = localStorage.getItem('ag_user_expiry');
         
         const savedEmail = localStorage.getItem('ag_last_email');
         const savedPass = localStorage.getItem('ag_last_pass');
@@ -1046,11 +1046,15 @@
         if(savedPass) document.getElementById('login-pass').value = savedPass;
 
         if(localStr) {
-            currentUser = JSON.parse(localStr);
-            finalizeLogin();
-        } else if(sessionStr) {
-            currentUser = JSON.parse(sessionStr);
-            finalizeLogin();
+            if(expiryStr && Date.now() > parseInt(expiryStr)) {
+                localStorage.removeItem('ag_user');
+                localStorage.removeItem('ag_user_expiry');
+                document.getElementById('login-screen').style.display = 'flex';
+            } else {
+                currentUser = JSON.parse(localStr);
+                if(expiryStr) localStorage.setItem('ag_user_expiry', Date.now() + 5 * 60 * 1000);
+                finalizeLogin();
+            }
         } else {
             document.getElementById('login-screen').style.display = 'flex';
         }
@@ -1072,8 +1076,10 @@
             localStorage.setItem('ag_last_pass', p);
             if(remember) {
                 localStorage.setItem('ag_user', JSON.stringify(user));
+                localStorage.removeItem('ag_user_expiry');
             } else {
-                sessionStorage.setItem('ag_user', JSON.stringify(user));
+                localStorage.setItem('ag_user', JSON.stringify(user));
+                localStorage.setItem('ag_user_expiry', Date.now() + 5 * 60 * 1000);
             }
             document.getElementById('login-pass').value = '';
             finalizeLogin();
@@ -1092,7 +1098,7 @@
 
     window.performLogout = function() {
         localStorage.removeItem('ag_user');
-        sessionStorage.removeItem('ag_user');
+        localStorage.removeItem('ag_user_expiry');
         currentUser = null;
         
         const savedEmail = localStorage.getItem('ag_last_email');
