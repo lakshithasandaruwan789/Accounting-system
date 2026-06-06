@@ -459,6 +459,9 @@
         <li class="nav-item" onclick="navigate('catalog')" id="nav-catalog">
             <span class="nav-icon">⚙️</span> <span class="nav-text">Product Catalog</span>
         </li>
+        <li class="nav-item" onclick="navigate('settings')" id="nav-settings">
+            <span class="nav-icon">🛠️</span> <span class="nav-text">System Settings</span>
+        </li>
         <li class="nav-item" onclick="navigate('staff')" id="nav-staff">
             <span class="nav-icon">👥</span> <span class="nav-text">Staff Management</span>
         </li>
@@ -929,6 +932,27 @@
             </div>
         </div>
 
+        <!-- PAGE 8: SYSTEM SETTINGS -->
+        <div id="page-settings" class="page">
+            <h2>System Settings</h2>
+            <div class="table-card">
+                <h3>Business Cycle Configuration</h3>
+                <div class="form-group" style="max-width: 400px; margin-top:15px;">
+                    <label>Start Day of the Week</label>
+                    <select id="setting-week-start" class="data-input" style="width:100%; border:1px solid #cbd5e1; border-radius:8px; padding:10px;">
+                        <option value="0">Sunday</option>
+                        <option value="1">Monday</option>
+                        <option value="2">Tuesday</option>
+                        <option value="3">Wednesday</option>
+                        <option value="4">Thursday</option>
+                        <option value="5">Friday</option>
+                        <option value="6">Saturday</option>
+                    </select>
+                </div>
+                <button class="action-btn" style="max-width:200px; margin-top:20px;" onclick="saveSystemSettings()">Save Settings</button>
+            </div>
+        </div>
+
     </div>
 </main>
 
@@ -979,6 +1003,18 @@
                 permissions: ["dashboard", "leads", "purchases", "packaging", "profit", "catalog", "staff"]
             });
         }
+
+        const configSnap = await db.collection('config').doc('system').get();
+        if (configSnap.exists) {
+            window.systemConfig = configSnap.data();
+            if(window.systemConfig.weekStartDay === undefined) window.systemConfig.weekStartDay = 3;
+        } else {
+            window.systemConfig = { weekStartDay: 3 };
+            await db.collection('config').doc('system').set(window.systemConfig);
+        }
+        
+        const selectSetting = document.getElementById('setting-week-start');
+        if(selectSetting) selectSetting.value = window.systemConfig.weekStartDay;
 
         await loadCatalogToDropdown();
         checkLoginSession(); 
@@ -1120,7 +1156,7 @@
         let perms = currentUser.permissions || [];
         
         if(currentUser.username === 'admin' || currentUser.username === 'admin@company.com') {
-            perms = ["dashboard", "leads", "purchases", "packaging", "profit", "catalog", "staff"];
+            perms = ["dashboard", "leads", "purchases", "packaging", "profit", "catalog", "settings", "staff"];
             currentUser.permissions = perms; 
         }
         
@@ -1145,7 +1181,7 @@
         
         let perms = currentUser.permissions || [];
         if(currentUser.username === 'admin' || currentUser.username === 'admin@company.com') {
-            perms = ["dashboard", "leads", "purchases", "packaging", "profit", "catalog", "staff"];
+            perms = ["dashboard", "leads", "purchases", "packaging", "profit", "catalog", "settings", "staff"];
         }
 
         if(!perms.includes(pageId)) return notify("Access Denied! You don't have permission.", true);
@@ -1182,10 +1218,14 @@
         if (!isMonth) {
             const snap = await db.collection('leads').orderBy('date', 'asc').limit(1).get();
             let refDate = snap.empty ? new Date() : new Date(snap.docs[0].data().date);
-            let dayOfWeek = refDate.getDay();
-            let daysToSubtract = (dayOfWeek >= 3) ? (dayOfWeek - 3) : (dayOfWeek + 4);
-            let baseWed = new Date(refDate);
-            baseWed.setDate(refDate.getDate() - daysToSubtract);
+            
+            // Find the first occurrence of the Start Day in the month of refDate
+            let monthStart = new Date(refDate.getFullYear(), refDate.getMonth(), 1);
+            let dayOfWeek = monthStart.getDay();
+            let S = window.systemConfig ? window.systemConfig.weekStartDay : 3;
+            let daysToStartDay = (S - dayOfWeek + 7) % 7;
+            let baseWed = new Date(monthStart);
+            baseWed.setDate(1 + daysToStartDay);
             
             let weekNum = parseInt(week.replace('Week ', ''));
             let targetWed = new Date(baseWed);
@@ -1852,6 +1892,20 @@
         });
     }
 
+    window.saveSystemSettings = async function() {
+        const val = parseInt(document.getElementById('setting-week-start').value);
+        try {
+            await db.collection('config').doc('system').set({ weekStartDay: val }, { merge: true });
+            window.systemConfig = { weekStartDay: val };
+            notify("System Settings Saved Successfully!");
+            // Re-evaluate context since the calendar definition changed
+            await handleContextChange();
+        } catch(e) {
+            console.error(e);
+            notify("Error saving settings", true);
+        }
+    }
+
     window.autoSelectWeek = async function() {
         try {
             const selectedDate = document.getElementById('global-date').value;
@@ -1860,10 +1914,13 @@
             const snap = await db.collection('leads').orderBy('date', 'asc').limit(1).get();
             let refDate = snap.empty ? new Date() : new Date(snap.docs[0].data().date);
             
-            let dayOfWeek = refDate.getDay();
-            let daysToSubtract = (dayOfWeek >= 3) ? (dayOfWeek - 3) : (dayOfWeek + 4);
-            let baseWed = new Date(refDate);
-            baseWed.setDate(refDate.getDate() - daysToSubtract);
+            // Find the first occurrence of the Start Day in the month of refDate
+            let monthStart = new Date(refDate.getFullYear(), refDate.getMonth(), 1);
+            let dayOfWeek = monthStart.getDay();
+            let S = window.systemConfig ? window.systemConfig.weekStartDay : 3;
+            let daysToStartDay = (S - dayOfWeek + 7) % 7;
+            let baseWed = new Date(monthStart);
+            baseWed.setDate(1 + daysToStartDay);
             
             let d = new Date(selectedDate);
             // Calculate UTC midnight to avoid DST issues
@@ -1871,8 +1928,8 @@
             let diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
             
             let weekNum = Math.floor(diffDays / 7) + 1;
-            if(weekNum < 1) weekNum = 1;
-            if(weekNum > 4) weekNum = 4;
+            if(weekNum < 1) weekNum = 4; // If it's before the first Wednesday, it belongs to week 4 of last month
+            if(weekNum > 4) weekNum = 4; // Cap at 4
             const targetWeek = "Week " + weekNum;
             
             const select = document.getElementById('active-week');
