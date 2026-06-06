@@ -1154,8 +1154,9 @@
     function applyPermissions() {
         if(!currentUser) return;
         let perms = currentUser.permissions || [];
+        const isAdmin = currentUser.username === 'admin' || currentUser.username === 'admin@company.com';
         
-        if(currentUser.username === 'admin' || currentUser.username === 'admin@company.com') {
+        if(isAdmin) {
             perms = ["dashboard", "leads", "purchases", "packaging", "profit", "catalog", "settings", "staff"];
             currentUser.permissions = perms; 
         }
@@ -1163,6 +1164,13 @@
         document.querySelectorAll('.nav-item').forEach(item => {
             if(item.id !== 'nav-logout' && item.id !== '') {
                 const pageId = item.id.replace('nav-', '');
+                
+                // Force hide sensitive pages if not admin
+                if(!isAdmin && (pageId === 'catalog' || pageId === 'settings' || pageId === 'staff')) {
+                    item.style.display = 'none';
+                    return;
+                }
+
                 if(perms.includes(pageId)) {
                     item.style.display = 'flex';
                 } else {
@@ -1180,8 +1188,13 @@
         if(!currentUser) return;
         
         let perms = currentUser.permissions || [];
-        if(currentUser.username === 'admin' || currentUser.username === 'admin@company.com') {
+        const isAdmin = currentUser.username === 'admin' || currentUser.username === 'admin@company.com';
+        if(isAdmin) {
             perms = ["dashboard", "leads", "purchases", "packaging", "profit", "catalog", "settings", "staff"];
+        }
+
+        if(!isAdmin && (pageId === 'catalog' || pageId === 'settings' || pageId === 'staff')) {
+            return notify("Access Denied! Admin only.", true);
         }
 
         if(!perms.includes(pageId)) return notify("Access Denied! You don't have permission.", true);
@@ -1730,8 +1743,12 @@
         btn.style.background = 'var(--primary)';
         btn.style.boxShadow = '0 4px 15px rgba(79, 70, 229, 0.3)';
         
+        // Explicitly clear the date to force a fresh UI state
+        document.getElementById('global-date').value = '';
+        
         loadAllData();
         if(typeof autoSelectWeek === 'function') autoSelectWeek();
+        handleDateChange(true); // Re-run date change logic to reset everything
     }
 
     window.saveProductPurchase = async function() {
