@@ -668,6 +668,7 @@
                                 <th>Ads</th>
                                 <th>Prod Cost</th>
                                 <th>Other (Pack)</th>
+                                <th>Salaries</th>
                                 <th style="color:var(--accent)">Profit</th>
                             </tr>
                         </thead>
@@ -830,6 +831,7 @@
                                 <th>Ads</th>
                                 <th>Prod Cost</th>
                                 <th>Other (Pack)</th>
+                                <th>Salaries</th>
                                 <th style="color:var(--accent)">Profit</th>
                                 <th>Action</th>
                             </tr>
@@ -1700,6 +1702,14 @@
         document.getElementById('tbl-manage-packaging').innerHTML = packBodyManage;
 
         // --- 4. EXPENSES & PROFIT ---
+        const sSnap_pre = await db.collection('salaries').get();
+        let salaryByWeek = {};
+        sSnap_pre.docs.forEach(d => {
+            const data = d.data();
+            if(!salaryByWeek[data.week]) salaryByWeek[data.week] = 0;
+            salaryByWeek[data.week] += (data.netSalary || 0);
+        });
+
         const eSnap = await db.collection('expenses').get();
         let expenses = eSnap.docs.map(d => ({id: d.id, ...d.data()}));
         if(!isMonth) expenses = expenses.filter(e => e.week === week);
@@ -1710,19 +1720,23 @@
 
         expenses.forEach(e => {
             const received = e.received || 0;
-            const totalSpent = e.adsSpent + e.productCost + e.otherCosts; 
-            const profit = received - totalSpent;
-            totalExpensesProfit += profit;
+            const weekSalaries = salaryByWeek[e.week] || 0;
+            const totalSpentBase = e.adsSpent + e.productCost + e.otherCosts; 
+            const baseProfit = received - totalSpentBase;
+            totalExpensesProfit += baseProfit;
             
+            const rowProfit = baseProfit - weekSalaries;
+
             const weekTd = isMonth ? `<td><strong style="color:var(--text-muted);">${e.week || 'Week 1'}</strong></td>` : '';
             const dRec = showFinancials ? formatRs(received) : '***';
             const dAds = showFinancials ? formatRs(e.adsSpent) : '***';
             const dProd = showFinancials ? formatRs(e.productCost) : '***';
             const dOth = showFinancials ? formatRs(e.otherCosts) : '***';
-            const dProf = showFinancials ? formatRs(profit) : '***';
+            const dSal = showFinancials ? formatRs(weekSalaries) : '***';
+            const dProf = showFinancials ? formatRs(rowProfit) : '***';
 
-            eBodyDash += `<tr>${weekTd}<td style="color:var(--success); font-weight:bold;">${dRec}</td><td style="font-weight:600;">${dAds}</td><td style="font-weight:600;">${dProd}</td><td style="font-weight:600;">${dOth}</td><td style="color:var(--primary); font-weight:bold;">${dProf}</td></tr>`;
-            eBodyManage += `<tr><td><strong style="color:var(--text-muted);">${e.week || 'Week 1'}</strong></td><td style="color:var(--success); font-weight:bold;">${dRec}</td><td style="font-weight:600;">${dAds}</td><td style="font-weight:600;">${dProd}</td><td style="font-weight:600;">${dOth}</td><td style="color:var(--primary); font-weight:bold;">${dProf}</td><td><button class="btn-delete" onclick="deleteRecord('expenses', '${e.id}')">Del</button></td></tr>`;
+            eBodyDash += `<tr>${weekTd}<td style="color:var(--success); font-weight:bold;">${dRec}</td><td style="font-weight:600;">${dAds}</td><td style="font-weight:600;">${dProd}</td><td style="font-weight:600;">${dOth}</td><td style="color:var(--danger); font-weight:600;">${dSal}</td><td style="color:var(--primary); font-weight:bold;">${dProf}</td></tr>`;
+            eBodyManage += `<tr><td><strong style="color:var(--text-muted);">${e.week || 'Week 1'}</strong></td><td style="color:var(--success); font-weight:bold;">${dRec}</td><td style="font-weight:600;">${dAds}</td><td style="font-weight:600;">${dProd}</td><td style="font-weight:600;">${dOth}</td><td style="color:var(--danger); font-weight:600;">${dSal}</td><td style="color:var(--primary); font-weight:bold;">${dProf}</td><td><button class="btn-delete" onclick="deleteRecord('expenses', '${e.id}')">Del</button></td></tr>`;
         });
         document.getElementById('tbl-dash-expenses').innerHTML = eBodyDash;
         document.getElementById('tbl-manage-expenses').innerHTML = eBodyManage;
