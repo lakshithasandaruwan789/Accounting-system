@@ -1056,6 +1056,7 @@
                         <div class="perm-grid">
                             <label class="perm-lbl"><input type="checkbox" class="perm-chk" value="dashboard"> 📊 Dashboard</label>
                             <label class="perm-lbl"><input type="checkbox" class="perm-chk" value="leads"> 🎯 Daily Leads</label>
+                            <label class="perm-lbl"><input type="checkbox" class="perm-chk" value="orders"> 🚚 Orders & Courier</label>
                             <label class="perm-lbl"><input type="checkbox" class="perm-chk" value="purchases"> 📦 Purchases</label>
                             <label class="perm-lbl"><input type="checkbox" class="perm-chk" value="packaging"> 🏷️ Packaging</label>
                             <label class="perm-lbl"><input type="checkbox" class="perm-chk" value="profit"> 💰 Profit</label>
@@ -1182,7 +1183,7 @@
             await db.collection('users').add({
                 username: "admin@company.com",
                 password: "123",
-                permissions: ["dashboard", "leads", "purchases", "packaging", "profit", "catalog", "staff"]
+                permissions: ["dashboard", "leads", "orders", "purchases", "packaging", "profit", "catalog", "staff"]
             });
         }
 
@@ -1377,7 +1378,7 @@
         let perms = currentUser.permissions || [];
         const isAdmin = currentUser.username === 'admin' || currentUser.username === 'admin@company.com';
         if(isAdmin) {
-            perms = ["dashboard", "leads", "purchases", "packaging", "profit", "catalog", "salaries", "settings", "staff"];
+            perms = ["dashboard", "leads", "orders", "purchases", "packaging", "profit", "catalog", "salaries", "settings", "staff"];
         }
 
         if(!isAdmin && (pageId === 'catalog' || pageId === 'settings' || pageId === 'staff')) {
