@@ -818,6 +818,10 @@
                         <label>Packaging & Other Costs (Rs) <span style="font-size:11px; color:var(--text-muted); font-weight:normal;">(Auto)</span></label>
                         <input type="number" id="exp-other" placeholder="0.00" readonly style="background:#fdf4ff; color:var(--accent); font-weight:bold;">
                     </div>
+                    <div class="form-group">
+                        <label>Staff Salaries (Rs) <span style="font-size:11px; color:var(--text-muted); font-weight:normal;">(Auto)</span></label>
+                        <input type="number" id="exp-salaries" placeholder="0.00" readonly style="background:#f8fafc; color:var(--danger); font-weight:bold;">
+                    </div>
                     <button class="action-btn" style="background:var(--success); box-shadow:0 4px 15px rgba(16, 185, 129, 0.3);" onclick="saveExpenses()">Save Weekly Profit</button>
                 </div>
 
@@ -1754,6 +1758,7 @@
             document.getElementById('exp-prod').value = weeklyProductTotal;
             document.getElementById('exp-ads').value = weeklyAdsTotal;
             document.getElementById('exp-other').value = weeklyPackagingTotal;
+            document.getElementById('exp-salaries').value = salaryByWeek[week] || 0;
         }
 
         // --- 5. UPDATE DASHBOARD SUMMARIES ---
