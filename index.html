@@ -87,6 +87,8 @@
             box-shadow: 5px 0 30px rgba(0,0,0,0.02);
             transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            overscroll-behavior-y: contain;
         }
         .sidebar::-webkit-scrollbar { width: 4px; }
         .sidebar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
@@ -299,6 +301,9 @@
                 box-shadow: 10px 0 25px rgba(0,0,0,0.1);
                 flex-direction: column; width: 260px;
                 background: #ffffff;
+                overflow-y: auto;
+                -webkit-overflow-scrolling: touch;
+                overscroll-behavior-y: contain;
             }
             .sidebar.mobile-open { transform: translateX(0); }
             .sidebar-header { display: block; margin-top: 10px; }
