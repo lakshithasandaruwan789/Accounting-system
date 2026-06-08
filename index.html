@@ -2063,7 +2063,7 @@
         const s = doc.data();
 
         // Create a temporary element for the payslip
-        const payslipHtml = \`
+        const payslipHtml = `
         <div id="payslip-print-temp" style="padding: 40px; background: white; max-width: 600px; margin: 0 auto; font-family: 'Plus Jakarta Sans', sans-serif; color: #0f172a;">
             <div style="text-align: center; margin-bottom: 30px; border-bottom: 2px solid #e2e8f0; padding-bottom: 20px;">
                 <h2 style="margin: 0; color: #0f172a; font-size: 24px; font-weight: 800;">HERBAL CROWN (PVT) LTD</h2>
@@ -2073,11 +2073,11 @@
             <div style="display:flex; justify-content:space-between; margin-bottom: 30px; font-size: 15px;">
                 <div>
                     <p style="margin:0 0 8px 0; color:#64748b;">Employee Name:</p>
-                    <p style="margin:0; font-weight:700; font-size:18px;">\${s.employee}</p>
+                    <p style="margin:0; font-weight:700; font-size:18px;">${s.employee}</p>
                 </div>
                 <div style="text-align:right;">
                     <p style="margin:0 0 8px 0; color:#64748b;">Payment Date:</p>
-                    <p style="margin:0; font-weight:600;">\${s.date}</p>
+                    <p style="margin:0; font-weight:600;">${s.date}</p>
                 </div>
             </div>
 
@@ -2085,19 +2085,19 @@
                 <tbody>
                     <tr>
                         <td style="padding: 15px; border-bottom: 1px solid #e2e8f0; font-weight: 600;">Basic Salary</td>
-                        <td style="padding: 15px; border-bottom: 1px solid #e2e8f0; text-align: right; font-weight: 600;">Rs. \${parseFloat(s.basic).toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+                        <td style="padding: 15px; border-bottom: 1px solid #e2e8f0; text-align: right; font-weight: 600;">Rs. ${parseFloat(s.basic).toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
                     </tr>
                     <tr>
                         <td style="padding: 15px; border-bottom: 1px solid #e2e8f0; font-weight: 600; color: #10b981;">Bonus & Allowances</td>
-                        <td style="padding: 15px; border-bottom: 1px solid #e2e8f0; text-align: right; font-weight: 600; color: #10b981;">Rs. \${parseFloat(s.bonus).toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+                        <td style="padding: 15px; border-bottom: 1px solid #e2e8f0; text-align: right; font-weight: 600; color: #10b981;">Rs. ${parseFloat(s.bonus).toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
                     </tr>
                     <tr>
                         <td style="padding: 15px; border-bottom: 1px solid #e2e8f0; font-weight: 600; color: #ef4444;">Deductions & Advances</td>
-                        <td style="padding: 15px; border-bottom: 1px solid #e2e8f0; text-align: right; font-weight: 600; color: #ef4444;">- Rs. \${parseFloat(s.deduct).toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+                        <td style="padding: 15px; border-bottom: 1px solid #e2e8f0; text-align: right; font-weight: 600; color: #ef4444;">- Rs. ${parseFloat(s.deduct).toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
                     </tr>
                     <tr style="background-color: #f8fafc;">
                         <td style="padding: 20px 15px; font-weight: 800; font-size: 18px; color: #4f46e5;">NET SALARY PAID</td>
-                        <td style="padding: 20px 15px; text-align: right; font-weight: 800; font-size: 18px; color: #4f46e5;">Rs. \${parseFloat(s.netSalary).toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+                        <td style="padding: 20px 15px; text-align: right; font-weight: 800; font-size: 18px; color: #4f46e5;">Rs. ${parseFloat(s.netSalary).toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
                     </tr>
                 </tbody>
             </table>
@@ -2113,7 +2113,7 @@
                 </div>
             </div>
         </div>
-        \`;
+        `;
 
         // Temporarily inject and print
         const printDiv = document.createElement('div');
@@ -2123,12 +2123,12 @@
         
         const style = document.createElement('style');
         style.id = 'temp-print-style';
-        style.innerHTML = \`
+        style.innerHTML = `
             @media print {
                 body > *:not(#temp-payslip-wrapper) { display: none !important; }
                 #temp-payslip-wrapper { display: block !important; position: absolute; left: 0; top: 0; width: 100%; z-index: 99999; }
             }
-        \`;
+        `;
         document.head.appendChild(style);
 
         window.print();
