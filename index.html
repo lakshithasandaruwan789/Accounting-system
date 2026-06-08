@@ -462,6 +462,9 @@
         <li class="nav-item" onclick="navigate('settings')" id="nav-settings">
             <span class="nav-icon">🛠️</span> <span class="nav-text">System Settings</span>
         </li>
+        <li class="nav-item" onclick="navigate('salaries')" id="nav-salaries">
+            <span class="nav-icon">💸</span> <span class="nav-text">Staff Salaries</span>
+        </li>
         <li class="nav-item" onclick="navigate('staff')" id="nav-staff">
             <span class="nav-icon">👥</span> <span class="nav-text">Staff Management</span>
         </li>
@@ -873,7 +876,69 @@
             </div>
         </div>
 
-        <!-- PAGE 7: STAFF MANAGEMENT -->
+        <!-- PAGE 7: STAFF SALARIES -->
+        <div id="page-salaries" class="page">
+            <div class="two-col-layout">
+                <div class="form-card">
+                    <h2>💸 Issue Staff Salary</h2>
+                    <p style="font-size:13px; color:var(--text-muted); margin-top:-15px;">Calculate and record salary payments for your employees.</p>
+                    
+                    <div class="form-group">
+                        <label>Select Employee</label>
+                        <select id="sal-employee" class="data-input" style="width:100%; border:1px solid #cbd5e1; border-radius:8px; padding:10px;">
+                            <option value="">-- Loading Staff --</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Payment Date</label>
+                        <input type="date" id="sal-date">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Basic Salary (Rs)</label>
+                        <input type="text" id="sal-basic" placeholder="0.00" oninput="formatNumberInput(event); calculateNetSalary()">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Bonus / Allowances (Rs)</label>
+                        <input type="text" id="sal-bonus" placeholder="0.00" oninput="formatNumberInput(event); calculateNetSalary()">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Deductions / Advances (Rs)</label>
+                        <input type="text" id="sal-deduct" placeholder="0.00" oninput="formatNumberInput(event); calculateNetSalary()">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label style="color: var(--success); font-weight:bold;">Net Salary to Pay (Rs) <span style="font-size:11px; color:var(--text-muted); font-weight:normal;">(Auto)</span></label>
+                        <input type="text" id="sal-net" placeholder="0.00" readonly style="background:#f0fdf4; color:var(--success); font-weight:bold; font-size:16px;">
+                    </div>
+
+                    <button class="action-btn" id="btn-save-salary" onclick="saveSalaryData()">Save & Issue Salary</button>
+                </div>
+
+                <div class="table-card">
+                    <h2>📜 Salary History</h2>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Employee</th>
+                                <th>Basic</th>
+                                <th style="color:var(--success);">Bonus</th>
+                                <th style="color:var(--danger);">Deduct</th>
+                                <th style="color:var(--primary);">Net Paid</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbl-manage-salaries"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- PAGE 8: STAFF MANAGEMENT -->
         <div id="page-staff" class="page">
             <div class="two-col-layout">
                 <div class="form-card">
@@ -898,6 +963,7 @@
                             <label class="perm-lbl"><input type="checkbox" class="perm-chk" value="packaging"> 🏷️ Packaging</label>
                             <label class="perm-lbl"><input type="checkbox" class="perm-chk" value="profit"> 💰 Profit</label>
                             <label class="perm-lbl"><input type="checkbox" class="perm-chk" value="catalog"> ⚙️ Catalog</label>
+                            <label class="perm-lbl"><input type="checkbox" class="perm-chk" value="salaries"> 💸 Salaries (View Own)</label>
                             <label class="perm-lbl" style="grid-column: 1/-1; background:#fee2e2; border-color:#fca5a5; color:var(--danger);">
                                 <input type="checkbox" class="perm-chk" value="staff"> 👥 Staff Management (Admin Only)
                             </label>
@@ -1179,7 +1245,7 @@
         const isAdmin = currentUser.username === 'admin' || currentUser.username === 'admin@company.com';
         
         if(isAdmin) {
-            perms = ["dashboard", "leads", "purchases", "packaging", "profit", "catalog", "settings", "staff"];
+            perms = ["dashboard", "leads", "purchases", "packaging", "profit", "catalog", "salaries", "settings", "staff"];
             currentUser.permissions = perms; 
         }
         
@@ -1212,7 +1278,7 @@
         let perms = currentUser.permissions || [];
         const isAdmin = currentUser.username === 'admin' || currentUser.username === 'admin@company.com';
         if(isAdmin) {
-            perms = ["dashboard", "leads", "purchases", "packaging", "profit", "catalog", "settings", "staff"];
+            perms = ["dashboard", "leads", "purchases", "packaging", "profit", "catalog", "salaries", "settings", "staff"];
         }
 
         if(!isAdmin && (pageId === 'catalog' || pageId === 'settings' || pageId === 'staff')) {
@@ -1662,6 +1728,62 @@
         if(currentPage === 'staff') {
             loadStaffTable();
         }
+
+        // --- 8. LOAD SALARIES ---
+        if(currentUser.permissions.includes('salaries')) {
+            const sSnap = await db.collection('salaries').orderBy('date', 'desc').get();
+            let allSalaries = sSnap.docs.map(d => ({id: d.id, ...d.data()}));
+            
+            // If staff, only show their own
+            if(!isAdmin) {
+                allSalaries = allSalaries.filter(s => s.employee === currentUser.username);
+            }
+
+            let sBody = '';
+            let totalSalaries = 0;
+            allSalaries.forEach(s => {
+                // If we are looking at a specific week/month, we might want to filter.
+                // However, salaries are usually independent of the exact weekly cycle (often monthly).
+                // We will deduct them from the monthly profit if we are in 'Month Overview', or deduct the specific week's salaries if in a week view.
+                if(isMonth || s.week === week) {
+                    totalSalaries += s.netSalary;
+                }
+
+                // Table rendering (always show all for context unless filtered heavily)
+                if(isMonth || s.week === week || !isDateFilterApplied) {
+                    const isSelected = s.date === selectedDate && !isMonth ? 'background-color: #f0fdf4;' : '';
+                    const actionBtns = isAdmin 
+                        ? `<button class="action-btn" style="background:var(--primary); padding:4px 8px; font-size:12px; margin-right:5px; margin-bottom:5px;" onclick="printPayslip('${s.id}')">📄 Print</button><button class="btn-delete" onclick="deleteRecord('salaries', '${s.id}')">Del</button>`
+                        : `<button class="action-btn" style="background:var(--primary); padding:4px 8px; font-size:12px; margin-right:5px; margin-bottom:5px;" onclick="printPayslip('${s.id}')">📄 Print</button>`;
+                    
+                    sBody += `<tr style="${isSelected}"><td><strong>${s.date}</strong></td><td style="font-weight:600;">${s.employee}</td><td>${formatRs(s.basic)}</td><td style="color:var(--success);">${formatRs(s.bonus)}</td><td style="color:var(--danger);">${formatRs(s.deduct)}</td><td style="color:var(--primary); font-weight:bold;">${formatRs(s.netSalary)}</td><td>${actionBtns}</td></tr>`;
+                }
+            });
+            document.getElementById('tbl-manage-salaries').innerHTML = sBody;
+
+            // Load employee dropdown (Admin only needs this)
+            if(isAdmin) {
+                document.getElementById('page-salaries').querySelector('.form-card').style.display = 'block';
+                const uSnap = await db.collection('users').get();
+                const users = uSnap.docs.map(d => d.data().username);
+                const empSelect = document.getElementById('sal-employee');
+                if(empSelect.options.length <= 1) { // Only populate if empty
+                    empSelect.innerHTML = '<option value="">-- Select Staff Member --</option>';
+                    users.forEach(u => {
+                        if(u !== 'admin' && u !== 'admin@company.com') {
+                            empSelect.innerHTML += `<option value="${u}">${u}</option>`;
+                        }
+                    });
+                }
+            } else {
+                document.getElementById('page-salaries').querySelector('.form-card').style.display = 'none';
+                document.getElementById('page-salaries').querySelector('.two-col-layout').style.gridTemplateColumns = '1fr';
+            }
+            
+            // Deduct salaries from profit calculation
+            totalExpensesProfit -= totalSalaries;
+            document.getElementById('lbl-sum-profit').textContent = showFinancials ? formatRs(totalExpensesProfit) : '***';
+        }
     }
 
     // --- DATA SAVING LOGIC ---
@@ -1882,6 +2004,140 @@
 
         loadAllData();
     }
+    
+    // --- STAFF SALARY LOGIC ---
+    window.calculateNetSalary = function() {
+        const basic = parseFloat(document.getElementById('sal-basic').value.replace(/,/g, '')) || 0;
+        const bonus = parseFloat(document.getElementById('sal-bonus').value.replace(/,/g, '')) || 0;
+        const deduct = parseFloat(document.getElementById('sal-deduct').value.replace(/,/g, '')) || 0;
+        
+        const net = basic + bonus - deduct;
+        document.getElementById('sal-net').value = net.toLocaleString('en-US');
+    }
+
+    window.saveSalaryData = async function() {
+        const week = document.getElementById('active-week').value;
+        if(week === 'Month Overview') return notify("Cannot add data in Month Overview!", true);
+
+        const emp = document.getElementById('sal-employee').value;
+        const date = document.getElementById('sal-date').value;
+        const basicStr = document.getElementById('sal-basic').value.replace(/,/g, '');
+        const bonusStr = document.getElementById('sal-bonus').value.replace(/,/g, '');
+        const deductStr = document.getElementById('sal-deduct').value.replace(/,/g, '');
+
+        if(!emp) return notify("Please select an Employee!", true);
+        if(!date) return notify("Please select a Payment Date!", true);
+        if(!basicStr) return notify("Please enter a Basic Salary!", true);
+
+        const basic = parseFloat(basicStr) || 0;
+        const bonus = parseFloat(bonusStr) || 0;
+        const deduct = parseFloat(deductStr) || 0;
+        const net = basic + bonus - deduct;
+
+        await db.collection('salaries').add({
+            week: week,
+            date: date,
+            employee: emp,
+            basic: basic,
+            bonus: bonus,
+            deduct: deduct,
+            netSalary: net
+        });
+
+        document.getElementById('sal-basic').value = '';
+        document.getElementById('sal-bonus').value = '';
+        document.getElementById('sal-deduct').value = '';
+        document.getElementById('sal-net').value = '';
+        document.getElementById('sal-employee').value = '';
+        document.getElementById('sal-date').value = '';
+
+        notify(`Salary issued to ${emp} successfully!`);
+        loadAllData();
+    }
+
+    window.printPayslip = async function(id) {
+        const doc = await db.collection('salaries').doc(id).get();
+        if(!doc.exists) return;
+        const s = doc.data();
+
+        // Create a temporary element for the payslip
+        const payslipHtml = \`
+        <div id="payslip-print-temp" style="padding: 40px; background: white; max-width: 600px; margin: 0 auto; font-family: 'Plus Jakarta Sans', sans-serif; color: #0f172a;">
+            <div style="text-align: center; margin-bottom: 30px; border-bottom: 2px solid #e2e8f0; padding-bottom: 20px;">
+                <h2 style="margin: 0; color: #0f172a; font-size: 24px; font-weight: 800;">HERBAL CROWN (PVT) LTD</h2>
+                <p style="margin: 5px 0 0; color: #475569; font-size: 14px;">SALARY PAYSLIP</p>
+            </div>
+            
+            <div style="display:flex; justify-content:space-between; margin-bottom: 30px; font-size: 15px;">
+                <div>
+                    <p style="margin:0 0 8px 0; color:#64748b;">Employee Name:</p>
+                    <p style="margin:0; font-weight:700; font-size:18px;">\${s.employee}</p>
+                </div>
+                <div style="text-align:right;">
+                    <p style="margin:0 0 8px 0; color:#64748b;">Payment Date:</p>
+                    <p style="margin:0; font-weight:600;">\${s.date}</p>
+                </div>
+            </div>
+
+            <table style="width: 100%; border-collapse: collapse; margin-bottom: 30px;">
+                <tbody>
+                    <tr>
+                        <td style="padding: 15px; border-bottom: 1px solid #e2e8f0; font-weight: 600;">Basic Salary</td>
+                        <td style="padding: 15px; border-bottom: 1px solid #e2e8f0; text-align: right; font-weight: 600;">Rs. \${parseFloat(s.basic).toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 15px; border-bottom: 1px solid #e2e8f0; font-weight: 600; color: #10b981;">Bonus & Allowances</td>
+                        <td style="padding: 15px; border-bottom: 1px solid #e2e8f0; text-align: right; font-weight: 600; color: #10b981;">Rs. \${parseFloat(s.bonus).toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 15px; border-bottom: 1px solid #e2e8f0; font-weight: 600; color: #ef4444;">Deductions & Advances</td>
+                        <td style="padding: 15px; border-bottom: 1px solid #e2e8f0; text-align: right; font-weight: 600; color: #ef4444;">- Rs. \${parseFloat(s.deduct).toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+                    </tr>
+                    <tr style="background-color: #f8fafc;">
+                        <td style="padding: 20px 15px; font-weight: 800; font-size: 18px; color: #4f46e5;">NET SALARY PAID</td>
+                        <td style="padding: 20px 15px; text-align: right; font-weight: 800; font-size: 18px; color: #4f46e5;">Rs. \${parseFloat(s.netSalary).toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+                    </tr>
+                </tbody>
+            </table>
+            
+            <div style="margin-top: 50px; display:flex; justify-content:space-between;">
+                <div style="text-align:center;">
+                    <div style="width: 150px; border-top: 1px solid #cbd5e1; margin-bottom: 10px;"></div>
+                    <p style="margin:0; font-size:12px; color:#64748b;">Employer Signature</p>
+                </div>
+                <div style="text-align:center;">
+                    <div style="width: 150px; border-top: 1px solid #cbd5e1; margin-bottom: 10px;"></div>
+                    <p style="margin:0; font-size:12px; color:#64748b;">Employee Signature</p>
+                </div>
+            </div>
+        </div>
+        \`;
+
+        // Temporarily inject and print
+        const printDiv = document.createElement('div');
+        printDiv.innerHTML = payslipHtml;
+        printDiv.id = 'temp-payslip-wrapper';
+        document.body.appendChild(printDiv);
+        
+        const style = document.createElement('style');
+        style.id = 'temp-print-style';
+        style.innerHTML = \`
+            @media print {
+                body > *:not(#temp-payslip-wrapper) { display: none !important; }
+                #temp-payslip-wrapper { display: block !important; position: absolute; left: 0; top: 0; width: 100%; z-index: 99999; }
+            }
+        \`;
+        document.head.appendChild(style);
+
+        window.print();
+
+        // Cleanup
+        setTimeout(() => {
+            document.body.removeChild(printDiv);
+            document.head.removeChild(style);
+        }, 500);
+    }
+
     
     // --- EXPORTS ---
     window.exportToCSV = async function() {
