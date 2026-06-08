@@ -2185,6 +2185,11 @@
             @media print {
                 body > *:not(#temp-payslip-wrapper) { display: none !important; }
                 #temp-payslip-wrapper { display: block !important; position: absolute; left: 0; top: 0; width: 100%; z-index: 99999; }
+                * {
+                    -webkit-print-color-adjust: exact !important;
+                    print-color-adjust: exact !important;
+                    color-adjust: exact !important;
+                }
             }
         `;
         document.head.appendChild(style);
