@@ -455,6 +455,9 @@
         <li class="nav-item" onclick="navigate('leads')" id="nav-leads">
             <span class="nav-icon">🎯</span> <span class="nav-text">Daily Leads</span>
         </li>
+        <li class="nav-item" onclick="navigate('orders')" id="nav-orders">
+            <span class="nav-icon">🚚</span> <span class="nav-text">Orders & Courier</span>
+        </li>
         <li class="nav-item" onclick="navigate('purchases')" id="nav-purchases">
             <span class="nav-icon">📦</span> <span class="nav-text">Purchases & GRN</span>
         </li>
@@ -681,6 +684,59 @@
                             </tr>
                         </thead>
                         <tbody id="tbl-dash-expenses"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- PAGE 1.5: ORDERS & COURIER -->
+        <div id="page-orders" class="page">
+            <div class="two-col-layout">
+                <div class="form-card">
+                    <h2>🚚 Royal Express Orders</h2>
+                    <div class="form-group">
+                        <label>Customer Name</label>
+                        <input type="text" id="order-customer" placeholder="e.g. Nimal Perera">
+                    </div>
+                    <div class="form-group">
+                        <label>Phone Number</label>
+                        <input type="text" id="order-phone" placeholder="e.g. 0771234567">
+                    </div>
+                    <div class="form-group">
+                        <label>Address</label>
+                        <input type="text" id="order-address" placeholder="Delivery Address">
+                    </div>
+                    <div class="form-group">
+                        <label>Select Product</label>
+                        <select id="order-product"></select>
+                    </div>
+                    <div class="form-group">
+                        <label>Quantity</label>
+                        <input type="number" id="order-qty" placeholder="1" value="1">
+                    </div>
+                    <div class="form-group">
+                        <label>Tracking / Waybill Number</label>
+                        <input type="text" id="order-waybill" placeholder="e.g. RE123456789LK" style="border: 2px solid var(--accent); background:#fdf4ff;">
+                    </div>
+                    <button class="action-btn" onclick="saveOrder()">Save Order</button>
+                </div>
+
+                <div class="table-card">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; border-bottom: 2px solid #f1f5f9; padding-bottom:15px;">
+                        <h2 style="margin:0; border:none; padding:0;">📦 Order Tracking</h2>
+                        <button class="action-btn" style="width:auto; padding:8px 15px; font-size:12px; background:var(--warning); color:#fff; box-shadow:none;" onclick="syncCurfox()">🔄 Sync Curfox API</button>
+                    </div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Customer</th>
+                                <th>Waybill</th>
+                                <th>Status</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbl-manage-orders"></tbody>
                     </table>
                 </div>
             </div>
@@ -1497,9 +1553,12 @@
         const snap = await db.collection('product_catalog').get();
         const catalog = snap.docs.map(d => ({id: d.id, ...d.data()}));
         const select = document.getElementById('prod-name');
-        select.innerHTML = '<option value="">-- Select Product --</option>';
+        const selectOrder = document.getElementById('order-product');
+        if(select) select.innerHTML = '<option value="">-- Select Product --</option>';
+        if(selectOrder) selectOrder.innerHTML = '<option value="">-- Select Product --</option>';
         catalog.forEach(p => {
-            select.innerHTML += `<option value="${p.name}" data-price="${p.price}">${p.name}</option>`;
+            if(select) select.innerHTML += `<option value="${p.name}" data-price="${p.price}">${p.name}</option>`;
+            if(selectOrder) selectOrder.innerHTML += `<option value="${p.name}">${p.name}</option>`;
         });
         
         const tbody = document.getElementById('tbl-manage-catalog');
@@ -1839,6 +1898,32 @@
             // Deduct salaries from profit calculation
             totalExpensesProfit -= totalSalaries;
             document.getElementById('lbl-sum-profit').textContent = showFinancials ? formatRs(totalExpensesProfit) : '***';
+        }
+
+        // --- 9. LOAD ORDERS ---
+        if(currentPage === 'orders') {
+            const oSnap = await db.collection('orders').orderBy('date', 'desc').get();
+            let allOrders = oSnap.docs.map(d => ({id: d.id, ...d.data()}));
+            let oBody = '';
+            allOrders.forEach(o => {
+                let statusColor = 'var(--text-muted)';
+                if(o.status === 'Processing') statusColor = 'var(--warning)';
+                if(o.status === 'Delivered') statusColor = 'var(--success)';
+                if(o.status === 'Returned') statusColor = 'var(--danger)';
+
+                const isSelected = o.date === selectedDate && !isMonth ? 'background-color: #f0fdf4;' : '';
+                oBody += `<tr style="${isSelected}">
+                    <td><strong>${o.date}</strong></td>
+                    <td style="font-weight:600;">${o.customerName}</td>
+                    <td style="color:var(--accent);">${o.waybill}</td>
+                    <td style="color:${statusColor}; font-weight:bold;">${o.status}</td>
+                    <td><button class="btn-delete" onclick="deleteRecord('orders', '${o.id}')">Del</button></td>
+                </tr>`;
+            });
+            document.getElementById('tbl-manage-orders').innerHTML = oBody;
+            
+            // Ensure product dropdown is loaded
+            loadCatalogToDropdown();
         }
     }
 
@@ -2413,6 +2498,143 @@
             }
         } catch(e) { console.error("Auto Week Error:", e); }
     }
+
+    // --- PHASE 1: ORDERS & CURFOX API INTEGRATION ---
+    window.saveOrder = async function() {
+        const customer = document.getElementById('order-customer').value;
+        const phone = document.getElementById('order-phone').value;
+        const address = document.getElementById('order-address').value;
+        const product = document.getElementById('order-product').value;
+        const qty = parseInt(document.getElementById('order-qty').value) || 1;
+        const waybill = document.getElementById('order-waybill').value;
+        const date = document.getElementById('global-date').value || new Date().toISOString().split('T')[0];
+        const week = document.getElementById('active-week').value;
+
+        if(!customer || !phone || !product || !waybill) {
+            return notify("Please fill Customer, Phone, Product, and Waybill!", true);
+        }
+
+        // Save order
+        await db.collection('orders').add({
+            date, week,
+            customerName: customer,
+            phone: phone,
+            address: address,
+            product: product,
+            qty: qty,
+            waybill: waybill,
+            status: 'Processing'
+        });
+
+        // Save to CRM Database (Customers collection)
+        const custRef = db.collection('customers').doc(phone);
+        await custRef.set({
+            name: customer,
+            phone: phone,
+            address: address,
+            lastOrderDate: date
+        }, { merge: true });
+
+        notify("Order Saved & CRM Updated!");
+        document.getElementById('order-customer').value = '';
+        document.getElementById('order-phone').value = '';
+        document.getElementById('order-address').value = '';
+        document.getElementById('order-waybill').value = '';
+        
+        loadAllData();
+    };
+
+    window.syncCurfox = async function() {
+        notify("Syncing with Curfox API... Please wait.", false, 5000);
+        
+        try {
+            // Step 1: Login to get Bearer Token
+            const loginRes = await fetch("https://v1.api.curfox.com/api/public/merchant/login", {
+                method: "POST",
+                headers: {
+                    "Accept": "application/json",
+                    "Content-Type": "application/json",
+                    "X-tenant": "royalexpress"
+                },
+                body: JSON.stringify({
+                    email: "2005vgls@gmail.com",
+                    password: "HC123"
+                })
+            });
+            const loginData = await loginRes.json();
+            
+            if(!loginRes.ok || loginData.error) {
+                return notify("API Login Failed: " + (loginData.message || "Invalid Credentials"), true);
+            }
+            const token = loginData.token || loginData.access_token || loginData.data?.token;
+            if(!token) return notify("API token not found in response", true);
+
+            // Step 2: Get all 'Processing' orders from Firestore
+            const oSnap = await db.collection('orders').where('status', '==', 'Processing').get();
+            if(oSnap.empty) {
+                return notify("No processing orders to sync.");
+            }
+
+            let syncCount = 0;
+
+            // Step 3: Loop through and track each waybill
+            for(let doc of oSnap.docs) {
+                const order = doc.data();
+                if(!order.waybill) continue;
+
+                // Call tracking API
+                const trackRes = await fetch("https://v1.api.curfox.com/api/public/merchant/order/tracking-info", {
+                    method: "POST", 
+                    headers: {
+                        "Accept": "application/json",
+                        "Content-Type": "application/json",
+                        "Authorization": "Bearer " + token,
+                        "X-tenant": "royalexpress"
+                    },
+                    body: JSON.stringify({
+                        waybill_number: order.waybill
+                    })
+                });
+                
+                const trackData = await trackRes.json();
+                if(trackData && trackData.data) {
+                    let curfoxStatus = trackData.data.status_name || trackData.data.status || 'Processing';
+                    
+                    if(curfoxStatus.toLowerCase().includes('deliver')) {
+                        // Mark as Delivered and Deduct Inventory!
+                        await db.collection('orders').doc(doc.id).update({ status: 'Delivered' });
+                        
+                        // Deduct from Factory Purchases
+                        const pSnap = await db.collection('products').where('itemName', '==', order.product).get();
+                        let qtyToDeduct = order.qty;
+                        
+                        for(let pDoc of pSnap.docs) {
+                            let pData = pDoc.data();
+                            if(pData.qty > 0 && qtyToDeduct > 0) {
+                                let deductAmount = Math.min(pData.qty, qtyToDeduct);
+                                await db.collection('products').doc(pDoc.id).update({
+                                    qty: pData.qty - deductAmount
+                                });
+                                qtyToDeduct -= deductAmount;
+                            }
+                        }
+                        syncCount++;
+                    } 
+                    else if (curfoxStatus.toLowerCase().includes('return')) {
+                        await db.collection('orders').doc(doc.id).update({ status: 'Returned' });
+                        syncCount++;
+                    }
+                }
+            }
+
+            notify(`Sync Complete! Updated ${syncCount} orders.`);
+            loadAllData();
+
+        } catch (error) {
+            console.error("Curfox Sync Error:", error);
+            notify("API Sync Error: Check console", true);
+        }
+    };
 
     document.getElementById('global-date').valueAsDate = new Date();
 </script>
