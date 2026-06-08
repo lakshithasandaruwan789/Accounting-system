@@ -86,7 +86,10 @@
             z-index: 100;
             box-shadow: 5px 0 30px rgba(0,0,0,0.02);
             transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow-y: auto;
         }
+        .sidebar::-webkit-scrollbar { width: 4px; }
+        .sidebar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
 
         .sidebar.collapsed { width: 85px; }
 
