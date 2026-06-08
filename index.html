@@ -884,10 +884,9 @@
                     <p style="font-size:13px; color:var(--text-muted); margin-top:-15px;">Calculate and record salary payments for your employees.</p>
                     
                     <div class="form-group">
-                        <label>Select Employee</label>
-                        <select id="sal-employee" class="data-input" style="width:100%; border:1px solid #cbd5e1; border-radius:8px; padding:10px;">
-                            <option value="">-- Loading Staff --</option>
-                        </select>
+                        <label>Employee Name</label>
+                        <input type="text" id="sal-employee" class="data-input" list="sal-employee-list" placeholder="Enter or select employee name" style="width:100%; border:1px solid #cbd5e1; border-radius:8px; padding:10px;">
+                        <datalist id="sal-employee-list"></datalist>
                     </div>
                     
                     <div class="form-group">
@@ -1797,12 +1796,11 @@
                 document.getElementById('page-salaries').querySelector('.form-card').style.display = 'block';
                 const uSnap = await db.collection('users').get();
                 const users = uSnap.docs.map(d => d.data().username);
-                const empSelect = document.getElementById('sal-employee');
-                if(empSelect.options.length <= 1) { // Only populate if empty
-                    empSelect.innerHTML = '<option value="">-- Select Staff Member --</option>';
+                const empList = document.getElementById('sal-employee-list');
+                if(empList.children.length === 0) { // Only populate if empty
                     users.forEach(u => {
                         if(u !== 'admin' && u !== 'admin@company.com') {
-                            empSelect.innerHTML += `<option value="${u}">${u}</option>`;
+                            empList.innerHTML += `<option value="${u}">`;
                         }
                     });
                 }
@@ -2127,10 +2125,11 @@
             <!-- Header Section -->
             <div style="display:flex; justify-content:space-between; align-items:center; border-bottom: 3px solid #4f46e5; padding-bottom: 30px; margin-bottom: 30px;">
                 <div style="display:flex; align-items:center; gap:25px;">
-                    <img src="logo.png" alt="Herbal Crown Logo" style="height: 100px; width: 100px; object-fit: contain; border-radius: 50%; border: 2px solid #e2e8f0;" onerror="this.style.display='none'">
+                    <img src="logo.png" alt="Herbal Crown Logo" style="height: 100px; width: 100px; object-fit: contain;" onerror="this.style.display='none'">
                     <div>
                         <h2 style="margin: 0; color: #0f172a; font-size: 32px; font-weight: 900; letter-spacing: -0.5px;">HERBAL CROWN</h2>
                         <p style="margin: 4px 0 0; color: #64748b; font-size: 16px; font-weight: 600; letter-spacing: 2px;">PRIVATE LIMITED</p>
+                        <p style="margin: 4px 0 0; color: #64748b; font-size: 14px; font-weight: 500;">Makandura town, Matara<br>0766066789</p>
                     </div>
                 </div>
                 <div style="text-align: right; background: #f8fafc; padding: 20px 25px; border-radius: 12px; border: 1px solid #e2e8f0;">
