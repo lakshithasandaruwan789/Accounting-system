@@ -2123,7 +2123,7 @@
 
         // Create a temporary element for the payslip
         const payslipHtml = `
-        <div id="payslip-print-temp" style="padding: 40px; background: white; max-width: 750px; margin: 0 auto; font-family: 'Plus Jakarta Sans', sans-serif; color: #0f172a; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); border: 1px solid #e2e8f0;">
+        <div id="payslip-print-temp" style="padding: 40px; background: white; width: 750px; margin: 0 auto; font-family: 'Plus Jakarta Sans', sans-serif; color: #0f172a; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); border: 1px solid #e2e8f0; box-sizing: border-box;">
             <!-- Header Section -->
             <div style="display:flex; justify-content:space-between; align-items:center; border-bottom: 3px solid #4f46e5; padding-bottom: 25px; margin-bottom: 30px;">
                 <div style="display:flex; align-items:center; gap:20px;">
@@ -2147,7 +2147,7 @@
 
             <!-- Attendance & Basic Section -->
             <div style="width: 100%; margin-bottom: 20px;">
-                <div style="width: 100%; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden; background: #fff;">
+                <div style="width: 100%; border: 1px solid #e2e8f0; border-radius: 8px; background: #fff;">
                     <table style="width: 100%; border-collapse: collapse;">
                         <tbody>
                             <tr>
@@ -2165,8 +2165,8 @@
 
             <!-- Salary Details Table -->
             <div style="display: flex; justify-content: space-between; margin-bottom: 30px;">
-                <div style="width: 48%; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden;">
-                    <div style="background: #f8fafc; padding: 12px 15px; font-weight: 700; color: #475569; border-bottom: 1px solid #e2e8f0; font-size: 13px; text-transform: uppercase; letter-spacing: 1px;">Earnings</div>
+                <div style="width: 48%; border: 1px solid #e2e8f0; border-radius: 8px;">
+                    <div style="background: #f8fafc; padding: 12px 15px; font-weight: 700; color: #475569; border-bottom: 1px solid #e2e8f0; font-size: 13px; text-transform: uppercase; letter-spacing: 1px; border-top-left-radius: 8px; border-top-right-radius: 8px;">Earnings</div>
                     <table style="width: 100%; border-collapse: collapse;">
                         <tbody>
                             <tr>
@@ -2189,8 +2189,8 @@
                     </table>
                 </div>
 
-                <div style="width: 48%; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden; align-self: flex-start;">
-                    <div style="background: #fef2f2; padding: 12px 15px; font-weight: 700; color: #ef4444; border-bottom: 1px solid #fee2e2; font-size: 13px; text-transform: uppercase; letter-spacing: 1px;">Deductions</div>
+                <div style="width: 48%; border: 1px solid #e2e8f0; border-radius: 8px; align-self: flex-start;">
+                    <div style="background: #fef2f2; padding: 12px 15px; font-weight: 700; color: #ef4444; border-bottom: 1px solid #fee2e2; font-size: 13px; text-transform: uppercase; letter-spacing: 1px; border-top-left-radius: 8px; border-top-right-radius: 8px;">Deductions</div>
                     <table style="width: 100%; border-collapse: collapse;">
                         <tbody>
                             <tr>
