@@ -900,14 +900,26 @@
                         <input type="text" id="sal-basic" placeholder="0.00" oninput="formatNumberInput(event); calculateNetSalary()">
                     </div>
                     
-                    <div class="form-group">
-                        <label>Bonus / Allowances (Rs)</label>
-                        <input type="text" id="sal-bonus" placeholder="0.00" oninput="formatNumberInput(event); calculateNetSalary()">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                        <div class="form-group">
+                            <label>Commissions (Rs)</label>
+                            <input type="text" id="sal-comm" placeholder="0.00" oninput="formatNumberInput(event); calculateNetSalary()">
+                        </div>
+                        <div class="form-group">
+                            <label>Bonuses (Rs)</label>
+                            <input type="text" id="sal-bonus" placeholder="0.00" oninput="formatNumberInput(event); calculateNetSalary()">
+                        </div>
                     </div>
-                    
-                    <div class="form-group">
-                        <label>Deductions / Advances (Rs)</label>
-                        <input type="text" id="sal-deduct" placeholder="0.00" oninput="formatNumberInput(event); calculateNetSalary()">
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                        <div class="form-group">
+                            <label>Allowances (Rs)</label>
+                            <input type="text" id="sal-allow" placeholder="0.00" oninput="formatNumberInput(event); calculateNetSalary()">
+                        </div>
+                        <div class="form-group">
+                            <label style="color: var(--danger);">Deductions (Rs)</label>
+                            <input type="text" id="sal-deduct" placeholder="0.00" oninput="formatNumberInput(event); calculateNetSalary()">
+                        </div>
                     </div>
                     
                     <div class="form-group">
@@ -926,7 +938,7 @@
                                 <th>Date</th>
                                 <th>Employee</th>
                                 <th>Basic</th>
-                                <th style="color:var(--success);">Bonus</th>
+                                <th style="color:var(--success);">Extras</th>
                                 <th style="color:var(--danger);">Deduct</th>
                                 <th style="color:var(--primary);">Net Paid</th>
                                 <th>Action</th>
@@ -1758,7 +1770,8 @@
                         ? `<button class="action-btn" style="background:var(--primary); padding:4px 8px; font-size:12px; margin-right:5px; margin-bottom:5px;" onclick="printPayslip('${s.id}')">📄 Print</button><button class="btn-delete" onclick="deleteRecord('salaries', '${s.id}')">Del</button>`
                         : `<button class="action-btn" style="background:var(--primary); padding:4px 8px; font-size:12px; margin-right:5px; margin-bottom:5px;" onclick="printPayslip('${s.id}')">📄 Print</button>`;
                     
-                    sBody += `<tr style="${isSelected}"><td><strong>${s.date}</strong></td><td style="font-weight:600;">${s.employee}</td><td>${formatRs(s.basic)}</td><td style="color:var(--success);">${formatRs(s.bonus)}</td><td style="color:var(--danger);">${formatRs(s.deduct)}</td><td style="color:var(--primary); font-weight:bold;">${formatRs(s.netSalary)}</td><td>${actionBtns}</td></tr>`;
+                    const totalExtras = (s.bonus || 0) + (s.comm || 0) + (s.allow || 0);
+                    sBody += `<tr style="${isSelected}"><td><strong>${s.date}</strong></td><td style="font-weight:600;">${s.employee}</td><td>${formatRs(s.basic)}</td><td style="color:var(--success);">${formatRs(totalExtras)}</td><td style="color:var(--danger);">${formatRs(s.deduct)}</td><td style="color:var(--primary); font-weight:bold;">${formatRs(s.netSalary)}</td><td>${actionBtns}</td></tr>`;
                 }
             });
             document.getElementById('tbl-manage-salaries').innerHTML = sBody;
@@ -2010,10 +2023,12 @@
     // --- STAFF SALARY LOGIC ---
     window.calculateNetSalary = function() {
         const basic = parseFloat(document.getElementById('sal-basic').value.replace(/,/g, '')) || 0;
+        const comm = parseFloat(document.getElementById('sal-comm').value.replace(/,/g, '')) || 0;
         const bonus = parseFloat(document.getElementById('sal-bonus').value.replace(/,/g, '')) || 0;
+        const allow = parseFloat(document.getElementById('sal-allow').value.replace(/,/g, '')) || 0;
         const deduct = parseFloat(document.getElementById('sal-deduct').value.replace(/,/g, '')) || 0;
         
-        const net = basic + bonus - deduct;
+        const net = basic + comm + bonus + allow - deduct;
         document.getElementById('sal-net').value = net.toLocaleString('en-US');
     }
 
@@ -2024,7 +2039,9 @@
         const emp = document.getElementById('sal-employee').value;
         const date = document.getElementById('sal-date').value;
         const basicStr = document.getElementById('sal-basic').value.replace(/,/g, '');
+        const commStr = document.getElementById('sal-comm').value.replace(/,/g, '');
         const bonusStr = document.getElementById('sal-bonus').value.replace(/,/g, '');
+        const allowStr = document.getElementById('sal-allow').value.replace(/,/g, '');
         const deductStr = document.getElementById('sal-deduct').value.replace(/,/g, '');
 
         if(!emp) return notify("Please select an Employee!", true);
@@ -2032,22 +2049,28 @@
         if(!basicStr) return notify("Please enter a Basic Salary!", true);
 
         const basic = parseFloat(basicStr) || 0;
+        const comm = parseFloat(commStr) || 0;
         const bonus = parseFloat(bonusStr) || 0;
+        const allow = parseFloat(allowStr) || 0;
         const deduct = parseFloat(deductStr) || 0;
-        const net = basic + bonus - deduct;
+        const net = basic + comm + bonus + allow - deduct;
 
         await db.collection('salaries').add({
             week: week,
             date: date,
             employee: emp,
             basic: basic,
+            comm: comm,
             bonus: bonus,
+            allow: allow,
             deduct: deduct,
             netSalary: net
         });
 
         document.getElementById('sal-basic').value = '';
+        document.getElementById('sal-comm').value = '';
         document.getElementById('sal-bonus').value = '';
+        document.getElementById('sal-allow').value = '';
         document.getElementById('sal-deduct').value = '';
         document.getElementById('sal-net').value = '';
         document.getElementById('sal-employee').value = '';
@@ -2064,53 +2087,88 @@
 
         // Create a temporary element for the payslip
         const payslipHtml = `
-        <div id="payslip-print-temp" style="padding: 40px; background: white; max-width: 600px; margin: 0 auto; font-family: 'Plus Jakarta Sans', sans-serif; color: #0f172a;">
-            <div style="text-align: center; margin-bottom: 30px; border-bottom: 2px solid #e2e8f0; padding-bottom: 20px;">
-                <h2 style="margin: 0; color: #0f172a; font-size: 24px; font-weight: 800;">HERBAL CROWN (PVT) LTD</h2>
-                <p style="margin: 5px 0 0; color: #475569; font-size: 14px;">SALARY PAYSLIP</p>
+        <div id="payslip-print-temp" style="padding: 40px; background: white; max-width: 750px; margin: 0 auto; font-family: 'Plus Jakarta Sans', sans-serif; color: #0f172a; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); border: 1px solid #e2e8f0;">
+            <!-- Header Section -->
+            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom: 3px solid #4f46e5; padding-bottom: 25px; margin-bottom: 30px;">
+                <div style="display:flex; align-items:center; gap:20px;">
+                    <img src="logo.png" alt="Herbal Crown Logo" style="height: 70px; width: 70px; object-fit: contain; border-radius: 50%;" onerror="this.style.display='none'">
+                    <div>
+                        <h2 style="margin: 0; color: #0f172a; font-size: 26px; font-weight: 800; letter-spacing: -0.5px;">HERBAL CROWN</h2>
+                        <p style="margin: 2px 0 0; color: #64748b; font-size: 13px; font-weight: 500; letter-spacing: 1px;">PRIVATE LIMITED</p>
+                    </div>
+                </div>
+                <div style="text-align: right; background: #f8fafc; padding: 15px 20px; border-radius: 8px;">
+                    <h1 style="margin: 0; color: #4f46e5; font-size: 24px; font-weight: 900; letter-spacing: 2px;">PAYSLIP</h1>
+                    <p style="margin: 5px 0 0; color: #64748b; font-size: 13px; font-weight: 600;">DATE: <span style="color:#0f172a;">${s.date}</span></p>
+                </div>
             </div>
             
-            <div style="display:flex; justify-content:space-between; margin-bottom: 30px; font-size: 15px;">
-                <div>
-                    <p style="margin:0 0 8px 0; color:#64748b;">Employee Name:</p>
-                    <p style="margin:0; font-weight:700; font-size:18px;">${s.employee}</p>
+            <!-- Employee Details Section -->
+            <div style="background: #f8fafc; padding: 20px; border-radius: 8px; margin-bottom: 30px; border: 1px solid #f1f5f9;">
+                <p style="margin:0 0 5px 0; color:#64748b; font-size: 13px; text-transform: uppercase; font-weight: 700; letter-spacing: 1px;">Prepared For</p>
+                <h3 style="margin:0; font-weight:800; font-size:22px; color: #1e293b;">${s.employee}</h3>
+            </div>
+
+            <!-- Salary Details Table -->
+            <div style="display: flex; gap: 20px; margin-bottom: 30px;">
+                <div style="flex: 1; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden;">
+                    <div style="background: #f8fafc; padding: 12px 15px; font-weight: 700; color: #475569; border-bottom: 1px solid #e2e8f0; font-size: 13px; text-transform: uppercase; letter-spacing: 1px;">Earnings</div>
+                    <table style="width: 100%; border-collapse: collapse;">
+                        <tbody>
+                            <tr>
+                                <td style="padding: 12px 15px; border-bottom: 1px solid #f1f5f9; color: #334155; font-weight: 500;">Basic Salary</td>
+                                <td style="padding: 12px 15px; border-bottom: 1px solid #f1f5f9; text-align: right; font-weight: 600; color: #0f172a;">Rs. ${parseFloat(s.basic || 0).toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+                            </tr>
+                            ${s.comm ? `<tr>
+                                <td style="padding: 12px 15px; border-bottom: 1px solid #f1f5f9; color: #334155; font-weight: 500;">Commissions</td>
+                                <td style="padding: 12px 15px; border-bottom: 1px solid #f1f5f9; text-align: right; font-weight: 600; color: #0f172a;">Rs. ${parseFloat(s.comm).toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+                            </tr>` : ''}
+                            ${s.bonus ? `<tr>
+                                <td style="padding: 12px 15px; border-bottom: 1px solid #f1f5f9; color: #334155; font-weight: 500;">Bonus</td>
+                                <td style="padding: 12px 15px; border-bottom: 1px solid #f1f5f9; text-align: right; font-weight: 600; color: #0f172a;">Rs. ${parseFloat(s.bonus).toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+                            </tr>` : ''}
+                            ${s.allow ? `<tr>
+                                <td style="padding: 12px 15px; border-bottom: 1px solid #f1f5f9; color: #334155; font-weight: 500;">Allowances</td>
+                                <td style="padding: 12px 15px; border-bottom: 1px solid #f1f5f9; text-align: right; font-weight: 600; color: #0f172a;">Rs. ${parseFloat(s.allow).toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+                            </tr>` : ''}
+                        </tbody>
+                    </table>
                 </div>
-                <div style="text-align:right;">
-                    <p style="margin:0 0 8px 0; color:#64748b;">Payment Date:</p>
-                    <p style="margin:0; font-weight:600;">${s.date}</p>
+
+                <div style="flex: 1; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden; align-self: flex-start;">
+                    <div style="background: #fef2f2; padding: 12px 15px; font-weight: 700; color: #ef4444; border-bottom: 1px solid #fee2e2; font-size: 13px; text-transform: uppercase; letter-spacing: 1px;">Deductions</div>
+                    <table style="width: 100%; border-collapse: collapse;">
+                        <tbody>
+                            <tr>
+                                <td style="padding: 12px 15px; border-bottom: 1px solid #fef2f2; color: #334155; font-weight: 500;">Advances / Penalities</td>
+                                <td style="padding: 12px 15px; border-bottom: 1px solid #fef2f2; text-align: right; font-weight: 600; color: #ef4444;">- Rs. ${parseFloat(s.deduct || 0).toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+                            </tr>
+                        </tbody>
+                    </table>
                 </div>
             </div>
 
-            <table style="width: 100%; border-collapse: collapse; margin-bottom: 30px;">
-                <tbody>
-                    <tr>
-                        <td style="padding: 15px; border-bottom: 1px solid #e2e8f0; font-weight: 600;">Basic Salary</td>
-                        <td style="padding: 15px; border-bottom: 1px solid #e2e8f0; text-align: right; font-weight: 600;">Rs. ${parseFloat(s.basic).toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
-                    </tr>
-                    <tr>
-                        <td style="padding: 15px; border-bottom: 1px solid #e2e8f0; font-weight: 600; color: #10b981;">Bonus & Allowances</td>
-                        <td style="padding: 15px; border-bottom: 1px solid #e2e8f0; text-align: right; font-weight: 600; color: #10b981;">Rs. ${parseFloat(s.bonus).toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
-                    </tr>
-                    <tr>
-                        <td style="padding: 15px; border-bottom: 1px solid #e2e8f0; font-weight: 600; color: #ef4444;">Deductions & Advances</td>
-                        <td style="padding: 15px; border-bottom: 1px solid #e2e8f0; text-align: right; font-weight: 600; color: #ef4444;">- Rs. ${parseFloat(s.deduct).toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
-                    </tr>
-                    <tr style="background-color: #f8fafc;">
-                        <td style="padding: 20px 15px; font-weight: 800; font-size: 18px; color: #4f46e5;">NET SALARY PAID</td>
-                        <td style="padding: 20px 15px; text-align: right; font-weight: 800; font-size: 18px; color: #4f46e5;">Rs. ${parseFloat(s.netSalary).toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
-                    </tr>
-                </tbody>
-            </table>
+            <!-- Net Pay Section -->
+            <div style="background: linear-gradient(135deg, #4f46e5 0%, #3b82f6 100%); padding: 25px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; color: white; box-shadow: 0 10px 20px rgba(79, 70, 229, 0.2);">
+                <div style="text-transform: uppercase; letter-spacing: 2px; font-weight: 700; font-size: 14px; opacity: 0.9;">Total Net Payable</div>
+                <div style="font-size: 32px; font-weight: 900; letter-spacing: -1px;">Rs. ${parseFloat(s.netSalary).toLocaleString('en-US', {minimumFractionDigits: 2})}</div>
+            </div>
             
-            <div style="margin-top: 50px; display:flex; justify-content:space-between;">
+            <!-- Signatures Section -->
+            <div style="margin-top: 60px; display:flex; justify-content:space-between; padding: 0 20px;">
                 <div style="text-align:center;">
-                    <div style="width: 150px; border-top: 1px solid #cbd5e1; margin-bottom: 10px;"></div>
-                    <p style="margin:0; font-size:12px; color:#64748b;">Employer Signature</p>
+                    <div style="width: 180px; border-top: 2px dashed #cbd5e1; margin-bottom: 10px;"></div>
+                    <p style="margin:0; font-size:13px; font-weight: 600; color:#475569; text-transform: uppercase; letter-spacing: 1px;">Authorized Signatory</p>
                 </div>
                 <div style="text-align:center;">
-                    <div style="width: 150px; border-top: 1px solid #cbd5e1; margin-bottom: 10px;"></div>
-                    <p style="margin:0; font-size:12px; color:#64748b;">Employee Signature</p>
+                    <div style="width: 180px; border-top: 2px dashed #cbd5e1; margin-bottom: 10px;"></div>
+                    <p style="margin:0; font-size:13px; font-weight: 600; color:#475569; text-transform: uppercase; letter-spacing: 1px;">Employee Signature</p>
                 </div>
+            </div>
+
+            <!-- Footer -->
+            <div style="margin-top: 40px; text-align: center; border-top: 1px solid #e2e8f0; padding-top: 15px;">
+                <p style="margin: 0; color: #94a3b8; font-size: 11px;">This is a computer generated document and does not require a physical signature unless explicitly required.</p>
             </div>
         </div>
         `;
