@@ -2123,101 +2123,29 @@
 
         // Create a temporary element for the payslip
         const payslipHtml = `
-        <div id="payslip-print-temp" style="padding: 40px; background: white; width: 750px; margin: 0 auto; font-family: 'Plus Jakarta Sans', sans-serif; color: #0f172a; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); border: 1px solid #e2e8f0; box-sizing: border-box;">
+        <div id="payslip-print-temp" style="padding: 50px; background: white; width: 850px; margin: 0 auto; font-family: 'Plus Jakarta Sans', sans-serif; color: #0f172a; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); border: 1px solid #e2e8f0; box-sizing: border-box;">
             <!-- Header Section -->
-            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom: 3px solid #4f46e5; padding-bottom: 25px; margin-bottom: 30px;">
-                <div style="display:flex; align-items:center; gap:20px;">
-                    <img src="logo.png" alt="Herbal Crown Logo" style="height: 70px; width: 70px; object-fit: contain; border-radius: 50%;" onerror="this.style.display='none'">
+            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom: 3px solid #4f46e5; padding-bottom: 30px; margin-bottom: 30px;">
+                <div style="display:flex; align-items:center; gap:25px;">
+                    <img src="logo.png" alt="Herbal Crown Logo" style="height: 100px; width: 100px; object-fit: contain; border-radius: 50%; border: 2px solid #e2e8f0;" onerror="this.style.display='none'">
                     <div>
-                        <h2 style="margin: 0; color: #0f172a; font-size: 26px; font-weight: 800; letter-spacing: -0.5px;">HERBAL CROWN</h2>
-                        <p style="margin: 2px 0 0; color: #64748b; font-size: 13px; font-weight: 500; letter-spacing: 1px;">PRIVATE LIMITED</p>
+                        <h2 style="margin: 0; color: #0f172a; font-size: 32px; font-weight: 900; letter-spacing: -0.5px;">HERBAL CROWN</h2>
+                        <p style="margin: 4px 0 0; color: #64748b; font-size: 16px; font-weight: 600; letter-spacing: 2px;">PRIVATE LIMITED</p>
                     </div>
                 </div>
-                <div style="text-align: right; background: #f8fafc; padding: 15px 20px; border-radius: 8px;">
-                    <h1 style="margin: 0; color: #4f46e5; font-size: 24px; font-weight: 900; letter-spacing: 2px;">PAYSLIP</h1>
-                    <p style="margin: 5px 0 0; color: #64748b; font-size: 13px; font-weight: 600;">DATE: <span style="color:#0f172a;">${s.date}</span></p>
+                <div style="text-align: right; background: #f8fafc; padding: 20px 25px; border-radius: 12px; border: 1px solid #e2e8f0;">
+                    <h1 style="margin: 0; color: #4f46e5; font-size: 28px; font-weight: 900; letter-spacing: 2px;">PAYSLIP</h1>
+                    <p style="margin: 8px 0 0; color: #475569; font-size: 15px; font-weight: 700;">DATE: <span style="color:#0f172a;">${s.date}</span></p>
                 </div>
             </div>
             
             <!-- Employee Details Section -->
-            <div style="background: #f8fafc; padding: 20px; border-radius: 8px; margin-bottom: 30px; border: 1px solid #f1f5f9;">
-                <p style="margin:0 0 5px 0; color:#64748b; font-size: 13px; text-transform: uppercase; font-weight: 700; letter-spacing: 1px;">Prepared For</p>
-                <h3 style="margin:0; font-weight:800; font-size:22px; color: #1e293b;">${s.employee}</h3>
+            <div style="background: #f8fafc; padding: 25px; border-radius: 12px; margin-bottom: 30px; border: 1px solid #e2e8f0;">
+                <p style="margin:0 0 8px 0; color:#64748b; font-size: 14px; text-transform: uppercase; font-weight: 800; letter-spacing: 1.5px;">Prepared For</p>
+                <h3 style="margin:0; font-weight:900; font-size:26px; color: #1e293b;">${s.employee}</h3>
             </div>
 
             <!-- Attendance & Basic Section -->
-            <div style="width: 100%; margin-bottom: 20px;">
-                <div style="width: 100%; border: 1px solid #e2e8f0; border-radius: 8px; background: #fff;">
-                    <table style="width: 100%; border-collapse: collapse;">
-                        <tbody>
-                            <tr>
-                                <td style="padding: 12px 15px; border-bottom: 1px solid #f1f5f9; color: #334155; font-weight: 500;">Standard Monthly Basic</td>
-                                <td style="padding: 12px 15px; border-bottom: 1px solid #f1f5f9; text-align: right; font-weight: 600; color: #0f172a;">Rs. ${parseFloat(s.standardBasic || s.basic || 0).toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
-                            </tr>
-                            <tr>
-                                <td style="padding: 12px 15px; border-bottom: 1px solid #f1f5f9; color: #334155; font-weight: 500;">Attendance</td>
-                                <td style="padding: 12px 15px; border-bottom: 1px solid #f1f5f9; text-align: right; font-weight: 600; color: #0f172a;">${s.workedDays || 30} / ${s.monthDays || 30} Days</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <!-- Salary Details Table -->
-            <div style="display: flex; justify-content: space-between; margin-bottom: 30px;">
-                <div style="width: 48%; border: 1px solid #e2e8f0; border-radius: 8px;">
-                    <div style="background: #f8fafc; padding: 12px 15px; font-weight: 700; color: #475569; border-bottom: 1px solid #e2e8f0; font-size: 13px; text-transform: uppercase; letter-spacing: 1px; border-top-left-radius: 8px; border-top-right-radius: 8px;">Earnings</div>
-                    <table style="width: 100%; border-collapse: collapse;">
-                        <tbody>
-                            <tr>
-                                <td style="padding: 12px 15px; border-bottom: 1px solid #f1f5f9; color: #334155; font-weight: 500;">Actual Basic Pay</td>
-                                <td style="padding: 12px 15px; border-bottom: 1px solid #f1f5f9; text-align: right; font-weight: 600; color: #0f172a;">Rs. ${parseFloat(s.basic || 0).toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
-                            </tr>
-                            <tr>
-                                <td style="padding: 12px 15px; border-bottom: 1px solid #f1f5f9; color: #334155; font-weight: 500;">Commissions</td>
-                                <td style="padding: 12px 15px; border-bottom: 1px solid #f1f5f9; text-align: right; font-weight: 600; color: #0f172a;">Rs. ${parseFloat(s.comm || 0).toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
-                            </tr>
-                            <tr>
-                                <td style="padding: 12px 15px; border-bottom: 1px solid #f1f5f9; color: #334155; font-weight: 500;">Bonus</td>
-                                <td style="padding: 12px 15px; border-bottom: 1px solid #f1f5f9; text-align: right; font-weight: 600; color: #0f172a;">Rs. ${parseFloat(s.bonus || 0).toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
-                            </tr>
-                            <tr>
-                                <td style="padding: 12px 15px; border-bottom: 1px solid #f1f5f9; color: #334155; font-weight: 500;">Allowances</td>
-                                <td style="padding: 12px 15px; border-bottom: 1px solid #f1f5f9; text-align: right; font-weight: 600; color: #0f172a;">Rs. ${parseFloat(s.allow || 0).toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-
-                <div style="width: 48%; border: 1px solid #e2e8f0; border-radius: 8px; align-self: flex-start;">
-                    <div style="background: #fef2f2; padding: 12px 15px; font-weight: 700; color: #ef4444; border-bottom: 1px solid #fee2e2; font-size: 13px; text-transform: uppercase; letter-spacing: 1px; border-top-left-radius: 8px; border-top-right-radius: 8px;">Deductions</div>
-                    <table style="width: 100%; border-collapse: collapse;">
-                        <tbody>
-                            <tr>
-                                <td style="padding: 12px 15px; border-bottom: 1px solid #fef2f2; color: #334155; font-weight: 500;">Advances / Penalities</td>
-                                <td style="padding: 12px 15px; border-bottom: 1px solid #fef2f2; text-align: right; font-weight: 600; color: #ef4444;">- Rs. ${parseFloat(s.deduct || 0).toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <!-- Net Pay Section -->
-            <div style="background: linear-gradient(135deg, #4f46e5 0%, #3b82f6 100%); padding: 25px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; color: white; box-shadow: 0 10px 20px rgba(79, 70, 229, 0.2);">
-                <div style="text-transform: uppercase; letter-spacing: 2px; font-weight: 700; font-size: 14px; opacity: 0.9;">Total Net Payable</div>
-                <div style="font-size: 32px; font-weight: 900; letter-spacing: -1px;">Rs. ${parseFloat(s.netSalary).toLocaleString('en-US', {minimumFractionDigits: 2})}</div>
-            </div>
-            
-            <!-- Signatures Section -->
-            <div style="margin-top: 60px; display:flex; justify-content:space-between; padding: 0 20px;">
-                <div style="text-align:center;">
-                    <div style="width: 180px; border-top: 2px dashed #cbd5e1; margin-bottom: 10px;"></div>
-                    <p style="margin:0; font-size:13px; font-weight: 600; color:#475569; text-transform: uppercase; letter-spacing: 1px;">Authorized Signatory</p>
-                </div>
-                <div style="text-align:center;">
-                    <div style="width: 180px; border-top: 2px dashed #cbd5e1; margin-bottom: 10px;"></div>
-                    <p style="margin:0; font-size:13px; font-weight: 600; color:#475569; text-transform: uppercase; letter-spacing: 1px;">Employee Signature</p>
-                </div>
             </div>
 
             <!-- Footer -->
