@@ -1345,7 +1345,7 @@
         const isAdmin = currentUser.username === 'admin' || currentUser.username === 'admin@company.com';
         
         if(isAdmin) {
-            perms = ["dashboard", "leads", "purchases", "packaging", "profit", "catalog", "salaries", "settings", "staff"];
+            perms = ["dashboard", "leads", "orders", "purchases", "packaging", "profit", "catalog", "salaries", "settings", "staff"];
             currentUser.permissions = perms; 
         }
         
@@ -2584,17 +2584,14 @@
                 if(!order.waybill) continue;
 
                 // Call tracking API
-                const trackRes = await fetch("https://v1.api.curfox.com/api/public/merchant/order/tracking-info", {
-                    method: "POST", 
+                const trackRes = await fetch("https://v1.api.curfox.com/api/public/merchant/order/tracking-info?waybill_number=" + order.waybill, {
+                    method: "GET", 
                     headers: {
                         "Accept": "application/json",
                         "Content-Type": "application/json",
                         "Authorization": "Bearer " + token,
                         "X-tenant": "royalexpress"
-                    },
-                    body: JSON.stringify({
-                        waybill_number: order.waybill
-                    })
+                    }
                 });
                 
                 const trackData = await trackRes.json();
@@ -2606,7 +2603,7 @@
                         await db.collection('orders').doc(doc.id).update({ status: 'Delivered' });
                         
                         // Deduct from Factory Purchases
-                        const pSnap = await db.collection('products').where('itemName', '==', order.product).get();
+                        const pSnap = await db.collection('products').where('productName', '==', order.product).get();
                         let qtyToDeduct = order.qty;
                         
                         for(let pDoc of pSnap.docs) {
