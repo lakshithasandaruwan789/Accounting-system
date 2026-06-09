@@ -455,6 +455,9 @@
         <li class="nav-item" onclick="navigate('leads')" id="nav-leads">
             <span class="nav-icon">🎯</span> <span class="nav-text">Daily Leads</span>
         </li>
+        <li class="nav-item" onclick="navigate('orders')" id="nav-orders">
+            <span class="nav-icon">📦</span> <span class="nav-text">Orders & Scan</span>
+        </li>
         <li class="nav-item" onclick="navigate('purchases')" id="nav-purchases">
             <span class="nav-icon">📦</span> <span class="nav-text">Purchases & GRN</span>
         </li>
@@ -612,6 +615,10 @@
                 </div>
                 <div style="display:flex; gap:15px; align-items:center;">
                     <div style="background:#fff; padding:10px 20px; border-radius:10px; box-shadow:0 2px 10px rgba(0,0,0,0.05); text-align:center; min-width: 100px;">
+                        <p style="margin:0; font-size:12px; color:var(--text-muted); font-weight:700;">Confirmed (Scanned)</p>
+                        <p id="curfox-confirmed-count" style="margin:0; font-size:24px; color:var(--primary); font-weight:900;">--</p>
+                    </div>
+                    <div style="background:#fff; padding:10px 20px; border-radius:10px; box-shadow:0 2px 10px rgba(0,0,0,0.05); text-align:center; min-width: 100px;">
                         <p style="margin:0; font-size:12px; color:var(--text-muted); font-weight:700;">Delivered</p>
                         <p id="curfox-delivered-count" style="margin:0; font-size:24px; color:var(--success); font-weight:900;">--</p>
                     </div>
@@ -700,6 +707,48 @@
                             </tr>
                         </thead>
                         <tbody id="tbl-dash-expenses"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- PAGE 1.5: ORDERS & SCAN (ULTRA-FAST) -->
+        <div id="page-orders" class="page">
+            <div class="two-col-layout">
+                <div class="form-card" style="text-align: center;">
+                    <h2 style="font-size:24px;">📦 Ultra-Fast Barcode Scanner</h2>
+                    <p style="color:var(--text-muted); font-size:14px; margin-bottom: 25px;">Click inside the box below and scan your waybills non-stop.</p>
+                    
+                    <div class="form-group" style="max-width: 400px; margin: 0 auto 20px auto; text-align: left;">
+                        <label>Select Product (Optional - for auto deduction)</label>
+                        <select id="scan-product"></select>
+                    </div>
+
+                    <div style="margin-top: 30px;">
+                        <input type="text" id="scan-waybill" placeholder="Click here & Scan Barcode..." 
+                            style="font-size: 24px; padding: 20px; text-align: center; border: 3px solid var(--primary); background: #f0f9ff; border-radius: 15px; width: 100%; max-width: 400px; box-shadow: 0 4px 15px rgba(59, 130, 246, 0.2);"
+                            onkeydown="if(event.key === 'Enter') handleBarcodeScan(this.value)">
+                        <p style="font-size: 12px; color: var(--success); margin-top: 10px; font-weight: bold;" id="scan-success-msg"></p>
+                    </div>
+
+                    <div style="margin-top: 50px; padding-top: 20px; border-top: 2px dashed #e2e8f0;">
+                        <h3 style="color: var(--danger); font-size: 14px;">🛠️ Developer API Testing Tools</h3>
+                        <button class="action-btn" style="background: var(--warning); color: #fff; width: auto; margin: 0 auto;" onclick="testWaybillAPI()">Test API with Last Scanned Waybill</button>
+                    </div>
+                </div>
+
+                <div class="table-card">
+                    <h2>📋 Today's Scanned Orders</h2>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Time</th>
+                                <th>Waybill Number</th>
+                                <th>Product</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbl-scanned-orders"></tbody>
                     </table>
                 </div>
             </div>
@@ -1019,6 +1068,7 @@
                         <div class="perm-grid">
                             <label class="perm-lbl"><input type="checkbox" class="perm-chk" value="dashboard"> 📊 Dashboard</label>
                             <label class="perm-lbl"><input type="checkbox" class="perm-chk" value="leads"> 🎯 Daily Leads</label>
+                            <label class="perm-lbl"><input type="checkbox" class="perm-chk" value="orders"> 📦 Orders & Scan</label>
                             <label class="perm-lbl"><input type="checkbox" class="perm-chk" value="purchases"> 📦 Purchases</label>
                             <label class="perm-lbl"><input type="checkbox" class="perm-chk" value="packaging"> 🏷️ Packaging</label>
                             <label class="perm-lbl"><input type="checkbox" class="perm-chk" value="profit"> 💰 Profit</label>
@@ -1145,7 +1195,7 @@
             await db.collection('users').add({
                 username: "admin@company.com",
                 password: "123",
-                permissions: ["dashboard", "leads", "purchases", "packaging", "profit", "catalog", "staff"]
+                permissions: ["dashboard", "leads", "orders", "purchases", "packaging", "profit", "catalog", "staff"]
             });
         }
 
@@ -1307,7 +1357,7 @@
         const isAdmin = currentUser.username === 'admin' || currentUser.username === 'admin@company.com';
         
         if(isAdmin) {
-            perms = ["dashboard", "leads", "purchases", "packaging", "profit", "catalog", "salaries", "settings", "staff"];
+            perms = ["dashboard", "leads", "orders", "purchases", "packaging", "profit", "catalog", "salaries", "settings", "staff"];
             currentUser.permissions = perms; 
         }
         
@@ -1340,7 +1390,7 @@
         let perms = currentUser.permissions || [];
         const isAdmin = currentUser.username === 'admin' || currentUser.username === 'admin@company.com';
         if(isAdmin) {
-            perms = ["dashboard", "leads", "purchases", "packaging", "profit", "catalog", "salaries", "settings", "staff"];
+            perms = ["dashboard", "leads", "orders", "purchases", "packaging", "profit", "catalog", "salaries", "settings", "staff"];
         }
 
         if(!isAdmin && (pageId === 'catalog' || pageId === 'settings' || pageId === 'staff')) {
@@ -1516,9 +1566,9 @@
         const snap = await db.collection('product_catalog').get();
         const catalog = snap.docs.map(d => ({id: d.id, ...d.data()}));
         const select = document.getElementById('prod-name');
-        const selectOrder = document.getElementById('order-product');
+        const selectOrder = document.getElementById('scan-product');
         if(select) select.innerHTML = '<option value="">-- Select Product --</option>';
-        if(selectOrder) selectOrder.innerHTML = '<option value="">-- Select Product --</option>';
+        if(selectOrder) selectOrder.innerHTML = '<option value="">-- No Product (Track Only) --</option>';
         catalog.forEach(p => {
             if(select) select.innerHTML += `<option value="${p.name}" data-price="${p.price}">${p.name}</option>`;
             if(selectOrder) selectOrder.innerHTML += `<option value="${p.name}">${p.name}</option>`;
@@ -2463,99 +2513,196 @@
     }
 
     // --- PHASE 2: BULK COURIER API INTEGRATION ---
-    window.fetchBulkCourierStats = async function() {
-        document.getElementById('curfox-delivered-count').innerHTML = '<span style="font-size:14px; color:var(--text-muted);">Syncing...</span>';
-        document.getElementById('curfox-returned-count').innerHTML = '<span style="font-size:14px; color:var(--text-muted);">Syncing...</span>';
-        notify("Fetching Bulk Stats from Royal Express... Please wait.", false, 5000);
+    // --- PHASE 3: ULTRA-FAST BARCODE & LOCAL DB SYNC ---
+    
+    // 1. Handle Scanner Input
+    window.handleBarcodeScan = async function(waybill) {
+        if(!waybill || waybill.trim() === '') return;
         
-        // Calculate date range: last 7 days
-        const endDate = new Date();
-        const startDate = new Date();
-        startDate.setDate(endDate.getDate() - 7);
+        const product = document.getElementById('scan-product').value;
+        const scanDate = new Date().toISOString();
         
-        // Format as YYYY-MM-DD
-        const endStr = endDate.toISOString().split('T')[0];
-        const startStr = startDate.toISOString().split('T')[0];
-
         try {
-            // Step 1: Login to get Bearer Token
-            const loginRes = await fetch("https://v1.api.curfox.com/api/public/merchant/login", {
-                method: "POST",
-                headers: {
-                    "Accept": "application/json",
-                    "Content-Type": "application/json",
-                    "X-tenant": "royalexpress"
-                },
-                body: JSON.stringify({
-                    email: "2005vgls@gmail.com",
-                    password: "HC123"
-                })
-            });
-            const loginData = await loginRes.json();
-            
-            if(!loginRes.ok || loginData.error) {
-                document.getElementById('curfox-delivered-count').textContent = 'Err';
-                document.getElementById('curfox-returned-count').textContent = 'Err';
-                return notify("API Login Failed: " + (loginData.message || "Invalid Credentials"), true);
-            }
-            const token = loginData.token || loginData.access_token || loginData.data?.token;
-            if(!token) return notify("API token not found in response", true);
-
-            // Step 2: Fetch Bulk Orders for Date Range
-            const listUrl = `https://v1.api.curfox.com/api/public/merchant/orders?start_date=${startStr}&end_date=${endStr}`;
-            
-            const listRes = await fetch(listUrl, {
-                method: "GET",
-                headers: {
-                    "Accept": "application/json",
-                    "Content-Type": "application/json",
-                    "Authorization": "Bearer " + token,
-                    "X-tenant": "royalexpress"
-                }
+            await db.collection('orders').add({
+                waybill: waybill.trim(),
+                product: product,
+                status: 'Confirmed', // Initial status
+                date: scanDate
             });
             
-            const listData = await listRes.json();
+            // Clear input and show success
+            document.getElementById('scan-waybill').value = '';
+            document.getElementById('scan-success-msg').textContent = `✅ Saved ${waybill.trim()}! Ready for next...`;
+            setTimeout(() => { document.getElementById('scan-success-msg').textContent = ''; }, 2000);
             
-            // Assume listData.data contains the array of orders
-            let ordersArray = listData.data;
-            if(!ordersArray || !Array.isArray(ordersArray)) {
-                if(listData.data && Array.isArray(listData.data.data)) {
-                    ordersArray = listData.data.data;
-                } else if(Array.isArray(listData)) {
-                    ordersArray = listData;
-                } else {
-                    console.log("Unexpected Bulk API format:", listData);
-                    ordersArray = [];
-                }
-            }
-
-            let deliveredCount = 0;
-            let returnedCount = 0;
-
-            // Step 3: Count Statuses
-            ordersArray.forEach(order => {
-                const s = (order.status_name || order.status || '').toLowerCase();
-                if(s.includes('deliver')) deliveredCount++;
-                if(s.includes('return')) returnedCount++;
-            });
-
-            // Update Dashboard UI
-            document.getElementById('curfox-delivered-count').textContent = deliveredCount;
-            document.getElementById('curfox-returned-count').textContent = returnedCount;
-
-            if(ordersArray.length === 0) {
-                notify(`Debug API: ` + JSON.stringify(listData).substring(0, 150), false, 10000);
-            } else {
-                notify(`Sync Complete! Fetched ${ordersArray.length} total orders. (D: ${deliveredCount}, R: ${returnedCount})`, false, 6000);
-            }
-
-        } catch (error) {
-            console.error("Bulk API Error:", error);
-            document.getElementById('curfox-delivered-count').textContent = '--';
-            document.getElementById('curfox-returned-count').textContent = '--';
-            notify("API Sync Error: Check console for URL/CORS issues", true);
+            loadScannedOrders();
+            loadDashboardStats(); // Refresh dashboard counts
+        } catch(e) {
+            console.error("Scan error:", e);
+            notify("Failed to save scanned barcode!", true);
         }
     };
+
+    // 2. Load Scanned Orders Table
+    window.loadScannedOrders = async function() {
+        const tbody = document.getElementById('tbl-scanned-orders');
+        if(!tbody) return;
+        
+        try {
+            // Get today's beginning
+            const startOfDay = new Date();
+            startOfDay.setHours(0,0,0,0);
+            
+            const snap = await db.collection('orders')
+                                 .where('date', '>=', startOfDay.toISOString())
+                                 .orderBy('date', 'desc')
+                                 .get();
+                                 
+            tbody.innerHTML = '';
+            snap.forEach(doc => {
+                const data = doc.data();
+                const timeStr = new Date(data.date).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                tbody.innerHTML += `
+                    <tr>
+                        <td style="color:var(--text-muted);">${timeStr}</td>
+                        <td style="font-weight:bold;">${data.waybill}</td>
+                        <td>${data.product || '-'}</td>
+                        <td><span class="badge ${data.status === 'Delivered' ? 'bg-success' : (data.status === 'Returned' ? 'bg-danger' : 'bg-primary')}">${data.status}</span></td>
+                    </tr>
+                `;
+            });
+        } catch(e) { console.error("Load scanned orders err:", e); }
+    };
+
+    // 3. Test Waybill API Data
+    window.testWaybillAPI = async function() {
+        const snap = await db.collection('orders').orderBy('date', 'desc').limit(1).get();
+        if(snap.empty) return notify("No scanned waybills found to test!", true);
+        
+        const waybill = snap.docs[0].data().waybill;
+        notify(`Testing API for ${waybill}...`, false, 2000);
+        
+        try {
+            // Login
+            const loginRes = await fetch("https://v1.api.curfox.com/api/public/merchant/login", {
+                method: "POST", headers: { "Accept": "application/json", "Content-Type": "application/json", "X-tenant": "royalexpress" },
+                body: JSON.stringify({ email: "2005vgls@gmail.com", password: "HC123" })
+            });
+            const loginData = await loginRes.json();
+            const token = loginData.token || loginData.access_token || loginData.data?.token;
+            if(!token) return notify("API Login failed", true);
+            
+            // Track
+            const trackRes = await fetch("https://v1.api.curfox.com/api/public/merchant/order/tracking-info", {
+                method: "POST", headers: { "Accept": "application/json", "Content-Type": "application/json", "Authorization": "Bearer " + token, "X-tenant": "royalexpress" },
+                body: JSON.stringify({ tracking_number: waybill })
+            });
+            const trackData = await trackRes.json();
+            
+            // Dump to UI
+            notify(`API JSON for ${waybill}: ` + JSON.stringify(trackData).substring(0, 500), false, 20000);
+            console.log("Raw Curfox Tracking API Response:", trackData);
+        } catch(e) {
+            console.error("Test API error:", e);
+            notify("Error connecting to API test", true);
+        }
+    };
+
+    // 4. Sync All Confirmed to Curfox
+    window.fetchBulkCourierStats = async function() {
+        document.getElementById('curfox-confirmed-count').textContent = '...';
+        document.getElementById('curfox-delivered-count').textContent = '...';
+        document.getElementById('curfox-returned-count').textContent = '...';
+        
+        try {
+            // Get all orders that are currently 'Confirmed'
+            const snap = await db.collection('orders').where('status', '==', 'Confirmed').get();
+            let confirmedDocs = snap.docs;
+            
+            // If none, just update dashboard counts from DB
+            if(confirmedDocs.length === 0) {
+                notify("No new Confirmed orders to sync.", false, 2000);
+                return loadDashboardStats();
+            }
+            
+            notify(`Syncing ${confirmedDocs.length} Confirmed orders with Royal Express...`, false, 5000);
+
+            const loginRes = await fetch("https://v1.api.curfox.com/api/public/merchant/login", {
+                method: "POST", headers: { "Accept": "application/json", "Content-Type": "application/json", "X-tenant": "royalexpress" },
+                body: JSON.stringify({ email: "2005vgls@gmail.com", password: "HC123" })
+            });
+            const loginData = await loginRes.json();
+            const token = loginData.token || loginData.access_token || loginData.data?.token;
+            if(!token) return notify("Sync Login failed", true);
+
+            let newlyDelivered = 0;
+            let newlyReturned = 0;
+
+            for(let doc of confirmedDocs) {
+                let d = doc.data();
+                try {
+                    const trackRes = await fetch("https://v1.api.curfox.com/api/public/merchant/order/tracking-info", {
+                        method: "POST", headers: { "Accept": "application/json", "Content-Type": "application/json", "Authorization": "Bearer " + token, "X-tenant": "royalexpress" },
+                        body: JSON.stringify({ tracking_number: d.waybill })
+                    });
+                    const trackData = await trackRes.json();
+                    
+                    // Default Curfox status extract logic (Pending API Test verification)
+                    let statusObj = trackData.data ? trackData.data.status : null;
+                    let s = statusObj ? (statusObj.name || statusObj).toLowerCase() : '';
+                    
+                    if(s.includes('deliver')) {
+                        await db.collection('orders').doc(doc.id).update({status: 'Delivered'});
+                        newlyDelivered++;
+                        
+                        // FUTURE AUTO-DEDUCT LOGIC GOES HERE (Once we test the API fields)
+                        // if(d.product) { deduct inventory... }
+                        
+                    } else if(s.includes('return')) {
+                        await db.collection('orders').doc(doc.id).update({status: 'Returned'});
+                        newlyReturned++;
+                    }
+                } catch(err) {
+                    console.log(`Failed tracking for ${d.waybill}`);
+                }
+            }
+
+            notify(`Sync Complete! ${newlyDelivered} Delivered, ${newlyReturned} Returned.`, false, 5000);
+            loadDashboardStats();
+            if(document.getElementById('page-orders').classList.contains('active')) loadScannedOrders();
+            
+        } catch (error) {
+            console.error("Sync Error:", error);
+            notify("Sync Error: " + error.message, true);
+            loadDashboardStats();
+        }
+    };
+
+    // Helper: Load Dashboard Local Stats
+    window.loadDashboardStats = async function() {
+        if(!document.getElementById('curfox-confirmed-count')) return;
+        
+        try {
+            // Count from local DB
+            const snap = await db.collection('orders').get();
+            let c=0, d=0, r=0;
+            snap.forEach(doc => {
+                let s = doc.data().status;
+                if(s === 'Confirmed') c++;
+                if(s === 'Delivered') d++;
+                if(s === 'Returned') r++;
+            });
+            document.getElementById('curfox-confirmed-count').textContent = c;
+            document.getElementById('curfox-delivered-count').textContent = d;
+            document.getElementById('curfox-returned-count').textContent = r;
+        } catch(e) {}
+    };
+
+    // Load initial counts and tables
+    setTimeout(() => {
+        loadScannedOrders();
+        loadDashboardStats();
+    }, 1500);
 
     document.getElementById('global-date').valueAsDate = new Date();
 </script>
