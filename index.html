@@ -455,9 +455,6 @@
         <li class="nav-item" onclick="navigate('leads')" id="nav-leads">
             <span class="nav-icon">🎯</span> <span class="nav-text">Daily Leads</span>
         </li>
-        <li class="nav-item" onclick="navigate('orders')" id="nav-orders">
-            <span class="nav-icon">🚚</span> <span class="nav-text">Orders & Courier</span>
-        </li>
         <li class="nav-item" onclick="navigate('purchases')" id="nav-purchases">
             <span class="nav-icon">📦</span> <span class="nav-text">Purchases & GRN</span>
         </li>
@@ -607,6 +604,25 @@
         <div id="page-dashboard" class="page active">
             <h2 style="margin-top:0; font-family:'Outfit', sans-serif; font-weight:800; font-size:28px; color:var(--text-main);" id="dash-title">Week 1 Overview</h2>
             
+            <!-- BULK COURIER DASHBOARD -->
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; background:linear-gradient(135deg, #fdf4ff, #f3e8ff); padding:20px; border-radius:15px; border:1px solid #e9d5ff; flex-wrap: wrap; gap: 15px;">
+                <div>
+                    <h3 style="margin:0; font-size:16px; color:#6b21a8; font-weight:800;">📦 Courier Status (Last 7 Days)</h3>
+                    <p style="margin:5px 0 0 0; font-size:13px; color:#7e22ce;">Royal Express auto-sync summary.</p>
+                </div>
+                <div style="display:flex; gap:15px; align-items:center;">
+                    <div style="background:#fff; padding:10px 20px; border-radius:10px; box-shadow:0 2px 10px rgba(0,0,0,0.05); text-align:center; min-width: 100px;">
+                        <p style="margin:0; font-size:12px; color:var(--text-muted); font-weight:700;">Delivered</p>
+                        <p id="curfox-delivered-count" style="margin:0; font-size:24px; color:var(--success); font-weight:900;">--</p>
+                    </div>
+                    <div style="background:#fff; padding:10px 20px; border-radius:10px; box-shadow:0 2px 10px rgba(0,0,0,0.05); text-align:center; min-width: 100px;">
+                        <p style="margin:0; font-size:12px; color:var(--text-muted); font-weight:700;">Returned</p>
+                        <p id="curfox-returned-count" style="margin:0; font-size:24px; color:var(--danger); font-weight:900;">--</p>
+                    </div>
+                    <button class="action-btn" style="background:#9333ea; width:auto;" onclick="fetchBulkCourierStats()">🔄 Sync Now</button>
+                </div>
+            </div>
+
             <div class="stats-grid">
                 <div class="stat-card">
                     <h3 id="lbl-sum-leads-title">Total Leads</h3>
@@ -684,59 +700,6 @@
                             </tr>
                         </thead>
                         <tbody id="tbl-dash-expenses"></tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-
-        <!-- PAGE 1.5: ORDERS & COURIER -->
-        <div id="page-orders" class="page">
-            <div class="two-col-layout">
-                <div class="form-card">
-                    <h2>🚚 Royal Express Orders</h2>
-                    <div class="form-group">
-                        <label>Customer Name</label>
-                        <input type="text" id="order-customer" placeholder="e.g. Nimal Perera">
-                    </div>
-                    <div class="form-group">
-                        <label>Phone Number</label>
-                        <input type="text" id="order-phone" placeholder="e.g. 0771234567">
-                    </div>
-                    <div class="form-group">
-                        <label>Address</label>
-                        <input type="text" id="order-address" placeholder="Delivery Address">
-                    </div>
-                    <div class="form-group">
-                        <label>Select Product</label>
-                        <select id="order-product"></select>
-                    </div>
-                    <div class="form-group">
-                        <label>Quantity</label>
-                        <input type="number" id="order-qty" placeholder="1" value="1">
-                    </div>
-                    <div class="form-group">
-                        <label>Tracking / Waybill Number</label>
-                        <input type="text" id="order-waybill" placeholder="e.g. RE123456789LK" style="border: 2px solid var(--accent); background:#fdf4ff;">
-                    </div>
-                    <button class="action-btn" onclick="saveOrder()">Save Order</button>
-                </div>
-
-                <div class="table-card">
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; border-bottom: 2px solid #f1f5f9; padding-bottom:15px;">
-                        <h2 style="margin:0; border:none; padding:0;">📦 Order Tracking</h2>
-                        <button class="action-btn" style="width:auto; padding:8px 15px; font-size:12px; background:var(--warning); color:#fff; box-shadow:none;" onclick="syncCurfox()">🔄 Sync Curfox API</button>
-                    </div>
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Date</th>
-                                <th>Customer</th>
-                                <th>Waybill</th>
-                                <th>Status</th>
-                                <th>Action</th>
-                            </tr>
-                        </thead>
-                        <tbody id="tbl-manage-orders"></tbody>
                     </table>
                 </div>
             </div>
@@ -1056,7 +1019,6 @@
                         <div class="perm-grid">
                             <label class="perm-lbl"><input type="checkbox" class="perm-chk" value="dashboard"> 📊 Dashboard</label>
                             <label class="perm-lbl"><input type="checkbox" class="perm-chk" value="leads"> 🎯 Daily Leads</label>
-                            <label class="perm-lbl"><input type="checkbox" class="perm-chk" value="orders"> 🚚 Orders & Courier</label>
                             <label class="perm-lbl"><input type="checkbox" class="perm-chk" value="purchases"> 📦 Purchases</label>
                             <label class="perm-lbl"><input type="checkbox" class="perm-chk" value="packaging"> 🏷️ Packaging</label>
                             <label class="perm-lbl"><input type="checkbox" class="perm-chk" value="profit"> 💰 Profit</label>
@@ -1183,7 +1145,7 @@
             await db.collection('users').add({
                 username: "admin@company.com",
                 password: "123",
-                permissions: ["dashboard", "leads", "orders", "purchases", "packaging", "profit", "catalog", "staff"]
+                permissions: ["dashboard", "leads", "purchases", "packaging", "profit", "catalog", "staff"]
             });
         }
 
@@ -1345,7 +1307,7 @@
         const isAdmin = currentUser.username === 'admin' || currentUser.username === 'admin@company.com';
         
         if(isAdmin) {
-            perms = ["dashboard", "leads", "orders", "purchases", "packaging", "profit", "catalog", "salaries", "settings", "staff"];
+            perms = ["dashboard", "leads", "purchases", "packaging", "profit", "catalog", "salaries", "settings", "staff"];
             currentUser.permissions = perms; 
         }
         
@@ -1378,7 +1340,7 @@
         let perms = currentUser.permissions || [];
         const isAdmin = currentUser.username === 'admin' || currentUser.username === 'admin@company.com';
         if(isAdmin) {
-            perms = ["dashboard", "leads", "orders", "purchases", "packaging", "profit", "catalog", "salaries", "settings", "staff"];
+            perms = ["dashboard", "leads", "purchases", "packaging", "profit", "catalog", "salaries", "settings", "staff"];
         }
 
         if(!isAdmin && (pageId === 'catalog' || pageId === 'settings' || pageId === 'staff')) {
@@ -2500,54 +2462,21 @@
         } catch(e) { console.error("Auto Week Error:", e); }
     }
 
-    // --- PHASE 1: ORDERS & CURFOX API INTEGRATION ---
-    window.saveOrder = async function() {
-        const customer = document.getElementById('order-customer').value;
-        const phone = document.getElementById('order-phone').value;
-        const address = document.getElementById('order-address').value;
-        const product = document.getElementById('order-product').value;
-        const qty = parseInt(document.getElementById('order-qty').value) || 1;
-        const waybill = document.getElementById('order-waybill').value;
-        const date = document.getElementById('global-date').value || new Date().toISOString().split('T')[0];
-        const week = document.getElementById('active-week').value;
-
-        if(!customer || !phone || !product || !waybill) {
-            return notify("Please fill Customer, Phone, Product, and Waybill!", true);
-        }
-
-        // Save order
-        await db.collection('orders').add({
-            date, week,
-            customerName: customer,
-            phone: phone,
-            address: address,
-            product: product,
-            qty: qty,
-            waybill: waybill,
-            status: 'Processing'
-        });
-
-        // Save to CRM Database (Customers collection)
-        const custRef = db.collection('customers').doc(phone);
-        await custRef.set({
-            name: customer,
-            phone: phone,
-            address: address,
-            lastOrderDate: date
-        }, { merge: true });
-
-        notify("Order Saved & CRM Updated!");
-        document.getElementById('order-customer').value = '';
-        document.getElementById('order-phone').value = '';
-        document.getElementById('order-address').value = '';
-        document.getElementById('order-waybill').value = '';
+    // --- PHASE 2: BULK COURIER API INTEGRATION ---
+    window.fetchBulkCourierStats = async function() {
+        document.getElementById('curfox-delivered-count').innerHTML = '<span style="font-size:14px; color:var(--text-muted);">Syncing...</span>';
+        document.getElementById('curfox-returned-count').innerHTML = '<span style="font-size:14px; color:var(--text-muted);">Syncing...</span>';
+        notify("Fetching Bulk Stats from Royal Express... Please wait.", false, 5000);
         
-        loadAllData();
-    };
-
-    window.syncCurfox = async function() {
-        notify("Syncing with Curfox API... Please wait.", false, 5000);
+        // Calculate date range: last 7 days
+        const endDate = new Date();
+        const startDate = new Date();
+        startDate.setDate(endDate.getDate() - 7);
         
+        // Format as YYYY-MM-DD
+        const endStr = endDate.toISOString().split('T')[0];
+        const startStr = startDate.toISOString().split('T')[0];
+
         try {
             // Step 1: Login to get Bearer Token
             const loginRes = await fetch("https://v1.api.curfox.com/api/public/merchant/login", {
@@ -2565,72 +2494,62 @@
             const loginData = await loginRes.json();
             
             if(!loginRes.ok || loginData.error) {
+                document.getElementById('curfox-delivered-count').textContent = 'Err';
+                document.getElementById('curfox-returned-count').textContent = 'Err';
                 return notify("API Login Failed: " + (loginData.message || "Invalid Credentials"), true);
             }
             const token = loginData.token || loginData.access_token || loginData.data?.token;
             if(!token) return notify("API token not found in response", true);
 
-            // Step 2: Get all 'Processing' orders from Firestore
-            const oSnap = await db.collection('orders').where('status', '==', 'Processing').get();
-            if(oSnap.empty) {
-                return notify("No processing orders to sync.");
-            }
-
-            let syncCount = 0;
-
-            // Step 3: Loop through and track each waybill
-            for(let doc of oSnap.docs) {
-                const order = doc.data();
-                if(!order.waybill) continue;
-
-                // Call tracking API
-                const trackRes = await fetch("https://v1.api.curfox.com/api/public/merchant/order/tracking-info?waybill_number=" + order.waybill, {
-                    method: "GET", 
-                    headers: {
-                        "Accept": "application/json",
-                        "Content-Type": "application/json",
-                        "Authorization": "Bearer " + token,
-                        "X-tenant": "royalexpress"
-                    }
-                });
-                
-                const trackData = await trackRes.json();
-                if(trackData && trackData.data) {
-                    let curfoxStatus = trackData.data.status_name || trackData.data.status || 'Processing';
-                    
-                    if(curfoxStatus.toLowerCase().includes('deliver')) {
-                        // Mark as Delivered and Deduct Inventory!
-                        await db.collection('orders').doc(doc.id).update({ status: 'Delivered' });
-                        
-                        // Deduct from Factory Purchases
-                        const pSnap = await db.collection('products').where('productName', '==', order.product).get();
-                        let qtyToDeduct = order.qty;
-                        
-                        for(let pDoc of pSnap.docs) {
-                            let pData = pDoc.data();
-                            if(pData.qty > 0 && qtyToDeduct > 0) {
-                                let deductAmount = Math.min(pData.qty, qtyToDeduct);
-                                await db.collection('products').doc(pDoc.id).update({
-                                    qty: pData.qty - deductAmount
-                                });
-                                qtyToDeduct -= deductAmount;
-                            }
-                        }
-                        syncCount++;
-                    } 
-                    else if (curfoxStatus.toLowerCase().includes('return')) {
-                        await db.collection('orders').doc(doc.id).update({ status: 'Returned' });
-                        syncCount++;
-                    }
+            // Step 2: Fetch Bulk Orders for Date Range
+            const listUrl = `https://v1.api.curfox.com/api/public/merchant/order/list?start_date=${startStr}&end_date=${endStr}`;
+            
+            const listRes = await fetch(listUrl, {
+                method: "GET",
+                headers: {
+                    "Accept": "application/json",
+                    "Content-Type": "application/json",
+                    "Authorization": "Bearer " + token,
+                    "X-tenant": "royalexpress"
+                }
+            });
+            
+            const listData = await listRes.json();
+            
+            // Assume listData.data contains the array of orders
+            let ordersArray = listData.data;
+            if(!ordersArray || !Array.isArray(ordersArray)) {
+                if(listData.data && Array.isArray(listData.data.data)) {
+                    ordersArray = listData.data.data;
+                } else if(Array.isArray(listData)) {
+                    ordersArray = listData;
+                } else {
+                    console.log("Unexpected Bulk API format:", listData);
+                    ordersArray = [];
                 }
             }
 
-            notify(`Sync Complete! Updated ${syncCount} orders.`);
-            loadAllData();
+            let deliveredCount = 0;
+            let returnedCount = 0;
+
+            // Step 3: Count Statuses
+            ordersArray.forEach(order => {
+                const s = (order.status_name || order.status || '').toLowerCase();
+                if(s.includes('deliver')) deliveredCount++;
+                if(s.includes('return')) returnedCount++;
+            });
+
+            // Update Dashboard UI
+            document.getElementById('curfox-delivered-count').textContent = deliveredCount;
+            document.getElementById('curfox-returned-count').textContent = returnedCount;
+
+            notify(`Successfully fetched stats for the last 7 days!`);
 
         } catch (error) {
-            console.error("Curfox Sync Error:", error);
-            notify("API Sync Error: Check console", true);
+            console.error("Bulk API Error:", error);
+            document.getElementById('curfox-delivered-count').textContent = '--';
+            document.getElementById('curfox-returned-count').textContent = '--';
+            notify("API Sync Error: Check console for URL/CORS issues", true);
         }
     };
 
