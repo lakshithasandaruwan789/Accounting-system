@@ -2543,7 +2543,7 @@
             document.getElementById('curfox-delivered-count').textContent = deliveredCount;
             document.getElementById('curfox-returned-count').textContent = returnedCount;
 
-            notify(`Successfully fetched stats for the last 7 days!`);
+            notify(`Sync Complete! Fetched ${ordersArray.length} total orders. (D: ${deliveredCount}, R: ${returnedCount})`, false, 6000);
 
         } catch (error) {
             console.error("Bulk API Error:", error);
