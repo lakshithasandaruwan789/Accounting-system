@@ -2543,7 +2543,11 @@
             document.getElementById('curfox-delivered-count').textContent = deliveredCount;
             document.getElementById('curfox-returned-count').textContent = returnedCount;
 
-            notify(`Sync Complete! Fetched ${ordersArray.length} total orders. (D: ${deliveredCount}, R: ${returnedCount})`, false, 6000);
+            if(ordersArray.length === 0) {
+                notify(`Debug API: ` + JSON.stringify(listData).substring(0, 150), false, 10000);
+            } else {
+                notify(`Sync Complete! Fetched ${ordersArray.length} total orders. (D: ${deliveredCount}, R: ${returnedCount})`, false, 6000);
+            }
 
         } catch (error) {
             console.error("Bulk API Error:", error);
