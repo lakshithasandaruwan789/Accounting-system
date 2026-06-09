@@ -2502,7 +2502,7 @@
             if(!token) return notify("API token not found in response", true);
 
             // Step 2: Fetch Bulk Orders for Date Range
-            const listUrl = `https://v1.api.curfox.com/api/public/merchant/order/list?start_date=${startStr}&end_date=${endStr}`;
+            const listUrl = `https://v1.api.curfox.com/api/public/merchant/orders?start_date=${startStr}&end_date=${endStr}`;
             
             const listRes = await fetch(listUrl, {
                 method: "GET",
