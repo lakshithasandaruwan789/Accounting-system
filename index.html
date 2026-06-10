@@ -331,20 +331,16 @@
                 gap: 0; 
             }
             
-            /* Beautiful horizontally scrollable filter bar */
+            /* Neat wrapping filter bar */
             .topbar-controls { 
                 display: flex;
                 flex-direction: row; 
+                flex-wrap: wrap;
                 width: 100%; 
                 gap: 8px; 
-                overflow-x: auto; 
-                -webkit-overflow-scrolling: touch;
-                scrollbar-width: none; /* Firefox */
-                padding: 0;
-                margin-left: 10px;
+                padding: 5px 0 0 10px;
                 align-items: center;
             }
-            .topbar-controls::-webkit-scrollbar { display: none; } /* Safari/Chrome */
 
             .control-group { 
                 flex-direction: row; 
@@ -384,7 +380,7 @@
             .export-btns-container { display: none !important; }
             .topbar-controls .export-group { padding: 4px; gap: 5px; background: transparent; border: none; }
 
-            .two-col-layout, .dash-tables, .stats-grid { grid-template-columns: 1fr; }
+            .two-col-layout, .dash-tables, .stats-grid, .perm-grid { grid-template-columns: 1fr; }
             
             .table-card { overflow-x: auto; padding: 15px; margin-bottom: 20px;}
             table { min-width: 650px; }
@@ -455,29 +451,29 @@
         <li class="nav-item" onclick="navigate('leads')" id="nav-leads">
             <span class="nav-icon">🎯</span> <span class="nav-text">Daily Leads</span>
         </li>
-        <li class="nav-item" onclick="navigate('orders')" id="nav-orders">
-            <span class="nav-icon">📦</span> <span class="nav-text">Orders & Scan</span>
-        </li>
         <li class="nav-item" onclick="navigate('purchases')" id="nav-purchases">
             <span class="nav-icon">📦</span> <span class="nav-text">Purchases & GRN</span>
-        </li>
-        <li class="nav-item" onclick="navigate('packaging')" id="nav-packaging">
-            <span class="nav-icon">🏷️</span> <span class="nav-text">Packaging & Other</span>
-        </li>
-        <li class="nav-item" onclick="navigate('profit')" id="nav-profit">
-            <span class="nav-icon">💰</span> <span class="nav-text">Expenses & Profit</span>
         </li>
         <li class="nav-item" onclick="navigate('catalog')" id="nav-catalog">
             <span class="nav-icon">⚙️</span> <span class="nav-text">Product Catalog</span>
         </li>
-        <li class="nav-item" onclick="navigate('settings')" id="nav-settings">
-            <span class="nav-icon">🛠️</span> <span class="nav-text">System Settings</span>
+        <li class="nav-item" onclick="navigate('packaging')" id="nav-packaging">
+            <span class="nav-icon">🏷️</span> <span class="nav-text">Packaging & Other</span>
         </li>
         <li class="nav-item" onclick="navigate('salaries')" id="nav-salaries">
             <span class="nav-icon">💸</span> <span class="nav-text">Staff Salaries</span>
         </li>
+        <li class="nav-item" onclick="navigate('profit')" id="nav-profit">
+            <span class="nav-icon">💰</span> <span class="nav-text">Expenses & Profit</span>
+        </li>
         <li class="nav-item" onclick="navigate('staff')" id="nav-staff">
             <span class="nav-icon">👥</span> <span class="nav-text">Staff Management</span>
+        </li>
+        <li class="nav-item" onclick="navigate('settings')" id="nav-settings">
+            <span class="nav-icon">🛠️</span> <span class="nav-text">System Settings</span>
+        </li>
+        <li class="nav-item" onclick="navigate('orders')" id="nav-orders">
+            <span class="nav-icon">📦</span> <span class="nav-text">Orders & Scan</span>
         </li>
         
         <li class="nav-item" onclick="performLogout()" id="nav-logout" style="margin-top:auto; color: var(--danger); background: #fee2e2; overflow:hidden;">
