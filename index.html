@@ -1613,6 +1613,17 @@
 
         if(!name || !price) return notify("Please fill both Name and Price!", true);
 
+        // Check for duplicate name
+        const snap = await db.collection('product_catalog').get();
+        let exists = false;
+        snap.forEach(doc => {
+            if(doc.id !== currentCatalogId && doc.data().name.toLowerCase() === name.toLowerCase()) {
+                exists = true;
+            }
+        });
+
+        if(exists) return notify("A product with this name already exists!", true);
+
         const payload = { name: name, price: parseFloat(price) };
 
         if(currentCatalogId) {
