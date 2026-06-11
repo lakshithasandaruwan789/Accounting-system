@@ -2591,7 +2591,7 @@
         if(snap.empty) return notify("No scanned waybills found to test!", true);
         
         const waybill = snap.docs[0].data().waybill;
-        notify(`Testing API for ${waybill}...`, false, 2000);
+        document.getElementById('scan-success-msg').textContent = `Testing API for ${waybill}... Please wait.`;
         
         try {
             // Login
@@ -2603,19 +2603,28 @@
             const token = loginData.token || loginData.access_token || loginData.data?.token;
             if(!token) return notify("API Login failed", true);
             
-            // Track
-            const trackRes = await fetch("https://v1.api.curfox.com/api/public/merchant/order/tracking-info", {
-                method: "POST", headers: { "Accept": "application/json", "Content-Type": "application/json", "Authorization": "Bearer " + token, "X-tenant": "royalexpress" },
-                body: JSON.stringify({ tracking_number: waybill })
+            // Track via GET first
+            let trackRes = await fetch(`https://v1.api.curfox.com/api/public/merchant/order/tracking-info?tracking_number=${waybill}`, {
+                method: "GET", headers: { "Accept": "application/json", "Content-Type": "application/json", "Authorization": "Bearer " + token, "X-tenant": "royalexpress" }
             });
+            
+            if(!trackRes.ok) {
+                // Try POST if GET fails
+                trackRes = await fetch("https://v1.api.curfox.com/api/public/merchant/order/tracking-info", {
+                    method: "POST", headers: { "Accept": "application/json", "Content-Type": "application/json", "Authorization": "Bearer " + token, "X-tenant": "royalexpress" },
+                    body: JSON.stringify({ tracking_number: waybill })
+                });
+            }
+
             const trackData = await trackRes.json();
             
             // Dump to UI
-            notify(`API JSON for ${waybill}: ` + JSON.stringify(trackData).substring(0, 500), false, 20000);
+            const dumpStr = JSON.stringify(trackData, null, 2);
+            document.getElementById('scan-success-msg').innerHTML = `<textarea style="width:100%; height:200px; font-size:12px;" readonly>${dumpStr}</textarea>`;
             console.log("Raw Curfox Tracking API Response:", trackData);
         } catch(e) {
             console.error("Test API error:", e);
-            notify("Error connecting to API test", true);
+            document.getElementById('scan-success-msg').textContent = "Error: " + e.message;
         }
     };
 
@@ -2652,29 +2661,41 @@
             for(let doc of confirmedDocs) {
                 let d = doc.data();
                 try {
-                    const trackRes = await fetch("https://v1.api.curfox.com/api/public/merchant/order/tracking-info", {
-                        method: "POST", headers: { "Accept": "application/json", "Content-Type": "application/json", "Authorization": "Bearer " + token, "X-tenant": "royalexpress" },
-                        body: JSON.stringify({ tracking_number: d.waybill })
+                    let trackRes = await fetch(`https://v1.api.curfox.com/api/public/merchant/order/tracking-info?waybill_number=${d.waybill}`, {
+                        method: "GET", headers: { "Accept": "application/json", "Content-Type": "application/json", "Authorization": "Bearer " + token, "X-tenant": "royalexpress" }
                     });
+                    
+                    if(!trackRes.ok) {
+                        trackRes = await fetch("https://v1.api.curfox.com/api/public/merchant/order/tracking-info", {
+                            method: "POST", headers: { "Accept": "application/json", "Content-Type": "application/json", "Authorization": "Bearer " + token, "X-tenant": "royalexpress" },
+                            body: JSON.stringify({ tracking_number: d.waybill })
+                        });
+                    }
+
                     const trackData = await trackRes.json();
                     
-                    // Default Curfox status extract logic (Pending API Test verification)
-                    let statusObj = trackData.data ? trackData.data.status : null;
-                    let s = statusObj ? (statusObj.name || statusObj).toLowerCase() : '';
+                    // Robust status matching
+                    let s = "";
+                    if(trackData.data && trackData.data.status) {
+                         s = (trackData.data.status.name || trackData.data.status).toString().toLowerCase();
+                    } else if(trackData.status) {
+                         s = (trackData.status.name || trackData.status).toString().toLowerCase();
+                    } else if(typeof trackData === 'string') {
+                         s = trackData.toLowerCase();
+                    } else {
+                         s = JSON.stringify(trackData).toLowerCase();
+                    }
                     
                     if(s.includes('deliver')) {
                         await db.collection('orders').doc(doc.id).update({status: 'Delivered'});
                         newlyDelivered++;
-                        
-                        // FUTURE AUTO-DEDUCT LOGIC GOES HERE (Once we test the API fields)
-                        // if(d.product) { deduct inventory... }
                         
                     } else if(s.includes('return')) {
                         await db.collection('orders').doc(doc.id).update({status: 'Returned'});
                         newlyReturned++;
                     }
                 } catch(err) {
-                    console.log(`Failed tracking for ${d.waybill}`);
+                    console.log(`Failed tracking for ${d.waybill}`, err);
                 }
             }
 
