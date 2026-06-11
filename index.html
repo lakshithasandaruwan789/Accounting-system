@@ -737,7 +737,10 @@
 
                     <div style="margin-top: 50px; padding-top: 20px; border-top: 2px dashed #e2e8f0;">
                         <h3 style="color: var(--danger); font-size: 14px;">🛠️ Developer API Testing Tools</h3>
-                        <button class="action-btn" style="background: var(--warning); color: #fff; width: auto; margin: 0 auto;" onclick="testWaybillAPI()">Test API with Last Scanned Waybill</button>
+                        <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
+                            <button class="action-btn" style="background: var(--warning); color: #fff; width: auto;" onclick="testWaybillAPI()">Test API with Last Scanned Waybill</button>
+                            <button class="action-btn" style="background: var(--danger); color: #fff; width: auto;" onclick="clearAllOrders()">⚠️ Wipe All Orders DB</button>
+                        </div>
                     </div>
                 </div>
 
@@ -2602,6 +2605,25 @@
                 loadDashboardStats();
             } catch(e) {
                 notify("Failed to delete order", true);
+                console.error(e);
+            }
+        }
+    };
+
+    window.clearAllOrders = async function() {
+        if(confirm("DANGER: Are you SURE you want to DELETE ALL scanned orders from the entire database? This will reset your dashboard numbers to 0. This cannot be undone!")) {
+            try {
+                const snap = await db.collection('orders').get();
+                const batch = db.batch();
+                snap.forEach(doc => {
+                    batch.delete(doc.ref);
+                });
+                await batch.commit();
+                notify("All orders wiped successfully!");
+                loadScannedOrders();
+                loadDashboardStats();
+            } catch(e) {
+                notify("Failed to wipe database", true);
                 console.error(e);
             }
         }
