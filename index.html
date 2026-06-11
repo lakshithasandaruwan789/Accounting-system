@@ -1264,6 +1264,7 @@
     
     // --- THEME MANAGEMENT ---
     function applyChartTheme(isDark) {
+        if (typeof Chart === 'undefined') return;
         Chart.defaults.color = isDark ? '#e4ccff' : '#64748b';
         Chart.defaults.borderColor = isDark ? 'rgba(166, 0, 255, 0.15)' : '#e2e8f0';
         if (profitChartInstance) {
@@ -1306,9 +1307,11 @@
     }
 
     // --- CHART.JS CLOUD MODE DEFAULTS ---
-    Chart.defaults.color = '#64748b';
-    Chart.defaults.borderColor = '#e2e8f0';
-    Chart.defaults.font.family = "'Plus Jakarta Sans', sans-serif";
+    if (typeof Chart !== 'undefined') {
+        Chart.defaults.color = '#64748b';
+        Chart.defaults.borderColor = '#e2e8f0';
+        Chart.defaults.font.family = "'Plus Jakarta Sans', sans-serif";
+    }
 
     // --- DATABASE SETUP (FIREBASE) ---
     function formatNumberInput(e) {
