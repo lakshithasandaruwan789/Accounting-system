@@ -381,7 +381,7 @@
                 will-change: transform;
                 box-shadow: 10px 0 25px rgba(0,0,0,0.1);
                 flex-direction: column; width: 260px;
-                background: #ffffff;
+                background: var(--sidebar-bg);
                 overflow-y: auto;
                 -webkit-overflow-scrolling: touch;
                 overscroll-behavior-y: contain;
@@ -398,10 +398,10 @@
                 padding: 10px 15px; 
                 position: sticky; 
                 top: 0; 
-                background: rgba(255, 255, 255, 0.95); 
+                background: var(--bg-color); 
                 backdrop-filter: blur(10px); 
                 z-index: 900; 
-                border-bottom: 1px solid #e2e8f0;
+                border-bottom: 1px solid var(--border);
                 align-items: center;
             }
             
@@ -430,8 +430,8 @@
                 margin-bottom: 0; 
                 flex-shrink: 0; 
                 border-radius: 30px; /* Pill shape */
-                background: #f8fafc;
-                border: 1px solid #e2e8f0;
+                background: var(--card-bg);
+                border: 1px solid var(--border);
                 box-shadow: none;
             }
             .control-group label { 
@@ -456,7 +456,7 @@
             .date-inputs { gap: 8px !important; align-items: center; }
             .date-inputs .btn-export { padding: 4px 12px !important; font-size: 12px !important; border-radius: 20px !important; margin: 0 !important; }
 
-            .hamburger-btn { display: inline-block !important; padding: 8px 12px; background: #f1f5f9; border-radius: 8px; margin-bottom: 0; width: auto;}
+            .hamburger-btn { display: inline-block !important; padding: 8px 12px; background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; margin-bottom: 0; width: auto;}
             
             .export-btns-container { display: none !important; }
             .topbar-controls .export-group { padding: 4px; gap: 5px; background: transparent; border: none; }
