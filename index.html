@@ -15,92 +15,95 @@
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     
     <style>
-        body.light-mode {
-            --bg-color: #f8fafc;
-            --card-bg: rgba(255, 255, 255, 0.85);
-            --text-main: #3b0764; /* Very dark rich purple instead of black */
-            --text-muted: #6b21a8; /* Dark purple */
-            --border: rgba(139, 92, 246, 0.2);
+        :root {
+            /* ☀️ Simple Light Theme (Default) */
+            --primary: #3b82f6; /* Clean Blue */
+            --primary-light: #60a5fa;
+            --success: #10b981; 
+            --warning: #f59e0b; 
+            --danger: #ef4444; 
             
-            --sidebar-bg: #ffffff;
-            --sidebar-hover: rgba(139, 92, 246, 0.08);
-            --sidebar-active: rgba(139, 92, 246, 0.15);
-            --sidebar-text: #4c1d95; /* Deep purple text in sidebar */
+            --bg-color: #f1f5f9; /* Simple light background */
+            --card-bg: #ffffff; /* Pure white cards */
+            --text-main: #0f172a; /* Dark gray text */
+            --text-muted: #64748b; /* Muted gray text */
+            --border: #e2e8f0; /* Simple gray borders */
             
-            --courier-title: #3b0764;
-            --courier-sub: #6b21a8;
-            --courier-box-text: #4c1d95;
+            --sidebar-bg: #ffffff; 
+            --sidebar-hover: #f8fafc;
+            --sidebar-active: #eff6ff; 
+            --sidebar-text: #334155; 
             
-            --card-shadow: 0 8px 25px rgba(139, 92, 246, 0.08);
+            --courier-bg: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(147, 197, 253, 0.1));
+            --courier-title: #0f172a;
+            --courier-sub: #64748b;
+            --courier-box-text: #475569;
+            
+            --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
         }
 
-        :root {
-            /* 🌌 Deep Dark Purple / Neon Theme */
-            --primary: #8b5cf6; /* Vibrant Purple */
-            --primary-light: #a78bfa; /* Light Purple */
-            --success: #10b981; /* Emerald */
-            --warning: #f59e0b; /* Amber */
-            --danger: #ef4444; /* Red */
+        body.dark-mode {
+            /* 🌌 Deep Dark Purple / Neon Theme (Optional) */
+            --bg-color: #0f0a1c; 
+            --card-bg: rgba(23, 15, 38, 0.7); 
+            --text-main: #ffffff; 
+            --text-muted: #c4b5fd; 
+            --border: rgba(139, 92, 246, 0.15); 
             
-            --bg-color: #0f0a1c; /* Deep darkest purple background */
-            --card-bg: rgba(23, 15, 38, 0.7); /* Deep purple glass */
-            --text-main: #ffffff; /* Pure white text */
-            --text-muted: #c4b5fd; /* Muted purple text */
-            --border: rgba(139, 92, 246, 0.15); /* Subtle purple borders */
-            
-            --sidebar-bg: #0a0612; /* Darkest purple sidebar */
+            --sidebar-bg: #0a0612; 
             --sidebar-hover: rgba(139, 92, 246, 0.1);
-            --sidebar-active: rgba(139, 92, 246, 0.2); /* Active item background */
-            --sidebar-text: #c4b5fd;
+            --sidebar-active: rgba(139, 92, 246, 0.2); 
+            --sidebar-text: #c4b5fd; 
             
+            --courier-bg: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(76, 29, 149, 0.1));
             --courier-title: #ddd6fe;
             --courier-sub: #a78bfa;
             --courier-box-text: #c4b5fd;
             
             --card-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+            --primary: #8b5cf6; 
+            --primary-light: #a78bfa;
         }
 
-        body.light-mode .stat-card {
-            background: rgba(255, 255, 255, 0.6);
-            border: 1px solid rgba(0,0,0,0.05);
-            box-shadow: 0 8px 25px rgba(0,0,0,0.03);
+        body.dark-mode .stat-card {
+            background: rgba(23, 15, 38, 0.7);
+            border: 1px solid rgba(139, 92, 246, 0.15);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.2);
         }
-        body.light-mode .stat-card:hover {
-            background: rgba(255, 255, 255, 0.95);
-            box-shadow: 0 15px 35px rgba(0,0,0,0.08), 0 0 20px rgba(139, 92, 246, 0.1);
+        body.dark-mode .stat-card:hover {
+            background: rgba(30, 20, 50, 0.9);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.4), 0 0 20px rgba(139, 92, 246, 0.2);
+            border-color: rgba(139, 92, 246, 0.5);
+        }
+        body.dark-mode .stat-card p { text-shadow: 0 2px 10px rgba(0,0,0,0.5); color: var(--primary); }
+        body.dark-mode .stat-card h3 { color: #c4b5fd; }
+        body.dark-mode .stat-card:hover h3 { color: #ffffff; }
+        
+        body.dark-mode .form-card, body.dark-mode .table-card {
+            background: rgba(23, 15, 38, 0.7);
+            border: 1px solid rgba(139, 92, 246, 0.15);
+        }
+        body.dark-mode .form-card:hover, body.dark-mode .table-card:hover {
+            background: rgba(25, 18, 45, 0.9);
             border-color: rgba(139, 92, 246, 0.3);
         }
-        body.light-mode .stat-card p { text-shadow: none; color: #0f172a; }
-        body.light-mode .stat-card h3 { color: #64748b; }
-        body.light-mode .stat-card:hover h3 { color: #0f172a; }
         
-        body.light-mode .form-card, body.light-mode .table-card {
-            background: rgba(255, 255, 255, 0.8);
-            border: 1px solid rgba(0,0,0,0.06);
-            box-shadow: 0 10px 30px rgba(0,0,0,0.04);
+        body.dark-mode .form-group input, body.dark-mode .form-group select {
+            background: rgba(10, 5, 20, 0.5);
+            border: 1px solid rgba(139, 92, 246, 0.2);
+            color: #ffffff;
         }
-        body.light-mode .form-card:hover, body.light-mode .table-card:hover {
-            background: rgba(255, 255, 255, 0.95);
-            border-color: rgba(139, 92, 246, 0.2);
-            box-shadow: 0 15px 40px rgba(0,0,0,0.08);
-        }
-        
-        body.light-mode .form-group input, body.light-mode .form-group select {
-            background: rgba(255,255,255,0.9);
-            border: 1px solid rgba(0,0,0,0.15);
-            color: #1e293b;
-        }
-        body.light-mode .form-group input:focus, body.light-mode .form-group select:focus {
-            background: #ffffff;
+        body.dark-mode .form-group input:focus, body.dark-mode .form-group select:focus {
+            background: #0f0a1c;
             border-color: var(--primary);
-            box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.15);
+            box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.25);
         }
         
-        body.light-mode td { background: rgba(0,0,0,0.02); }
-        body.light-mode th { color: #475569; border-bottom: 1px solid rgba(0,0,0,0.08); }
-        body.light-mode tr:hover td { background: rgba(139, 92, 246, 0.08); color: #0f172a; border-color: rgba(139, 92, 246, 0.2); }
-        body.light-mode .sidebar-header h2 { color: #1e293b; }
-        body.light-mode .login-overlay { background: #f8fafc; }
+        body.dark-mode td { background: transparent; }
+        body.dark-mode th { color: #c4b5fd; border-bottom: 1px solid rgba(139, 92, 246, 0.2); }
+        body.dark-mode tr:hover td { background: rgba(139, 92, 246, 0.1); color: #ffffff; border-color: rgba(139, 92, 246, 0.3); }
+        body.dark-mode .sidebar-header h2 { color: #ffffff; }
+        body.dark-mode .login-overlay { background: #0f0a1c; }
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -685,12 +688,12 @@
         <div id="page-dashboard" class="page active">
             
             <!-- BULK COURIER DASHBOARD -->
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; background:linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(76, 29, 149, 0.1)); backdrop-filter: blur(15px); padding:20px; border-radius:15px; border:1px solid rgba(139, 92, 246, 0.3); box-shadow: 0 10px 30px rgba(139, 92, 246, 0.15); flex-wrap: wrap; gap: 15px; position: relative; overflow: hidden;">
-                <!-- Glowing orb for the purple section -->
-                <div style="position: absolute; left: -50px; top: -50px; width: 150px; height: 150px; background: #8b5cf6; filter: blur(50px); opacity: 0.3; border-radius: 50%; pointer-events: none;"></div>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; background:var(--courier-bg); backdrop-filter: blur(15px); padding:20px; border-radius:15px; border:1px solid var(--border); box-shadow: var(--card-shadow); flex-wrap: wrap; gap: 15px; position: relative; overflow: hidden;">
+                <!-- Glowing orb for the section -->
+                <div style="position: absolute; left: -50px; top: -50px; width: 150px; height: 150px; background: var(--primary); filter: blur(50px); opacity: 0.15; border-radius: 50%; pointer-events: none;"></div>
                 
                 <div style="position: relative; z-index: 1;">
-                    <h3 style="margin:0; font-size:18px; color:var(--courier-title); font-weight:800; letter-spacing: 0.5px; text-shadow: 0 2px 10px rgba(0,0,0,0.1);">Courier Status (Last 7 Days)</h3>
+                    <h3 style="margin:0; font-size:18px; color:var(--courier-title); font-weight:800; letter-spacing: 0.5px; text-shadow: 0 2px 10px rgba(0,0,0,0.05);">Courier Status (Last 7 Days)</h3>
                     <p style="margin:5px 0 0 0; font-size:13px; color:var(--courier-sub);">Royal Express auto-sync summary.</p>
                 </div>
                 <div style="display:flex; gap:15px; align-items:center; position: relative; z-index: 1;">
@@ -1256,13 +1259,13 @@
 <script>
     // --- THEME MANAGEMENT ---
     function initTheme() {
-        const savedTheme = localStorage.getItem('systemTheme') || 'dark';
+        const savedTheme = localStorage.getItem('systemTheme') || 'light';
         const toggle = document.getElementById('setting-theme-toggle');
-        if(savedTheme === 'light') {
-            document.body.classList.add('light-mode');
+        if(savedTheme === 'dark') {
+            document.body.classList.add('dark-mode');
             if(toggle) toggle.checked = true;
         } else {
-            document.body.classList.remove('light-mode');
+            document.body.classList.remove('dark-mode');
             if(toggle) toggle.checked = false;
         }
     }
@@ -1271,13 +1274,13 @@
     window.toggleTheme = function() {
         const toggle = document.getElementById('setting-theme-toggle');
         if(toggle && toggle.checked) {
-            document.body.classList.add('light-mode');
-            localStorage.setItem('systemTheme', 'light');
-            notify("Switched to Light Mode");
-        } else {
-            document.body.classList.remove('light-mode');
+            document.body.classList.add('dark-mode');
             localStorage.setItem('systemTheme', 'dark');
             notify("Switched to Dark Mode");
+        } else {
+            document.body.classList.remove('dark-mode');
+            localStorage.setItem('systemTheme', 'light');
+            notify("Switched to Light Mode");
         }
     }
 
