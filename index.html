@@ -568,10 +568,18 @@
 
     <!-- TOPBAR -->
     <header class="topbar">
-        <div style="display:flex; align-items:center; width: 100%;">
-            <button class="hamburger-btn" onclick="toggleSidebar()" style="background:none; border:none; font-size:24px; cursor:pointer; color:var(--text-main); padding:0; flex-shrink:0;" title="Toggle Sidebar">☰</button>
-            <div class="topbar-controls">
-                <div class="control-group">
+        <div style="display:flex; align-items:center; width: 100%; justify-content: space-between;">
+            
+            <div style="display:flex; align-items:center; gap: 20px;">
+                <button class="hamburger-btn" onclick="toggleSidebar()" style="background:none; border:none; font-size:24px; cursor:pointer; color:var(--text-main); padding:0; flex-shrink:0;" title="Toggle Sidebar">☰</button>
+                <div class="control-group export-group" style="gap:8px; background: transparent; border: none; box-shadow: none; padding: 0;">
+                    <button class="btn-export" style="color:var(--success); border-color:#86efac; padding:6px 14px; margin:0; font-size:13px; font-weight: 700; border-radius: 8px;" onclick="exportToCSV()">📄 CSV</button>
+                    <button class="btn-export" style="color:var(--danger); border-color:#fca5a5; padding:6px 14px; margin:0; font-size:13px; font-weight: 700; border-radius: 8px;" onclick="exportToPDF()">📑 PDF</button>
+                </div>
+            </div>
+
+            <div class="topbar-controls" style="margin-left: auto;">
+                <div class="control-group" style="border-radius: 8px;">
                     <label style="white-space:nowrap;">Filter:</label>
                     <select id="active-week" onchange="handleContextChange()">
                         <option value="Week 1">Week 1</option>
@@ -581,19 +589,16 @@
                         <option value="Month Overview" style="color:var(--danger); font-weight:700;">Month Overview</option>
                     </select>
                 </div>
-                <div class="control-group" id="date-picker-group">
+                <div class="control-group" id="date-picker-group" style="border-radius: 8px;">
                     <label style="white-space:nowrap;">Date:</label>
                     <div class="date-inputs" style="display:flex; gap:5px; width:100%;">
                         <input type="date" id="global-date" onchange="handleDateChange()" style="flex:1;">
-                        <button class="btn-export" style="background:var(--success); color:white; padding:6px 12px; border:none; margin:0;" onclick="applyDateFilter()">Apply</button>
-                        <button class="btn-export" style="background:#f1f5f9; padding:6px 12px; margin:0;" onclick="clearDateFilter()">Clear</button>
+                        <button class="btn-export" style="background:var(--success); color:white; padding:6px 12px; border:none; margin:0; border-radius: 8px;" onclick="applyDateFilter()">Apply</button>
+                        <button class="btn-export" style="background:#f1f5f9; padding:6px 12px; margin:0; border-radius: 8px;" onclick="clearDateFilter()">Clear</button>
                     </div>
                 </div>
-                <div class="control-group export-group" style="gap:5px;">
-                    <button class="btn-export" style="color:var(--success); border-color:#86efac; padding:4px 10px; margin:0; font-size:12px;" onclick="exportToCSV()">📄 CSV</button>
-                    <button class="btn-export" style="color:var(--danger); border-color:#fca5a5; padding:4px 10px; margin:0; font-size:12px;" onclick="exportToPDF()">📑 PDF</button>
-                </div>
             </div>
+            
         </div>
     </header>
 
