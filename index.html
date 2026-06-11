@@ -1260,6 +1260,8 @@
 <div id="notification" class="notification">Action Successful!</div>
 
 <script>
+    let profitChartInstance = null;
+    
     // --- THEME MANAGEMENT ---
     function applyChartTheme(isDark) {
         Chart.defaults.color = isDark ? '#e4ccff' : '#64748b';
@@ -1401,8 +1403,6 @@
         loadAllData();
         notify("Date filter cleared!");
     }
-
-    let profitChartInstance = null;
 
     function toggleSidebar() {
         if(window.innerWidth <= 900) {
