@@ -177,7 +177,8 @@
         .nav-item.active { background-color: var(--sidebar-active); color: white; border-radius: 8px; box-shadow: 0 4px 15px rgba(139, 92, 246, 0.4); }
         .nav-icon { font-size: 18px; }
 
-        .hamburger-btn { display: none; } /* Hidden on desktop */
+        .hamburger-btn { display: inline-block; transition: transform 0.2s; } 
+        .hamburger-btn:hover { transform: scale(1.1); }
 
         /* --- MAIN CONTENT --- */
         .main-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; position: relative; }
@@ -651,10 +652,12 @@
     <header class="topbar">
         <div style="display:flex; flex-direction:column; width: 100%;">
             <div style="display:flex; align-items:center; width: 100%; justify-content: space-between; margin-bottom: 20px;">
-                <div style="display:flex; align-items:flex-start; flex-direction:column;">
+                <div style="display:flex; align-items:center; gap: 15px;">
                     <button class="hamburger-btn" onclick="toggleSidebar()" style="background:none; border:none; font-size:24px; cursor:pointer; color:var(--text-main); padding:0;" title="Toggle Sidebar">☰</button>
-                    <h1 id="dash-title">Dashboard</h1>
-                    <p class="subtitle">Welcome back, here's what's happening today.</p>
+                    <div style="display:flex; flex-direction:column;">
+                        <h1 id="dash-title" style="margin:0;">Dashboard</h1>
+                        <p class="subtitle" style="margin:5px 0 0 0;">Welcome back, here's what's happening today.</p>
+                    </div>
                 </div>
 
                 <div class="topbar-controls">
@@ -1861,7 +1864,18 @@
                     y: { beginAtZero: true, grid: { color: Chart.defaults.borderColor || '#f1f5f9' } },
                     x: { grid: { display: false } }
                 },
-                plugins: { legend: { labels: { font: { weight: '600' } } } }
+                plugins: { 
+                    legend: { labels: { font: { weight: '600' } } },
+                    tooltip: {
+                        titleColor: '#ffffff',
+                        bodyColor: '#ffffff',
+                        backgroundColor: 'rgba(15, 23, 42, 0.95)',
+                        titleFont: { size: 14 },
+                        bodyFont: { size: 13 },
+                        padding: 10,
+                        displayColors: true
+                    }
+                }
             }
         });
     }
