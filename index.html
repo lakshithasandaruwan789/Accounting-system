@@ -17,24 +17,24 @@
     <style>
         :root {
             /* ☀️ Simple Light Theme (Default) */
-            --primary: #3b82f6; /* Clean Blue */
-            --primary-light: #60a5fa;
+            --primary: #8b5cf6; /* Bold Purple (Dam pata) */
+            --primary-light: #a78bfa;
             --success: #10b981; 
             --warning: #f59e0b; 
             --danger: #ef4444; 
             
-            --bg-color: #f1f5f9; /* Simple light background */
+            --bg-color: #f4f7f6; /* Simple light background */
             --card-bg: #ffffff; /* Pure white cards */
             --text-main: #0f172a; /* Dark gray text */
             --text-muted: #64748b; /* Muted gray text */
             --border: #e2e8f0; /* Simple gray borders */
             
             --sidebar-bg: #ffffff; 
-            --sidebar-hover: #f8fafc;
-            --sidebar-active: #eff6ff; 
+            --sidebar-hover: #f1f5f9;
+            --sidebar-active: #8b5cf6; /* Solid purple active state */
             --sidebar-text: #334155; 
             
-            --courier-bg: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(147, 197, 253, 0.1));
+            --courier-bg: linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(139, 92, 246, 0.05));
             --courier-title: #0f172a;
             --courier-sub: #64748b;
             --courier-box-text: #475569;
@@ -154,12 +154,12 @@
 
         .sidebar-header { 
             padding: 25px 20px; 
-            background-color: transparent; 
+            background-color: var(--primary); /* Matching the top-left solid color block */
             border-bottom: 1px solid var(--border); 
             text-align: left; 
         }
         .sidebar-header h2 { color: white; font-size: 18px; letter-spacing: 1px; text-transform: uppercase; }
-        .sidebar-header p { margin: 5px 0 0 0; font-size: 11px; color: var(--text-muted); text-transform: uppercase;}
+        .sidebar-header p { margin: 5px 0 0 0; font-size: 11px; color: rgba(255,255,255,0.7); text-transform: uppercase;}
 
         .nav-menu { list-style: none; padding: 15px 10px; margin: 0; flex: 1; display:flex; flex-direction:column; gap: 5px;}
 
@@ -173,8 +173,8 @@
         .sidebar.collapsed .nav-text, .sidebar.collapsed .sidebar-header p { display: none; }
         .sidebar.collapsed .sidebar-header h2 { font-size: 14px; }
 
-        .nav-item:hover { background-color: var(--sidebar-hover); color: white; }
-        .nav-item.active { background-color: var(--sidebar-active); color: white; border-left: 4px solid var(--primary); border-radius: 8px; }
+        .nav-item:hover { background-color: var(--sidebar-hover); color: var(--primary); }
+        .nav-item.active { background-color: var(--sidebar-active); color: white; border-radius: 8px; box-shadow: 0 4px 15px rgba(139, 92, 246, 0.4); }
         .nav-icon { font-size: 18px; }
 
         /* --- MAIN CONTENT --- */
