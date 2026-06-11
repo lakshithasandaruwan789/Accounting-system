@@ -750,6 +750,7 @@
                                 <th>Waybill Number</th>
                                 <th>Product</th>
                                 <th>Status</th>
+                                <th style="width: 40px;"></th>
                             </tr>
                         </thead>
                         <tbody id="tbl-scanned-orders"></tbody>
@@ -2583,10 +2584,27 @@
                         <td style="font-weight:bold;">${data.waybill}</td>
                         <td>${data.product || '-'}</td>
                         <td><span class="badge ${data.status === 'Delivered' ? 'bg-success' : (data.status === 'Returned' ? 'bg-danger' : (data.status === 'Dispatched' ? 'bg-warning' : 'bg-primary'))}">${data.status}</span></td>
+                        <td>
+                            <button onclick="deleteScannedOrder('${doc.id}')" style="background:none; border:none; cursor:pointer; color:var(--danger);" title="Delete Order">🗑️</button>
+                        </td>
                     </tr>
                 `;
             });
         } catch(e) { console.error("Load scanned orders err:", e); }
+    };
+
+    window.deleteScannedOrder = async function(docId) {
+        if(confirm("Are you sure you want to delete this scanned order?")) {
+            try {
+                await db.collection('orders').doc(docId).delete();
+                notify("Order deleted successfully!");
+                loadScannedOrders();
+                loadDashboardStats();
+            } catch(e) {
+                notify("Failed to delete order", true);
+                console.error(e);
+            }
+        }
     };
 
     // 3. Test Waybill API Data
