@@ -335,7 +335,7 @@
             background: rgba(99, 102, 241, 0.1); 
             border-color: rgba(99, 102, 241, 0.3);
             transform: scale(1.01);
-            color: #ffffff;
+            color: var(--primary);
         }
 
         .btn-delete { background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239,68,68,0.2); padding: 8px 16px; font-size: 12px; font-weight: 700; color: var(--danger); border-radius: 8px; cursor: pointer; transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);}
@@ -345,9 +345,9 @@
         .btn-edit:hover { background: var(--warning); color: #fff; transform: translateY(-2px); box-shadow: 0 5px 15px rgba(245, 158, 11, 0.4);}
 
         .notification {
-            position: fixed; bottom: 30px; right: 30px; background: var(--card-bg); color: var(--text-main); padding: 16px 28px;
+            position: fixed; bottom: 30px; right: 30px; background: #1e1b4b; color: #ffffff; padding: 16px 28px;
             border-radius: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); font-weight: 600; transform: translateY(100px);
-            opacity: 0; transition: all 0.3s ease; z-index: 10000; font-size: 14px; border: 1px solid var(--border);
+            opacity: 0; transition: all 0.3s ease; z-index: 10000; font-size: 14px; border: 1px solid rgba(166, 0, 255, 0.5);
         }
         .notification.show { transform: translateY(0); opacity: 1; }
         
@@ -1868,13 +1868,18 @@
                 plugins: { 
                     legend: { labels: { font: { weight: '600' } } },
                     tooltip: {
+                        backgroundColor: '#1e1b4b',
                         titleColor: '#ffffff',
                         bodyColor: '#ffffff',
-                        backgroundColor: 'rgba(15, 23, 42, 0.95)',
                         titleFont: { size: 14 },
                         bodyFont: { size: 13 },
-                        padding: 10,
-                        displayColors: true
+                        padding: 12,
+                        displayColors: true,
+                        callbacks: {
+                            labelTextColor: function() {
+                                return '#ffffff';
+                            }
+                        }
                     }
                 }
             }
