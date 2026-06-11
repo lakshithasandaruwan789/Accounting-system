@@ -1267,6 +1267,12 @@
         if (typeof Chart === 'undefined') return;
         Chart.defaults.color = isDark ? '#e4ccff' : '#64748b';
         Chart.defaults.borderColor = isDark ? 'rgba(166, 0, 255, 0.15)' : '#e2e8f0';
+        
+        // Ensure tooltip text stays readable on its dark background
+        if (!Chart.defaults.plugins.tooltip) Chart.defaults.plugins.tooltip = {};
+        Chart.defaults.plugins.tooltip.titleColor = '#ffffff';
+        Chart.defaults.plugins.tooltip.bodyColor = '#ffffff';
+
         if (profitChartInstance) {
             profitChartInstance.options.scales.x.ticks.color = Chart.defaults.color;
             profitChartInstance.options.scales.y.ticks.color = Chart.defaults.color;
@@ -1311,6 +1317,10 @@
         Chart.defaults.color = '#64748b';
         Chart.defaults.borderColor = '#e2e8f0';
         Chart.defaults.font.family = "'Plus Jakarta Sans', sans-serif";
+        if (!Chart.defaults.plugins) Chart.defaults.plugins = {};
+        if (!Chart.defaults.plugins.tooltip) Chart.defaults.plugins.tooltip = {};
+        Chart.defaults.plugins.tooltip.titleColor = '#ffffff';
+        Chart.defaults.plugins.tooltip.bodyColor = '#ffffff';
     }
 
     // --- DATABASE SETUP (FIREBASE) ---
@@ -1848,10 +1858,10 @@
                 responsive: true, 
                 maintainAspectRatio: false, 
                 scales: { 
-                    y: { beginAtZero: true, grid: { color: '#f1f5f9' } },
+                    y: { beginAtZero: true, grid: { color: Chart.defaults.borderColor || '#f1f5f9' } },
                     x: { grid: { display: false } }
                 },
-                plugins: { legend: { labels: { color: '#1e293b', font: { weight: '600' } } } }
+                plugins: { legend: { labels: { font: { weight: '600' } } } }
             }
         });
     }
