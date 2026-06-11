@@ -2729,11 +2729,8 @@
                          s = trackData.data.status_name.toString().toLowerCase();
                     } else if(trackData.status_name) {
                          s = trackData.status_name.toString().toLowerCase();
-                    } else {
-                         // Fallback dump
-                         let dump = JSON.stringify(trackData).toLowerCase();
-                         if(dump.includes('failed to deliver') || dump.includes('failed order') || dump.includes('returned to') || dump.includes('invalid destination')) s = 'returned';
-                         else if(dump.includes('"status":"delivered') || dump.includes('"status_name":"delivered') || dump.includes('partially delivered')) s = 'deliver';
+                    } else if(trackData.data && trackData.data.tracking_history && trackData.data.tracking_history.length > 0) {
+                         s = trackData.data.tracking_history[0].status.toString().toLowerCase();
                     }
                     
                     // Royal Express Logic
