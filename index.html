@@ -177,6 +177,8 @@
         .nav-item.active { background-color: var(--sidebar-active); color: white; border-radius: 8px; box-shadow: 0 4px 15px rgba(139, 92, 246, 0.4); }
         .nav-icon { font-size: 18px; }
 
+        .hamburger-btn { display: none; } /* Hidden on desktop */
+
         /* --- MAIN CONTENT --- */
         .main-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; position: relative; }
 
@@ -454,8 +456,8 @@
             .date-inputs { gap: 8px !important; align-items: center; }
             .date-inputs .btn-export { padding: 4px 12px !important; font-size: 12px !important; border-radius: 20px !important; margin: 0 !important; }
 
+            .hamburger-btn { display: inline-block !important; padding: 8px 12px; background: #f1f5f9; border-radius: 8px; margin-bottom: 0; width: auto;}
             
-            .hamburger-btn { padding: 8px 12px !important; background: #f1f5f9 !important; border-radius: 8px !important; display: inline-block; margin-bottom: 0 !important; width: auto !important;}
             .export-btns-container { display: none !important; }
             .topbar-controls .export-group { padding: 4px; gap: 5px; background: transparent; border: none; }
 
@@ -650,7 +652,7 @@
         <div style="display:flex; flex-direction:column; width: 100%;">
             <div style="display:flex; align-items:center; width: 100%; justify-content: space-between; margin-bottom: 20px;">
                 <div style="display:flex; align-items:flex-start; flex-direction:column;">
-                    <button class="hamburger-btn" onclick="toggleSidebar()" style="background:none; border:none; font-size:24px; cursor:pointer; color:var(--text-main); padding:0; display:none;" title="Toggle Sidebar">☰</button>
+                    <button class="hamburger-btn" onclick="toggleSidebar()" style="background:none; border:none; font-size:24px; cursor:pointer; color:var(--text-main); padding:0;" title="Toggle Sidebar">☰</button>
                     <h1 id="dash-title">Dashboard</h1>
                     <p class="subtitle">Welcome back, here's what's happening today.</p>
                 </div>
