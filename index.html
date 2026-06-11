@@ -620,7 +620,7 @@
                         <p id="curfox-confirmed-count" style="margin:0; font-size:24px; color:var(--primary); font-weight:900;">--</p>
                     </div>
                     <div style="background:#fff; padding:10px 20px; border-radius:10px; box-shadow:0 2px 10px rgba(0,0,0,0.05); text-align:center; min-width: 100px;">
-                        <p style="margin:0; font-size:12px; color:var(--text-muted); font-weight:700;">Dispatched</p>
+                        <p style="margin:0; font-size:12px; color:var(--text-muted); font-weight:700;">ASSIGNED TO RIDER</p>
                         <p id="curfox-dispatched-count" style="margin:0; font-size:24px; color:var(--warning); font-weight:900;">--</p>
                     </div>
                     <div style="background:#fff; padding:10px 20px; border-radius:10px; box-shadow:0 2px 10px rgba(0,0,0,0.05); text-align:center; min-width: 100px;">
@@ -2591,7 +2591,7 @@
                         <td style="color:var(--text-muted);">${timeStr}</td>
                         <td style="font-weight:bold;">${data.waybill}</td>
                         <td>${data.product || '-'}</td>
-                        <td><span class="badge ${data.status === 'Delivered' ? 'bg-success' : (data.status === 'Returned' ? 'bg-danger' : (data.status === 'Dispatched' ? 'bg-warning' : 'bg-primary'))}">${data.status}</span></td>
+                        <td><span class="badge ${data.status === 'Delivered' ? 'bg-success' : (data.status === 'Returned' ? 'bg-danger' : (data.status === 'ASSIGNED TO RIDER' ? 'bg-warning' : 'bg-primary'))}">${data.status}</span></td>
                         <td>
                             <button onclick="deleteScannedOrder('${doc.id}')" style="background:none; border:none; cursor:pointer; color:var(--danger);" title="Delete Order">🗑️</button>
                         </td>
@@ -2684,8 +2684,8 @@
         document.getElementById('curfox-returned-count').textContent = '...';
         
         try {
-            // Get all orders that are currently 'Confirmed' or 'Dispatched'
-            const snap = await db.collection('orders').where('status', 'in', ['Confirmed', 'Dispatched']).get();
+            // Get all orders that are currently 'Confirmed' or 'ASSIGNED TO RIDER'
+            const snap = await db.collection('orders').where('status', 'in', ['Confirmed', 'ASSIGNED TO RIDER']).get();
             let confirmedDocs = snap.docs;
             
             // If none, just update dashboard counts from DB
@@ -2756,8 +2756,8 @@
                             newlyReturned++;
                         }
                     } else if(s.includes('assigned to destination rider')) {
-                        if(d.status !== 'Dispatched') {
-                            await db.collection('orders').doc(doc.id).update({status: 'Dispatched'});
+                        if(d.status !== 'ASSIGNED TO RIDER') {
+                            await db.collection('orders').doc(doc.id).update({status: 'ASSIGNED TO RIDER'});
                             newlyDispatched++;
                         }
                     }
@@ -2766,7 +2766,7 @@
                 }
             }
 
-            notify(`Sync Complete! ${newlyDelivered} Delivered, ${newlyReturned} Returned, ${newlyDispatched} Dispatched.`, false, 5000);
+            notify(`Sync Complete! ${newlyDelivered} Delivered, ${newlyReturned} Returned, ${newlyDispatched} Assigned To Rider.`, false, 5000);
             loadDashboardStats();
             if(document.getElementById('page-orders').classList.contains('active')) loadScannedOrders();
             
@@ -2788,7 +2788,7 @@
             snap.forEach(doc => {
                 let s = doc.data().status;
                 if(s === 'Confirmed') c++;
-                if(s === 'Dispatched') disp++;
+                if(s === 'ASSIGNED TO RIDER') disp++;
                 if(s === 'Delivered') d++;
                 if(s === 'Returned') r++;
             });
