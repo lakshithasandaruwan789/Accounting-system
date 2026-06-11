@@ -2719,18 +2719,11 @@
 
                     const trackData = await trackRes.json();
                     
-                    // DEBUG DUMP - Display the first API response in the UI so we can see the exact JSON structure
-                    if (doc === confirmedDocs[0]) {
-                        const dumpStr = JSON.stringify(trackData, null, 2);
-                        const msgBox = document.getElementById('scan-success-msg');
-                        if (msgBox) {
-                            msgBox.innerHTML = `<textarea style="width:100%; height:200px; font-size:12px; border:2px solid red;" readonly>${dumpStr}</textarea>`;
-                        }
-                    }
-
-                    // Robust status matching based on Royal Express exact statuses
+                    // Robust status matching based on exact Curfox array structure
                     let s = "";
-                    if(trackData.data && trackData.data.status) {
+                    if(Array.isArray(trackData.data) && trackData.data.length > 0 && trackData.data[0].status) {
+                         s = (trackData.data[0].status.name || trackData.data[0].status).toString().toLowerCase();
+                    } else if(trackData.data && trackData.data.status) {
                          s = (trackData.data.status.name || trackData.data.status).toString().toLowerCase();
                     } else if(trackData.status) {
                          s = (trackData.status.name || trackData.status).toString().toLowerCase();
@@ -2740,10 +2733,8 @@
                          s = trackData.status_name.toString().toLowerCase();
                     } else if(trackData.data && trackData.data.order_status) {
                          s = trackData.data.order_status.toString().toLowerCase();
-                    } else if(trackData.data && trackData.data.tracking_history && trackData.data.tracking_history.length > 0) {
-                         s = trackData.data.tracking_history[0].status.toString().toLowerCase();
                     }
-                    
+
                     // Royal Express Logic
                     // Deliver: DELIVERED, PARTIALLY DELIVERED
                     // Return: FAILED TO DELIVER, RETURNED TO SORTING WAREHOUSE, RECEIVED FAILED ORDER, RETURNED TO MERCHANT, etc.
