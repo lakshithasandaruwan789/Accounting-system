@@ -720,11 +720,15 @@
                         <select id="scan-product"></select>
                     </div>
 
-                    <div style="margin-top: 30px;">
-                        <input type="text" id="scan-waybill" placeholder="Click here & Scan Barcode..." 
-                            style="font-size: 24px; padding: 20px; text-align: center; border: 3px solid var(--primary); background: #f0f9ff; border-radius: 15px; width: 100%; max-width: 400px; box-shadow: 0 4px 15px rgba(59, 130, 246, 0.2);"
-                            onkeydown="if(event.key === 'Enter') handleBarcodeScan(this.value)">
-                        <p style="font-size: 12px; color: var(--success); margin-top: 10px; font-weight: bold;" id="scan-success-msg"></p>
+                    <div style="margin: 0 auto 30px auto; max-width: 400px;">
+                        <label style="display:block; text-align:left; margin-bottom:8px; font-weight:700; font-size:13px; color:var(--text-main);">Type or Scan Waybill</label>
+                        <div style="display: flex; gap: 10px;">
+                            <input type="text" id="scan-waybill" placeholder="Scan or Type..." 
+                                style="flex: 1; font-size: 16px; padding: 12px 15px; border: 2px solid var(--primary); background: #f0f9ff; border-radius: 12px; box-sizing: border-box; outline: none;"
+                                onkeydown="if(event.key === 'Enter') handleBarcodeScan(this.value)">
+                            <button class="action-btn" style="width: auto; padding: 12px 20px; border-radius: 12px; white-space: nowrap;" onclick="handleBarcodeScan(document.getElementById('scan-waybill').value)">Add</button>
+                        </div>
+                        <p style="font-size: 12px; color: var(--success); margin-top: 10px; font-weight: bold; text-align: left;" id="scan-success-msg"></p>
                     </div>
 
                     <div style="margin-top: 50px; padding-top: 20px; border-top: 2px dashed #e2e8f0;">
