@@ -616,10 +616,10 @@
             <h2 style="margin-top:0; font-family:'Outfit', sans-serif; font-weight:800; font-size:28px; color:var(--text-main);" id="dash-title">Week 1 Overview</h2>
             
             <!-- BULK COURIER DASHBOARD -->
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; background:linear-gradient(135deg, #fdf4ff, #f3e8ff); padding:20px; border-radius:15px; border:1px solid #e9d5ff; flex-wrap: wrap; gap: 15px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; background:#f8fafc; padding:20px; border-radius:15px; border:1px solid #e2e8f0; flex-wrap: wrap; gap: 15px;">
                 <div>
-                    <h3 style="margin:0; font-size:16px; color:#6b21a8; font-weight:800;">📦 Courier Status (Last 7 Days)</h3>
-                    <p style="margin:5px 0 0 0; font-size:13px; color:#7e22ce;">Royal Express auto-sync summary.</p>
+                    <h3 style="margin:0; font-size:16px; color:var(--secondary); font-weight:800;">Courier Status (Last 7 Days)</h3>
+                    <p style="margin:5px 0 0 0; font-size:13px; color:var(--text-muted);">Royal Express auto-sync summary.</p>
                 </div>
                 <div style="display:flex; gap:15px; align-items:center;">
                     <div style="background:#fff; padding:10px 20px; border-radius:10px; box-shadow:0 2px 10px rgba(0,0,0,0.05); text-align:center; min-width: 100px;">
@@ -638,7 +638,7 @@
                         <p style="margin:0; font-size:12px; color:var(--text-muted); font-weight:700;">Returned</p>
                         <p id="curfox-returned-count" style="margin:0; font-size:24px; color:var(--danger); font-weight:900;">--</p>
                     </div>
-                    <button class="action-btn" style="background:#9333ea; width:auto;" onclick="fetchBulkCourierStats()">🔄 Sync Now</button>
+                    <button class="action-btn" style="background:var(--primary); width:auto;" onclick="fetchBulkCourierStats()">Sync Now</button>
                 </div>
             </div>
 
@@ -663,14 +663,14 @@
 
             <!-- CHARTS SECTION -->
             <div class="table-card" style="margin-bottom: 35px;">
-                <h2>📈 Profit & Expenses Trend</h2>
+                <h2>Profit & Expenses Trend</h2>
                 <div style="height:300px;">
                     <canvas id="profitChart"></canvas>
                 </div>
             </div>
 
             <div class="table-card" style="margin-bottom:35px;">
-                <h2>📋 Lead Records</h2>
+                <h2>Lead Records</h2>
                 <table>
                     <thead>
                         <tr>
@@ -689,7 +689,7 @@
 
             <div class="dash-tables">
                 <div class="table-card">
-                    <h2>📦 Product Purchases</h2>
+                    <h2>Product Purchases</h2>
                     <table>
                         <thead>
                             <tr>
@@ -705,7 +705,7 @@
                 </div>
 
                 <div class="table-card">
-                    <h2>💸 Profit History</h2>
+                    <h2>Profit History</h2>
                     <table>
                         <thead>
                             <tr>
@@ -728,7 +728,7 @@
         <div id="page-orders" class="page">
             <div class="two-col-layout">
                 <div class="form-card" style="text-align: center;">
-                    <h2 style="font-size:24px;">📦 Ultra-Fast Barcode Scanner</h2>
+                    <h2 style="font-size:24px;">Ultra-Fast Barcode Scanner</h2>
                     <p style="color:var(--text-muted); font-size:14px; margin-bottom: 25px;">Click inside the box below and scan your waybills non-stop.</p>
                     
                     <div class="form-group" style="max-width: 400px; margin: 0 auto 20px auto; text-align: left;">
@@ -748,16 +748,16 @@
                     </div>
 
                     <div style="margin-top: 50px; padding-top: 20px; border-top: 2px dashed #e2e8f0;">
-                        <h3 style="color: var(--danger); font-size: 14px;">🛠️ Developer API Testing Tools</h3>
+                        <h3 style="color: var(--danger); font-size: 14px;">Developer API Testing Tools</h3>
                         <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
                             <button class="action-btn" style="background: var(--warning); color: #fff; width: auto;" onclick="testWaybillAPI()">Test API with Last Scanned Waybill</button>
-                            <button class="action-btn" style="background: var(--danger); color: #fff; width: auto;" onclick="clearAllOrders()">⚠️ Wipe All Orders DB</button>
+                            <button class="action-btn" style="background: var(--danger); color: #fff; width: auto;" onclick="clearAllOrders()">Wipe All Orders DB</button>
                         </div>
                     </div>
                 </div>
 
                 <div class="table-card">
-                    <h2>📋 Today's Scanned Orders</h2>
+                    <h2>Today's Scanned Orders</h2>
                     <table>
                         <thead>
                             <tr>
@@ -778,7 +778,7 @@
         <div id="page-leads" class="page">
             <div class="two-col-layout">
                 <div class="form-card">
-                    <h2>🎯 Daily Leads Entry <span id="lead-status-badge" class="badge" style="display:none;">Editing</span></h2>
+                    <h2>Daily Leads Entry <span id="lead-status-badge" class="badge" style="display:none;">Editing</span></h2>
                     <div class="form-group">
                         <label>Daily Ads Budget (Rs)</label>
                         <input type="text" id="lead-budget" placeholder="0.00" oninput="formatNumberInput(event)">
@@ -795,7 +795,7 @@
                 </div>
                 
                 <div class="table-card">
-                    <h2>📋 Lead Records</h2>
+                    <h2>Lead Records</h2>
                     <table>
                         <thead>
                             <tr>
@@ -818,7 +818,7 @@
         <div id="page-purchases" class="page">
             <div class="two-col-layout">
                 <div class="form-card">
-                    <h2>📦 Factory Purchases</h2>
+                    <h2>Factory Purchases</h2>
                     <div class="form-group">
                         <label>Product Name</label>
                         <select id="prod-name" onchange="updateProductPrice()">
@@ -837,7 +837,7 @@
                 </div>
 
                 <div class="table-card">
-                    <h2>📦 Purchase History</h2>
+                    <h2>Purchase History</h2>
                     <table>
                         <thead>
                             <tr>
@@ -858,7 +858,7 @@
         <div id="page-packaging" class="page">
             <div class="two-col-layout">
                 <div class="form-card">
-                    <h2>🏷️ Packaging & Other Costs</h2>
+                    <h2>Packaging & Other Costs</h2>
                     <p style="font-size:13px; color:var(--text-muted); margin-top:-15px;">Enter costs for Bubble Wrap, Tape, Labels, Bags, etc. here.</p>
                     <div class="form-group">
                         <label>Item Description</label>
@@ -876,7 +876,7 @@
                 </div>
 
                 <div class="table-card">
-                    <h2>🏷️ Costs History</h2>
+                    <h2>Costs History</h2>
                     <table>
                         <thead>
                             <tr>
@@ -897,7 +897,7 @@
         <div id="page-profit" class="page">
             <div class="two-col-layout">
                 <div class="form-card">
-                    <h2>💰 Weekly Profit Calculator</h2>
+                    <h2>Weekly Profit Calculator</h2>
                     <div class="form-group">
                         <label style="color: var(--success); font-size: 14px;">Sale Profit / Received Payment (Rs)</label>
                         <input type="number" id="exp-received" placeholder="0.00" style="border: 2px solid var(--success); background:#f0fdf4; font-size:16px;">
