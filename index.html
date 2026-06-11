@@ -1274,14 +1274,30 @@
         
         // Ensure tooltip text stays readable on its dark background
         if (!Chart.defaults.plugins.tooltip) Chart.defaults.plugins.tooltip = {};
-        Chart.defaults.plugins.tooltip.titleColor = '#ffffff';
-        Chart.defaults.plugins.tooltip.bodyColor = '#ffffff';
+        
+        // High Contrast Tooltips
+        const ttBg = isDark ? '#ffffff' : '#1e293b';
+        const ttText = isDark ? '#000000' : '#ffffff';
+
+        Chart.defaults.plugins.tooltip.backgroundColor = ttBg;
+        Chart.defaults.plugins.tooltip.titleColor = ttText;
+        Chart.defaults.plugins.tooltip.bodyColor = ttText;
 
         if (profitChartInstance) {
             profitChartInstance.options.scales.x.ticks.color = Chart.defaults.color;
             profitChartInstance.options.scales.y.ticks.color = Chart.defaults.color;
             profitChartInstance.options.scales.x.grid.color = Chart.defaults.borderColor;
             profitChartInstance.options.scales.y.grid.color = Chart.defaults.borderColor;
+            
+            if (profitChartInstance.options.plugins && profitChartInstance.options.plugins.tooltip) {
+                profitChartInstance.options.plugins.tooltip.backgroundColor = ttBg;
+                profitChartInstance.options.plugins.tooltip.titleColor = ttText;
+                profitChartInstance.options.plugins.tooltip.bodyColor = ttText;
+                profitChartInstance.options.plugins.tooltip.callbacks = {
+                    labelTextColor: function() { return ttText; },
+                    titleColor: function() { return ttText; }
+                };
+            }
             profitChartInstance.update();
         }
     }
@@ -1323,6 +1339,7 @@
         Chart.defaults.font.family = "'Plus Jakarta Sans', sans-serif";
         if (!Chart.defaults.plugins) Chart.defaults.plugins = {};
         if (!Chart.defaults.plugins.tooltip) Chart.defaults.plugins.tooltip = {};
+        Chart.defaults.plugins.tooltip.backgroundColor = '#1e293b';
         Chart.defaults.plugins.tooltip.titleColor = '#ffffff';
         Chart.defaults.plugins.tooltip.bodyColor = '#ffffff';
     }
