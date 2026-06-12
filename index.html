@@ -2888,6 +2888,12 @@
         element.style.transition = 'none';
         element.style.opacity = '1'; // Force visible since base CSS has opacity: 0
 
+        // Disable backdrop-filter globally during export to prevent rendering artifacts
+        const styleBlock = document.createElement('style');
+        styleBlock.id = 'pdf-export-style';
+        styleBlock.innerHTML = '* { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }';
+        document.head.appendChild(styleBlock);
+
         const isDarkMode = document.body.classList.contains('dark-mode');
         const bgColor = isDarkMode ? '#12121c' : '#f8fafc';
 
@@ -2895,7 +2901,7 @@
             margin:       0.3,
             filename:     'Lakshitha_Sandaruwan_Report.pdf',
             image:        { type: 'jpeg', quality: 0.98 },
-            html2canvas:  { scale: 2, useCORS: true, backgroundColor: bgColor, windowWidth: element.scrollWidth, windowHeight: element.scrollHeight },
+            html2canvas:  { scale: 2, useCORS: true, backgroundColor: bgColor, scrollY: 0, scrollX: 0 },
             jsPDF:        { unit: 'in', format: 'a4', orientation: 'landscape' }
         };
 
@@ -2903,6 +2909,8 @@
             element.style.animation = originalAnimation;
             element.style.transition = originalTransition;
             element.style.opacity = originalOpacity;
+            const styleToRemove = document.getElementById('pdf-export-style');
+            if (styleToRemove) styleToRemove.remove();
             actionBtns.forEach((btn, index) => {
                 btn.style.display = originalDisplays[index];
             });
