@@ -2320,6 +2320,9 @@
     }
 
     async function checkSmartAlerts(currentProfit) {
+        if(window.hasShownSmartAlerts) return;
+        window.hasShownSmartAlerts = true;
+
         let alertMsg = '';
         const isAdmin = currentUser.username === 'admin' || currentUser.username === 'admin@company.com' || (currentUser.permissions && currentUser.permissions.includes('staff'));
         const showFinancials = isAdmin || !window.systemConfig.hideFinancials;
@@ -2359,7 +2362,7 @@
                 if(window.smartAlertTimeout) clearTimeout(window.smartAlertTimeout);
                 window.smartAlertTimeout = setTimeout(() => {
                     alertBar.style.display = 'none';
-                }, 10000);
+                }, 5000);
             } else {
                 alertBar.style.display = 'none';
             }
