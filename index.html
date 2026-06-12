@@ -1075,7 +1075,7 @@
                         <input type="number" id="cat-price" placeholder="0.00">
                     </div>
                     
-                    <button class="action-btn" id="btn-save-catalog" style="background:var(--text-main); box-shadow:0 4px 15px rgba(30, 41, 59, 0.3);" onclick="saveCatalogProduct()">Save to Catalog</button>
+                    <button class="action-btn" id="btn-save-catalog" style="background:var(--primary); box-shadow:0 4px 15px rgba(30, 41, 59, 0.3);" onclick="saveCatalogProduct()">Save to Catalog</button>
                 </div>
 
                 <div class="table-card">
@@ -1083,7 +1083,6 @@
                     <table>
                         <thead>
                             <tr>
-                                <th>ID</th>
                                 <th>Product Name</th>
                                 <th>Factory Price</th>
                                 <th>Action</th>
@@ -1899,7 +1898,6 @@
             catalog.forEach(p => {
                 tbody.innerHTML += `
                     <tr>
-                        <td style="color:var(--text-muted);">#${p.id}</td>
                         <td style="font-weight:bold; color:var(--text-main);">${p.name}</td>
                         <td style="color:var(--success); font-weight:bold;">${formatRs(p.price)}</td>
                         <td style="white-space: nowrap;">
