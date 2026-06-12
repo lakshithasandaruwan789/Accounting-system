@@ -2885,11 +2885,14 @@
         element.style.animation = 'none';
         element.style.transition = 'none';
 
+        const isDarkMode = document.body.classList.contains('dark-mode');
+        const bgColor = isDarkMode ? '#12121c' : '#f8fafc';
+
         const opt = {
             margin:       0.3,
             filename:     'Lakshitha_Sandaruwan_Report.pdf',
             image:        { type: 'jpeg', quality: 0.98 },
-            html2canvas:  { scale: 2, useCORS: true, backgroundColor: '#f8fafc' },
+            html2canvas:  { scale: 2, useCORS: true, backgroundColor: bgColor, windowWidth: element.scrollWidth, windowHeight: element.scrollHeight },
             jsPDF:        { unit: 'in', format: 'a4', orientation: 'landscape' }
         };
 
