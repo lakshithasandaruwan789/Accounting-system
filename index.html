@@ -1549,6 +1549,7 @@
     }
 
     function clearDateFilter() {
+        document.getElementById('global-date').value = '';
         isDateFilterApplied = false;
         loadAllData();
         notify("Date filter cleared!");
