@@ -3239,6 +3239,8 @@
             btn.innerHTML = `<span style="font-size: 18px;">❌</span> Failed`;
             setTimeout(() => { btn.innerHTML = originalText; btn.disabled = false; }, 3000);
         }
+    };
+    
     // --- ADVANCED REPORTS ---
     window.generateCustomReport = async function() {
         const start = document.getElementById('rep-start-date').value;
