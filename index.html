@@ -2882,8 +2882,11 @@
         // Disable animations to prevent html2canvas from capturing the element mid-fade (which causes faded/light colors)
         const originalAnimation = element.style.animation;
         const originalTransition = element.style.transition;
+        const originalOpacity = element.style.opacity;
+        
         element.style.animation = 'none';
         element.style.transition = 'none';
+        element.style.opacity = '1'; // Force visible since base CSS has opacity: 0
 
         const isDarkMode = document.body.classList.contains('dark-mode');
         const bgColor = isDarkMode ? '#12121c' : '#f8fafc';
@@ -2899,6 +2902,7 @@
         html2pdf().set(opt).from(element).save().then(() => {
             element.style.animation = originalAnimation;
             element.style.transition = originalTransition;
+            element.style.opacity = originalOpacity;
             actionBtns.forEach((btn, index) => {
                 btn.style.display = originalDisplays[index];
             });
