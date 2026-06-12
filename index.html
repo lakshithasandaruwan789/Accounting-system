@@ -675,14 +675,11 @@
         </div>
     </div>
     
-    <!-- SMART ALERTS -->
-    <div id="smart-alert-bar" style="display:none; margin: 15px 30px 0 30px; background: rgba(239, 68, 68, 0.1); border: 1px solid var(--danger); color: var(--danger); padding: 12px 20px; border-radius: 8px; font-size: 14px; box-shadow: 0 4px 6px rgba(239, 68, 68, 0.05);"></div>
-
     <!-- TOPBAR -->
     <header class="topbar">
         <div style="display:flex; flex-direction:column; width: 100%;">
             <div class="topbar-main-row" style="display:flex; align-items:center; width: 100%; justify-content: space-between; margin-bottom: 20px;">
-                <div style="display:flex; align-items:center; gap: 15px;">
+                <div class="topbar-title-section" style="display:flex; align-items:center; gap: 15px;">
                     <button class="hamburger-btn" onclick="toggleSidebar()" style="background:none; border:none; font-size:24px; cursor:pointer; color:var(--text-main); padding:0;" title="Toggle Sidebar">☰</button>
                     <div style="display:flex; flex-direction:column;">
                         <h1 id="dash-title" style="margin:0;">Dashboard</h1>
@@ -690,29 +687,34 @@
                     </div>
                 </div>
 
-                <div class="topbar-controls">
-                    <div class="control-group">
-                        <label>Filter:</label>
-                        <select id="active-week" onchange="handleContextChange()">
-                            <option value="Week 1">Week 1</option>
-                            <option value="Week 2">Week 2</option>
-                            <option value="Week 3">Week 3</option>
-                            <option value="Week 4">Week 4</option>
-                            <option value="Month Overview" style="color:var(--danger); font-weight:700;">Month Overview</option>
-                        </select>
-                    </div>
-                    <div class="control-group" id="date-picker-group">
-                        <label>Date:</label>
-                        <div class="date-inputs" style="display:flex; gap:5px; width:100%;">
-                            <input type="date" id="global-date" onchange="handleDateChange()" style="flex:1;">
-                            <button class="btn-export" style="background:var(--success); color:white; padding:6px 12px; border:none; margin:0;" onclick="applyDateFilter()">Apply</button>
-                            <button class="btn-export" style="padding:6px 12px; margin:0;" onclick="clearDateFilter()">Clear</button>
+                <div class="controls-alert-wrapper" style="display:flex; align-items:stretch; gap:15px; width: 100%; justify-content: flex-end;">
+                    <div class="topbar-controls" style="flex: 1; max-width: 600px;">
+                        <div class="control-group">
+                            <label>Filter:</label>
+                            <select id="active-week" onchange="handleContextChange()">
+                                <option value="Week 1">Week 1</option>
+                                <option value="Week 2">Week 2</option>
+                                <option value="Week 3">Week 3</option>
+                                <option value="Week 4">Week 4</option>
+                                <option value="Month Overview" style="color:var(--danger); font-weight:700;">Month Overview</option>
+                            </select>
+                        </div>
+                        <div class="control-group" id="date-picker-group">
+                            <label>Date:</label>
+                            <div class="date-inputs" style="display:flex; gap:5px; width:100%; flex-wrap:wrap;">
+                                <input type="date" id="global-date" onchange="handleDateChange()" style="flex:1; min-width:120px;">
+                                <button class="btn-export" style="background:var(--success); color:white; padding:6px 12px; border:none; margin:0; flex:1; min-width:80px;" onclick="applyDateFilter()">Apply</button>
+                                <button class="btn-export" style="padding:6px 12px; margin:0; flex:1; min-width:80px;" onclick="clearDateFilter()">Clear</button>
+                            </div>
+                        </div>
+                        <div class="control-group export-group" style="gap:8px; background: transparent; border: none; box-shadow: none; padding: 0;">
+                            <button class="btn-export" style="color:var(--success); border-color:var(--success); padding:6px 14px; margin:0; flex:1;" onclick="exportToCSV()">📄 CSV</button>
+                            <button class="btn-export" style="color:var(--danger); border-color:var(--danger); padding:6px 14px; margin:0; flex:1;" onclick="exportToPDF()">📑 PDF</button>
                         </div>
                     </div>
-                    <div class="control-group export-group" style="gap:8px; background: transparent; border: none; box-shadow: none; padding: 0;">
-                        <button class="btn-export" style="color:var(--success); border-color:var(--success); padding:6px 14px; margin:0;" onclick="exportToCSV()">📄 CSV</button>
-                        <button class="btn-export" style="color:var(--danger); border-color:var(--danger); padding:6px 14px; margin:0;" onclick="exportToPDF()">📑 PDF</button>
-                    </div>
+                    
+                    <!-- SMART ALERTS -->
+                    <div id="smart-alert-bar" style="display:none; flex-direction:column; justify-content:center; flex: 0 0 110px; background: rgba(239, 68, 68, 0.1); border: 1px solid var(--danger); color: var(--danger); padding: 12px; border-radius: 20px; font-size: 13px; box-shadow: var(--card-shadow); text-align:center; word-break: break-word;"></div>
                 </div>
             </div>
         </div>
@@ -2353,7 +2355,7 @@
         const alertBar = document.getElementById('smart-alert-bar');
         if(alertMsg !== '') {
             alertBar.innerHTML = alertMsg;
-            alertBar.style.display = 'block';
+            alertBar.style.display = 'flex';
         } else {
             alertBar.style.display = 'none';
         }
