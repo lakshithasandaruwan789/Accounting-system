@@ -371,9 +371,14 @@
         .dash-tables { display: grid; grid-template-columns: 2fr 1fr; gap: 35px; margin-top: 35px; }
 
 
+        /* Responsive visibility */
+        .mobile-only { display: none !important; }
+        
         /* Mobile & Tablet Overhaul */
         @media (max-width: 900px) {
             body { flex-direction: column; }
+            .mobile-only { display: flex !important; }
+            .desktop-only { display: none !important; }
             
             /* Sidebar Overlay */
             .sidebar {
@@ -675,6 +680,9 @@
         </div>
     </div>
     
+    <!-- SMART ALERTS (DESKTOP) -->
+    <div id="smart-alert-bar-desktop" class="desktop-only" style="display:none; margin: 15px 30px 0 30px; background: rgba(239, 68, 68, 0.1); border: 1px solid var(--danger); color: var(--danger); padding: 12px 20px; border-radius: 8px; font-size: 14px; box-shadow: 0 4px 6px rgba(239, 68, 68, 0.05);"></div>
+
     <!-- TOPBAR -->
     <header class="topbar">
         <div style="display:flex; flex-direction:column; width: 100%;">
@@ -713,8 +721,8 @@
                         </div>
                     </div>
                     
-                    <!-- SMART ALERTS -->
-                    <div id="smart-alert-bar" style="display:none; flex-direction:column; justify-content:center; flex: 0 0 110px; background: rgba(239, 68, 68, 0.1); border: 1px solid var(--danger); color: var(--danger); padding: 12px; border-radius: 20px; font-size: 13px; box-shadow: var(--card-shadow); text-align:center; word-break: break-word;"></div>
+                    <!-- SMART ALERTS (MOBILE) -->
+                    <div id="smart-alert-bar-mobile" class="mobile-only" style="display:none; flex-direction:column; justify-content:center; flex: 0 0 110px; background: rgba(239, 68, 68, 0.1); border: 1px solid var(--danger); color: var(--danger); padding: 12px; border-radius: 20px; font-size: 13px; box-shadow: var(--card-shadow); text-align:center; word-break: break-word;"></div>
                 </div>
             </div>
         </div>
@@ -2352,12 +2360,21 @@
             }
         } catch(e) {}
         
-        const alertBar = document.getElementById('smart-alert-bar');
+        const alertBarDesktop = document.getElementById('smart-alert-bar-desktop');
+        const alertBarMobile = document.getElementById('smart-alert-bar-mobile');
+        
         if(alertMsg !== '') {
-            alertBar.innerHTML = alertMsg;
-            alertBar.style.display = 'flex';
+            if(alertBarDesktop) {
+                alertBarDesktop.innerHTML = alertMsg;
+                alertBarDesktop.style.display = 'block';
+            }
+            if(alertBarMobile) {
+                alertBarMobile.innerHTML = alertMsg;
+                alertBarMobile.style.display = 'flex';
+            }
         } else {
-            alertBar.style.display = 'none';
+            if(alertBarDesktop) alertBarDesktop.style.display = 'none';
+            if(alertBarMobile) alertBarMobile.style.display = 'none';
         }
     }
 
