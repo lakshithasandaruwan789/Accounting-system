@@ -330,6 +330,7 @@
             background: transparent; color: var(--text-muted); 
             font-weight: 800; font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px;
             border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 10px;
+            white-space: nowrap;
         }
         td { background: rgba(0,0,0,0.15); border-top: 1px solid transparent; border-bottom: 1px solid transparent; transition: all 0.3s ease; }
         td:first-child { border-top-left-radius: 10px; border-bottom-left-radius: 10px; border-left: 1px solid transparent; }
@@ -1927,6 +1928,21 @@
         document.getElementById('btn-save-catalog').textContent = "Update Catalog";
     }
 
+    window.editLead = function(id, date, budget, leads, confirmed) {
+        currentLeadId = id;
+        document.getElementById('global-date').value = date;
+        document.getElementById('global-date').dataset.filtered = "true";
+        document.getElementById('lead-budget').value = budget;
+        document.getElementById('lead-count').value = leads;
+        document.getElementById('lead-confirmed').value = confirmed;
+        document.getElementById('lead-status-badge').style.display = 'inline-block';
+        const btn = document.getElementById('btn-save-lead');
+        btn.textContent = "Update Lead";
+        btn.style.background = "var(--warning)";
+        btn.style.boxShadow = "0 4px 15px rgba(245, 158, 11, 0.3)";
+        window.scrollTo({top: 0, behavior: 'smooth'});
+    }
+
     window.saveCatalogProduct = async function() {
         const name = document.getElementById('cat-name').value;
         const price = document.getElementById('cat-price').value;
@@ -2101,7 +2117,7 @@
             const dCPC = showFinancials ? formatRs(costPerConfirmed) : '***';
 
             lBodyDash += `<tr class="${isSelectedClass}">${weekTd}<td><strong>${l.date}</strong></td><td style="font-weight:600;">${dBudget}</td><td>${l.totalLeads}</td><td><strong style="color:var(--success);">${l.confirmedLeads}</strong></td><td style="color:var(--primary); font-weight:bold;">${dCPL}</td><td style="color:var(--success); font-weight:bold;">${dCPC}</td></tr>`;
-            lBodyManage += `<tr class="${isSelectedClass}"><td><strong>${l.date}</strong></td><td style="font-weight:600;">${dBudget}</td><td>${l.totalLeads}</td><td><strong style="color:var(--success);">${l.confirmedLeads}</strong></td><td style="color:var(--primary); font-weight:bold;">${dCPL}</td><td style="color:var(--success); font-weight:bold;">${dCPC}</td><td><button class="btn-delete" onclick="deleteRecord('leads', '${l.id}')">Del</button></td></tr>`;
+            lBodyManage += `<tr class="${isSelectedClass}"><td><strong>${l.date}</strong></td><td style="font-weight:600;">${dBudget}</td><td>${l.totalLeads}</td><td><strong style="color:var(--success);">${l.confirmedLeads}</strong></td><td style="color:var(--primary); font-weight:bold;">${dCPL}</td><td style="color:var(--success); font-weight:bold;">${dCPC}</td><td style="white-space: nowrap;"><button class="btn-edit" onclick="editLead('${l.id}', '${l.date}', ${l.dailyBudget}, ${l.totalLeads}, ${l.confirmedLeads})">Edit</button><button class="btn-delete" onclick="deleteRecord('leads', '${l.id}')">Del</button></td></tr>`;
         });
         document.getElementById('tbl-dash-leads').innerHTML = lBodyDash;
         document.getElementById('tbl-manage-leads').innerHTML = lBodyManage;
