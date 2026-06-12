@@ -1549,7 +1549,7 @@
     }
 
     function clearDateFilter() {
-        document.getElementById('global-date').value = '';
+        document.getElementById('global-date').valueAsDate = new Date();
         isDateFilterApplied = false;
         loadAllData();
         notify("Date filter cleared!");
