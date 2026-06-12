@@ -1578,7 +1578,7 @@
     function notify(message, isError=false) {
         const notif = document.getElementById('notification');
         notif.textContent = message;
-        notif.style.background = isError ? "var(--danger)" : "var(--text-main)";
+        notif.style.background = isError ? "var(--danger)" : "var(--primary)";
         notif.classList.add('show');
         setTimeout(() => notif.classList.remove('show'), 3000);
     }
