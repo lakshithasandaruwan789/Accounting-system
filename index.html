@@ -380,6 +380,13 @@
             .mobile-only { display: flex !important; }
             .desktop-only { display: none !important; }
             
+            /* Smart Alert styling for mobile */
+            .smart-alert-bar {
+                font-size: 11px !important;
+                padding: 8px 15px !important;
+                margin: 10px 15px 0 15px !important;
+            }
+            
             /* Sidebar Overlay */
             .sidebar {
                 position: fixed; top: 0; left: 0; height: 100%; height: 100dvh; z-index: 1000;
@@ -421,35 +428,46 @@
             .topbar h1 { font-size: 24px !important; }
             .topbar p.subtitle { font-size: 13px !important; line-height: 1.3 !important; margin-top: 2px !important; }
 
-            /* Neat wrapping filter bar */
+            /* Neat wrapping filter bar for Mobile (Horizontal line) */
             .topbar-controls { 
                 display: flex;
-                flex-direction: column; 
+                flex-direction: row; 
                 width: 100%; 
-                gap: 0 !important; 
-                padding: 10px 15px !important;
-                align-items: stretch;
+                gap: 5px !important; 
+                padding: 5px !important;
+                align-items: center;
                 background: var(--card-bg) !important;
                 border: 1px solid var(--border) !important;
-                border-radius: 20px !important;
+                border-radius: 12px !important;
                 box-shadow: var(--card-shadow) !important;
                 margin-top: 5px !important;
+                overflow-x: auto;
+                flex-wrap: nowrap;
+                -webkit-overflow-scrolling: touch;
             }
 
             .control-group { 
                 display: flex;
                 flex-direction: row; 
-                justify-content: space-between;
+                justify-content: center;
                 align-items: center; 
-                padding: 12px 0 !important; 
+                padding: 0 !important; 
                 margin-bottom: 0; 
                 flex-shrink: 0; 
                 border-radius: 0 !important; 
                 background: transparent !important;
                 border: none !important;
-                border-bottom: 1px solid var(--border) !important;
+                border-bottom: none !important;
                 box-shadow: none !important;
             }
+            .control-group label { display: none; } /* Hide labels on mobile to save space */
+            
+            .control-group select { padding: 4px 8px; font-size: 11px; }
+            .control-group input[type="date"] { padding: 4px 8px; font-size: 11px; min-width: 110px !important; }
+            
+            /* Stack buttons vertically */
+            .btn-stack { flex-direction: column !important; gap: 2px !important; width: auto !important; }
+            .btn-stack .btn-export { padding: 4px 8px !important; font-size: 10px !important; min-width: 60px !important; flex: none !important; margin: 0 !important; }
             
             .control-group:last-child {
                 border-bottom: none !important;
@@ -680,8 +698,8 @@
         </div>
     </div>
     
-    <!-- SMART ALERTS (DESKTOP) -->
-    <div id="smart-alert-bar-desktop" class="desktop-only" style="display:none; margin: 15px 30px 0 30px; background: rgba(239, 68, 68, 0.1); border: 1px solid var(--danger); color: var(--danger); padding: 12px 20px; border-radius: 8px; font-size: 14px; box-shadow: 0 4px 6px rgba(239, 68, 68, 0.05);"></div>
+    <!-- SMART ALERTS -->
+    <div id="smart-alert-bar" class="smart-alert-bar" style="display:none; margin: 15px 30px 0 30px; background: rgba(239, 68, 68, 0.1); border: 1px solid var(--danger); color: var(--danger); padding: 12px 20px; border-radius: 8px; font-size: 14px; box-shadow: 0 4px 6px rgba(239, 68, 68, 0.05);"></div>
 
     <!-- TOPBAR -->
     <header class="topbar">
@@ -695,34 +713,33 @@
                     </div>
                 </div>
 
-                <div class="controls-alert-wrapper" style="display:flex; align-items:stretch; gap:15px; width: 100%; justify-content: flex-end;">
-                    <div class="topbar-controls" style="flex: 1; max-width: 600px;">
-                        <div class="control-group">
-                            <label>Filter:</label>
-                            <select id="active-week" onchange="handleContextChange()">
-                                <option value="Week 1">Week 1</option>
-                                <option value="Week 2">Week 2</option>
-                                <option value="Week 3">Week 3</option>
-                                <option value="Week 4">Week 4</option>
-                                <option value="Month Overview" style="color:var(--danger); font-weight:700;">Month Overview</option>
-                            </select>
-                        </div>
-                        <div class="control-group" id="date-picker-group">
-                            <label>Date:</label>
-                            <div class="date-inputs" style="display:flex; gap:5px; width:100%; flex-wrap:wrap;">
-                                <input type="date" id="global-date" onchange="handleDateChange()" style="flex:1; min-width:120px;">
-                                <button class="btn-export" style="background:var(--success); color:white; padding:6px 12px; border:none; margin:0; flex:1; min-width:80px;" onclick="applyDateFilter()">Apply</button>
-                                <button class="btn-export" style="padding:6px 12px; margin:0; flex:1; min-width:80px;" onclick="clearDateFilter()">Clear</button>
+                <div class="topbar-controls">
+                    <div class="control-group">
+                        <label>Filter:</label>
+                        <select id="active-week" onchange="handleContextChange()">
+                            <option value="Week 1">Week 1</option>
+                            <option value="Week 2">Week 2</option>
+                            <option value="Week 3">Week 3</option>
+                            <option value="Week 4">Week 4</option>
+                            <option value="Month Overview" style="color:var(--danger); font-weight:700;">Month Overview</option>
+                        </select>
+                    </div>
+                    <div class="control-group" id="date-picker-group">
+                        <label>Date:</label>
+                        <div class="date-inputs" style="display:flex; gap:5px; width:100%;">
+                            <input type="date" id="global-date" onchange="handleDateChange()" style="flex:1; min-width:120px;">
+                            <div class="btn-stack" style="display:flex; gap:5px;">
+                                <button class="btn-export" style="background:var(--success); color:white; padding:6px 12px; border:none; margin:0; flex:1;" onclick="applyDateFilter()">Apply</button>
+                                <button class="btn-export" style="padding:6px 12px; margin:0; flex:1;" onclick="clearDateFilter()">Clear</button>
                             </div>
                         </div>
-                        <div class="control-group export-group" style="gap:8px; background: transparent; border: none; box-shadow: none; padding: 0;">
+                    </div>
+                    <div class="control-group export-group" style="gap:8px; background: transparent; border: none; box-shadow: none; padding: 0;">
+                        <div class="btn-stack" style="display:flex; gap:5px; width:100%;">
                             <button class="btn-export" style="color:var(--success); border-color:var(--success); padding:6px 14px; margin:0; flex:1;" onclick="exportToCSV()">📄 CSV</button>
                             <button class="btn-export" style="color:var(--danger); border-color:var(--danger); padding:6px 14px; margin:0; flex:1;" onclick="exportToPDF()">📑 PDF</button>
                         </div>
                     </div>
-                    
-                    <!-- SMART ALERTS (MOBILE) -->
-                    <div id="smart-alert-bar-mobile" class="mobile-only" style="display:none; flex-direction:column; justify-content:center; flex: 0 0 110px; background: rgba(239, 68, 68, 0.1); border: 1px solid var(--danger); color: var(--danger); padding: 12px; border-radius: 20px; font-size: 13px; box-shadow: var(--card-shadow); text-align:center; word-break: break-word;"></div>
                 </div>
             </div>
         </div>
