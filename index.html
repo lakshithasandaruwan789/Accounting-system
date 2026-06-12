@@ -2444,6 +2444,11 @@
             confirmedLeads: parseInt(confirmedStr)
         };
 
+        if (!currentLeadId) {
+            const existing = await db.collection('leads').where('date', '==', date).get();
+            if(!existing.empty) currentLeadId = existing.docs[0].id;
+        }
+
         if (currentLeadId) {
             await db.collection('leads').doc(currentLeadId).update(payload);
             notify(`Lead data UPDATED for ${week}!`);
@@ -2467,7 +2472,7 @@
         
         loadAllData();
         if(typeof autoSelectWeek === 'function') autoSelectWeek();
-        handleDateChange(true); // Re-run date change logic to reset everything
+        // Removed handleDateChange(true) here so the boxes stay completely clear after saving
     }
 
     window.saveProductPurchase = async function() {
