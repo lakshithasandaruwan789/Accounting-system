@@ -1864,15 +1864,17 @@
         tbody.innerHTML = '';
         users.forEach(u => {
             const isMe = u.username === currentUser.username;
-            const delBtn = isMe ? `<span style="font-size:11px;color:var(--primary);font-weight:bold;">(You)</span>` : `<button class="btn-delete" onclick="deleteRecord('users', '${u.id}')">Del</button>`;
+            const delBtn = isMe ? `<span style="font-size:11px;color:var(--primary);font-weight:bold;">(You)</span>` : `<button class="btn-delete" style="margin:0; padding:4px 8px; font-size:11px;" onclick="deleteRecord('users', '${u.id}')">Del</button>`;
             
             tbody.innerHTML += `
                 <tr>
                     <td style="font-weight:bold; color:var(--text-main);">${u.username}</td>
                     <td style="font-size:12px; color:var(--text-muted);">${u.permissions.join(', ')}</td>
-                    <td>
-                        <button class="btn-edit" onclick="editStaff('${u.id}')">Edit</button>
-                        ${delBtn}
+                    <td style="white-space: nowrap;">
+                        <div style="display:flex; gap:6px; align-items:center;">
+                            <button class="btn-edit" style="margin:0; padding:4px 8px; font-size:11px;" onclick="editStaff('${u.id}')">Edit</button>
+                            ${delBtn}
+                        </div>
                     </td>
                 </tr>
             `;
@@ -1900,9 +1902,11 @@
                         <td style="color:var(--text-muted);">#${p.id}</td>
                         <td style="font-weight:bold; color:var(--text-main);">${p.name}</td>
                         <td style="color:var(--success); font-weight:bold;">${formatRs(p.price)}</td>
-                        <td>
-                            <button class="btn-edit" onclick="editCatalog('${p.id}', '${p.name}', ${p.price})">Edit</button>
-                            <button class="btn-delete" onclick="deleteRecord('product_catalog', '${p.id}')">Del</button>
+                        <td style="white-space: nowrap;">
+                            <div style="display:flex; gap:6px; align-items:center;">
+                                <button class="btn-edit" style="margin:0; padding:4px 8px; font-size:11px;" onclick="editCatalog('${p.id}', '${p.name}', ${p.price})">Edit</button>
+                                <button class="btn-delete" style="margin:0; padding:4px 8px; font-size:11px;" onclick="deleteRecord('product_catalog', '${p.id}')">Del</button>
+                            </div>
                         </td>
                     </tr>
                 `;
@@ -2240,11 +2244,11 @@
                 if(isMonth || s.week === week || !isDateFilterApplied) {
                     const isSelectedClass = s.date === selectedDate && !isMonth ? 'row-highlight' : '';
                     const actionBtns = isAdmin 
-                        ? `<button class="action-btn" style="background:var(--primary); padding:4px 8px; font-size:12px; margin-right:5px; margin-bottom:5px;" onclick="printPayslip('${s.id}')">📄 Print</button><button class="btn-delete" onclick="deleteRecord('salaries', '${s.id}')">Del</button>`
-                        : `<button class="action-btn" style="background:var(--primary); padding:4px 8px; font-size:12px; margin-right:5px; margin-bottom:5px;" onclick="printPayslip('${s.id}')">📄 Print</button>`;
+                        ? `<button class="action-btn" style="background:var(--primary); padding:4px 8px; font-size:11px; margin:0;" onclick="printPayslip('${s.id}')">📄 Print</button><button class="btn-delete" style="margin:0; padding:4px 8px; font-size:11px;" onclick="deleteRecord('salaries', '${s.id}')">Del</button>`
+                        : `<button class="action-btn" style="background:var(--primary); padding:4px 8px; font-size:11px; margin:0;" onclick="printPayslip('${s.id}')">📄 Print</button>`;
                     
                     const totalExtras = (s.bonus || 0) + (s.comm || 0) + (s.allow || 0);
-                    sBody += `<tr class="${isSelectedClass}"><td><strong>${s.date}</strong></td><td style="font-weight:600;">${s.employee}</td><td>${formatRs(s.basic)}</td><td style="color:var(--success);">${formatRs(totalExtras)}</td><td style="color:var(--danger);">${formatRs(s.deduct)}</td><td style="color:var(--primary); font-weight:bold;">${formatRs(s.netSalary)}</td><td>${actionBtns}</td></tr>`;
+                    sBody += `<tr class="${isSelectedClass}"><td><strong>${s.date}</strong></td><td style="font-weight:600;">${s.employee}</td><td>${formatRs(s.basic)}</td><td style="color:var(--success);">${formatRs(totalExtras)}</td><td style="color:var(--danger);">${formatRs(s.deduct)}</td><td style="color:var(--primary); font-weight:bold;">${formatRs(s.netSalary)}</td><td style="white-space: nowrap;"><div style="display:flex; gap:6px; align-items:center;">${actionBtns}</div></td></tr>`;
                 }
             });
             document.getElementById('tbl-manage-salaries').innerHTML = sBody;
