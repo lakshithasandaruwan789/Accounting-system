@@ -472,38 +472,7 @@
             .btn-stack { flex-direction: column !important; gap: 2px !important; width: auto !important; }
             .btn-stack .btn-export { padding: 4px 8px !important; font-size: 10px !important; min-width: 60px !important; flex: none !important; margin: 0 !important; }
             
-            .control-group:last-child {
-                border-bottom: none !important;
-                padding-bottom: 0 !important;
-                padding-top: 15px !important;
-            }
-            .control-group:first-child {
-                padding-top: 0 !important;
-            }
-
-            .control-group label { 
-                margin-bottom: 0; 
-                margin-right: 8px; 
-                font-weight: 700; 
-                font-size: 11px; 
-                text-transform: uppercase; 
-                letter-spacing: 0.5px; 
-                color: var(--primary); 
-            }
-            .control-group select, .control-group input[type="date"] {
-                border: none;
-                background: transparent;
-                outline: none;
-                font-weight: 600;
-                font-size: 14px;
-                padding: 0;
-                color: var(--text-main);
-                text-align: right;
-            }
-            
-            .date-inputs { gap: 8px !important; align-items: center; justify-content: flex-end; display: flex; flex: 1; }
-            .date-inputs .btn-export { padding: 4px 12px !important; font-size: 12px !important; border-radius: 20px !important; margin: 0 !important; }
-
+            /* Removed conflicting legacy vertical stack styles */
             .hamburger-btn { display: inline-block !important; padding: 8px 12px; background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; margin-bottom: 0; width: auto;}
             
             .export-btns-container { display: none !important; }
@@ -729,7 +698,7 @@
                     </div>
                     <div class="control-group" id="date-picker-group">
                         <label>Date:</label>
-                        <div class="date-inputs" style="display:flex; gap:5px; width:100%;">
+                        <div class="date-inputs" style="display:flex; gap:5px;">
                             <input type="date" id="global-date" onchange="handleDateChange()" style="flex:1; min-width:120px;">
                             <div class="btn-stack" style="display:flex; gap:5px;">
                                 <button class="btn-export" style="background:var(--success); color:white; padding:6px 12px; border:none; margin:0; flex:1;" onclick="applyDateFilter()">Apply</button>
@@ -738,7 +707,7 @@
                         </div>
                     </div>
                     <div class="control-group export-group" style="gap:8px; background: transparent; border: none; box-shadow: none; padding: 0;">
-                        <div class="btn-stack" style="display:flex; gap:5px; width:100%;">
+                        <div class="btn-stack" style="display:flex; gap:5px;">
                             <button class="btn-export" style="color:var(--success); border-color:var(--success); padding:6px 14px; margin:0; flex:1;" onclick="exportToCSV()">📄 CSV</button>
                             <button class="btn-export" style="color:var(--danger); border-color:var(--danger); padding:6px 14px; margin:0; flex:1;" onclick="exportToPDF()">📑 PDF</button>
                         </div>
