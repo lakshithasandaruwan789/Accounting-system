@@ -421,14 +421,14 @@
                 display: flex;
                 flex-direction: column; 
                 width: 100%; 
-                gap: 0; 
-                padding: 10px 15px;
+                gap: 0 !important; 
+                padding: 10px 15px !important;
                 align-items: stretch;
-                background: var(--card-bg);
-                border: 1px solid var(--border);
-                border-radius: 20px;
-                box-shadow: var(--card-shadow);
-                margin-top: 5px;
+                background: var(--card-bg) !important;
+                border: 1px solid var(--border) !important;
+                border-radius: 20px !important;
+                box-shadow: var(--card-shadow) !important;
+                margin-top: 5px !important;
             }
 
             .control-group { 
@@ -436,23 +436,23 @@
                 flex-direction: row; 
                 justify-content: space-between;
                 align-items: center; 
-                padding: 12px 0; 
+                padding: 12px 0 !important; 
                 margin-bottom: 0; 
                 flex-shrink: 0; 
-                border-radius: 0; 
-                background: transparent;
-                border: none;
-                border-bottom: 1px dashed var(--border);
-                box-shadow: none;
+                border-radius: 0 !important; 
+                background: transparent !important;
+                border: none !important;
+                border-bottom: 1px solid var(--border) !important;
+                box-shadow: none !important;
             }
             
             .control-group:last-child {
-                border-bottom: none;
-                padding-bottom: 0;
-                padding-top: 15px;
+                border-bottom: none !important;
+                padding-bottom: 0 !important;
+                padding-top: 15px !important;
             }
             .control-group:first-child {
-                padding-top: 0;
+                padding-top: 0 !important;
             }
 
             .control-group label { 
@@ -560,8 +560,14 @@
         <li class="nav-item" onclick="navigate('catalog')" id="nav-catalog">
             <span class="nav-icon">⚙️</span> <span class="nav-text">Product Catalog</span>
         </li>
+        <li class="nav-item" onclick="navigate('inventory')" id="nav-inventory">
+            <span class="nav-icon">📊</span> <span class="nav-text">Inventory & Stock</span>
+        </li>
         <li class="nav-item" onclick="navigate('packaging')" id="nav-packaging">
             <span class="nav-icon">🏷️</span> <span class="nav-text">Packaging & Other</span>
+        </li>
+        <li class="nav-item" onclick="navigate('reports')" id="nav-reports">
+            <span class="nav-icon">📈</span> <span class="nav-text">Advanced Reports</span>
         </li>
         <li class="nav-item" onclick="navigate('salaries')" id="nav-salaries">
             <span class="nav-icon">💸</span> <span class="nav-text">Staff Salaries</span>
@@ -668,6 +674,9 @@
             </div>
         </div>
     </div>
+    
+    <!-- SMART ALERTS -->
+    <div id="smart-alert-bar" style="display:none; margin: 15px 30px 0 30px; background: rgba(239, 68, 68, 0.1); border: 1px solid var(--danger); color: var(--danger); padding: 12px 20px; border-radius: 8px; font-size: 14px; box-shadow: 0 4px 6px rgba(239, 68, 68, 0.05);"></div>
 
     <!-- TOPBAR -->
     <header class="topbar">
@@ -1193,11 +1202,13 @@
                             <label class="perm-lbl"><input type="checkbox" class="perm-chk" value="orders"> 📦 Orders & Scan</label>
                             <label class="perm-lbl"><input type="checkbox" class="perm-chk" value="purchases"> 📦 Purchases</label>
                             <label class="perm-lbl"><input type="checkbox" class="perm-chk" value="packaging"> 🏷️ Packaging</label>
-                            <label class="perm-lbl"><input type="checkbox" class="perm-chk" value="profit"> 💰 Profit</label>
+                            <label class="perm-lbl"><input type="checkbox" class="perm-chk" value="profit"> 💰 Profit/Loss</label>
                             <label class="perm-lbl"><input type="checkbox" class="perm-chk" value="catalog"> ⚙️ Catalog</label>
-                            <label class="perm-lbl"><input type="checkbox" class="perm-chk" value="salaries"> 💸 Salaries (View Own)</label>
-                            <label class="perm-lbl" style="grid-column: 1/-1; background:#fee2e2; border-color:#fca5a5; color:var(--danger);">
-                                <input type="checkbox" class="perm-chk" value="staff"> 👥 Staff Management (Admin Only)
+                            <label class="perm-lbl"><input type="checkbox" class="perm-chk" value="inventory"> 📊 Inventory</label>
+                            <label class="perm-lbl"><input type="checkbox" class="perm-chk" value="reports"> 📈 Reports</label>
+                            <label class="perm-lbl"><input type="checkbox" class="perm-chk" value="salaries"> 💸 Salaries</label>
+                            <label class="perm-lbl" style="color:var(--danger); border-color:var(--danger);">
+                                <input type="checkbox" class="perm-chk" value="staff"> 👥 Staff Management
                             </label>
                         </div>
                     </div>
@@ -1227,6 +1238,84 @@
                             <button class="action-btn" style="background:var(--warning); box-shadow:0 4px 15px rgba(245, 158, 11, 0.3); font-size:13px;" onclick="resetCurrentWeek()">🗑️ Clear Week</button>
                             <button class="action-btn" style="background:var(--danger); box-shadow:0 4px 15px rgba(239, 68, 68, 0.3); font-size:13px;" onclick="resetAllData()">🚨 Wipe All Data</button>
                         </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- PAGE X: INVENTORY -->
+        <div id="page-inventory" class="page">
+            <h2>Inventory & Live Stock</h2>
+            <div class="table-card" style="padding: 20px;">
+                <p style="color:var(--text-muted); font-size:14px; margin-top:-10px; margin-bottom: 20px;">This table calculates the real-time stock by subtracting Scanned/Confirmed Orders from Factory Purchases.</p>
+                <div style="overflow-x: auto;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Product Name</th>
+                                <th>Total Purchased</th>
+                                <th>Total Dispatched</th>
+                                <th>Current Stock</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbl-manage-inventory"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- PAGE Y: ADVANCED REPORTS -->
+        <div id="page-reports" class="page">
+            <h2>Advanced Reports</h2>
+            <div class="form-card" style="margin-bottom: 20px;">
+                <h3 style="margin-top: 0;">Generate Custom Date Range Report</h3>
+                <div style="display:flex; gap:15px; flex-wrap:wrap; margin-top:15px; align-items:flex-end;">
+                    <div class="form-group" style="margin-bottom:0; flex:1; min-width: 150px;">
+                        <label>Start Date</label>
+                        <input type="date" id="rep-start-date" class="data-input">
+                    </div>
+                    <div class="form-group" style="margin-bottom:0; flex:1; min-width: 150px;">
+                        <label>End Date</label>
+                        <input type="date" id="rep-end-date" class="data-input">
+                    </div>
+                    <button class="action-btn" style="flex:1; min-width: 150px; margin-bottom:0;" onclick="generateCustomReport()">Generate Report</button>
+                </div>
+            </div>
+            
+            <div id="custom-report-results" style="display:none;">
+                <div class="stats-grid" style="margin-bottom: 20px;">
+                    <div class="stat-card" style="background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(168, 85, 247, 0.1)); border-color: rgba(99, 102, 241, 0.3);">
+                        <h3>Net Profit (Range)</h3>
+                        <p class="stat-value" id="rep-val-profit" style="color: var(--primary);">0</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Total Income</h3>
+                        <p class="stat-value" id="rep-val-income" style="color: var(--success);">0</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Total Expenses</h3>
+                        <p class="stat-value" id="rep-val-expenses" style="color: var(--danger);">0</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Leads / Orders</h3>
+                        <p class="stat-value" id="rep-val-leads" style="color: var(--accent);">0 / 0</p>
+                    </div>
+                </div>
+                
+                <div class="dash-tables">
+                    <div class="table-card">
+                        <h3>Expenses Breakdown</h3>
+                        <table>
+                            <thead><tr><th>Category</th><th>Amount</th></tr></thead>
+                            <tbody id="tbl-rep-expenses"></tbody>
+                        </table>
+                    </div>
+                    <div class="table-card">
+                        <h3>Sales Breakdown</h3>
+                        <table>
+                            <thead><tr><th>Product</th><th>Qty Ordered</th><th>Income</th></tr></thead>
+                            <tbody id="tbl-rep-sales"></tbody>
+                        </table>
                     </div>
                 </div>
             </div>
@@ -1275,6 +1364,14 @@
                     <p style="font-size:12px; color:var(--text-muted); margin-top:5px;">If ticked, staff accounts will see "***" instead of actual prices and budgets.</p>
                 </div>
                 <button class="action-btn" style="max-width:200px; margin-top:20px;" onclick="saveSystemSettings()">Save Settings</button>
+
+                <h3 style="margin-top:40px; color:var(--primary);">Data Management & Backup</h3>
+                <div style="margin-top:15px; padding: 15px; border: 1px solid var(--border); border-radius: 12px; background: rgba(99, 102, 241, 0.05);">
+                    <p style="font-size:13px; color:var(--text-main); margin-top:0; margin-bottom:15px; font-weight:500;">Download a complete backup of your entire database (Leads, Orders, Products, Salaries, etc.) as a JSON file to keep your business data safe.</p>
+                    <button class="action-btn" style="max-width:250px; background:var(--primary); color:#ffffff; display:flex; align-items:center; justify-content:center; gap:8px;" onclick="downloadDatabaseBackup()">
+                        <span style="font-size: 18px;">💾</span> Download Full Backup
+                    </button>
+                </div>
             </div>
         </div>
 
@@ -1410,7 +1507,7 @@
             await db.collection('users').add({
                 username: "admin@company.com",
                 password: "123",
-                permissions: ["dashboard", "leads", "orders", "purchases", "packaging", "profit", "catalog", "staff"]
+                permissions: ["dashboard", "leads", "orders", "purchases", "packaging", "profit", "catalog", "inventory", "reports", "salaries", "staff"]
             });
         }
 
@@ -1570,7 +1667,7 @@
         const isAdmin = currentUser.username === 'admin' || currentUser.username === 'admin@company.com';
         
         if(isAdmin) {
-            perms = ["dashboard", "leads", "orders", "purchases", "packaging", "profit", "catalog", "salaries", "settings", "staff"];
+            perms = ["dashboard", "leads", "orders", "purchases", "packaging", "profit", "catalog", "inventory", "reports", "salaries", "settings", "staff"];
             currentUser.permissions = perms; 
         }
         
@@ -2177,6 +2274,88 @@
             
             // Ensure product dropdown is loaded
             loadCatalogToDropdown();
+        }
+
+        loadInventory();
+        checkSmartAlerts(totalExpensesProfit);
+    }
+
+    async function loadInventory() {
+        if(currentPage !== 'inventory') return;
+        try {
+            const [cSnap, pSnap, oSnap] = await Promise.all([
+                db.collection('catalog').get(),
+                db.collection('products').get(),
+                db.collection('orders').get()
+            ]);
+            
+            let catMap = {};
+            cSnap.forEach(d => { catMap[d.data().name] = {purchased:0, dispatched:0}; });
+            
+            pSnap.forEach(d => {
+                const prod = d.data().productName;
+                if(catMap[prod]) catMap[prod].purchased += (d.data().qty || 0);
+            });
+            
+            oSnap.forEach(d => {
+                const prod = d.data().product;
+                if(prod && catMap[prod] && d.data().status !== 'Returned') {
+                    catMap[prod].dispatched += 1;
+                }
+            });
+            
+            let invHtml = '';
+            for(const [name, stats] of Object.entries(catMap)) {
+                const stock = stats.purchased - stats.dispatched;
+                const stockStyle = stock < 10 ? 'color:var(--danger); font-weight:bold;' : 'color:var(--success); font-weight:bold;';
+                invHtml += `<tr>
+                    <td><strong>${name}</strong></td>
+                    <td>${stats.purchased}</td>
+                    <td>${stats.dispatched}</td>
+                    <td style="${stockStyle}">${stock}</td>
+                </tr>`;
+            }
+            document.getElementById('tbl-manage-inventory').innerHTML = invHtml;
+        } catch(e) { console.error("Inventory error", e); }
+    }
+
+    async function checkSmartAlerts(currentProfit) {
+        let alertMsg = '';
+        const isAdmin = currentUser.username === 'admin' || currentUser.username === 'admin@company.com';
+        const showFinancials = isAdmin || !window.systemConfig.hideFinancials;
+        
+        // Check Profit
+        if(currentProfit < 0 && showFinancials) {
+            alertMsg += `<strong>⚠️ WARNING:</strong> You are currently running at a loss (${formatRs(currentProfit)})! &nbsp;&nbsp;&nbsp; `;
+        }
+        
+        // Check Stock
+        try {
+            const [cSnap, pSnap, oSnap] = await Promise.all([
+                db.collection('catalog').get(),
+                db.collection('products').get(),
+                db.collection('orders').get()
+            ]);
+            let catMap = {};
+            cSnap.forEach(d => { catMap[d.data().name] = {purchased:0, dispatched:0}; });
+            pSnap.forEach(d => { const n = d.data().productName; if(catMap[n]) catMap[n].purchased += (d.data().qty||0); });
+            oSnap.forEach(d => { const n = d.data().product; if(n && catMap[n] && d.data().status !== 'Returned') catMap[n].dispatched += 1; });
+            
+            let lowStockItems = [];
+            for(const [name, stats] of Object.entries(catMap)) {
+                if((stats.purchased - stats.dispatched) < 10) lowStockItems.push(name);
+            }
+            if(lowStockItems.length > 0) {
+                alertMsg += `<strong>⚠️ Low Stock Alert:</strong> ${lowStockItems.join(', ')} (Less than 10 items left!)`;
+            }
+        } catch(e) {}
+        
+        const alertBar = document.getElementById('smart-alert-bar');
+        if(alertMsg !== '') {
+            alertBar.innerHTML = alertMsg;
+            alertBar.style.display = 'block';
+        } else {
+            alertBar.style.display = 'none';
         }
     }
 
@@ -3022,6 +3201,138 @@
     }, 1500);
 
     document.getElementById('global-date').valueAsDate = new Date();
+
+    // --- DATABASE BACKUP ---
+    window.downloadDatabaseBackup = async function() {
+        const btn = event.currentTarget;
+        const originalText = btn.innerHTML;
+        btn.innerHTML = `<span style="font-size: 18px;">⏳</span> Fetching Database...`;
+        btn.disabled = true;
+
+        try {
+            const collections = ['leads', 'products', 'packaging', 'expenses', 'orders', 'catalog', 'salaries', 'users'];
+            const backupData = {
+                exportedAt: new Date().toISOString(),
+                collections: {}
+            };
+
+            for (const collName of collections) {
+                const snap = await db.collection(collName).get();
+                backupData.collections[collName] = snap.docs.map(doc => ({id: doc.id, ...doc.data()}));
+            }
+
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backupData, null, 2));
+            const dlAnchorElem = document.createElement('a');
+            dlAnchorElem.setAttribute("href", dataStr);
+            dlAnchorElem.setAttribute("download", `BudgetLeadSystem_Backup_${new Date().toISOString().slice(0,10)}.json`);
+            dlAnchorElem.style.display = 'none';
+            document.body.appendChild(dlAnchorElem);
+            dlAnchorElem.click();
+            document.body.removeChild(dlAnchorElem);
+
+            notify("Backup Downloaded Successfully!");
+            btn.innerHTML = `<span style="font-size: 18px;">✅</span> Done!`;
+            setTimeout(() => { btn.innerHTML = originalText; btn.disabled = false; }, 3000);
+        } catch (e) {
+            console.error("Backup Failed:", e);
+            notify("Backup failed: " + e.message, true);
+            btn.innerHTML = `<span style="font-size: 18px;">❌</span> Failed`;
+            setTimeout(() => { btn.innerHTML = originalText; btn.disabled = false; }, 3000);
+        }
+    // --- ADVANCED REPORTS ---
+    window.generateCustomReport = async function() {
+        const start = document.getElementById('rep-start-date').value;
+        const end = document.getElementById('rep-end-date').value;
+        if(!start || !end) return notify("Please select both Start and End dates!", true);
+        
+        try {
+            document.getElementById('custom-report-results').style.display = 'block';
+            
+            // Fetch all data
+            const [lSnap, pSnap, oSnap, eSnap, cSnap] = await Promise.all([
+                db.collection('leads').where('date', '>=', start).where('date', '<=', end).get(),
+                db.collection('products').where('date', '>=', start).where('date', '<=', end).get(),
+                db.collection('orders').where('date', '>=', start).where('date', '<=', end).get(),
+                db.collection('expenses').where('date', '>=', start).where('date', '<=', end).get(),
+                db.collection('catalog').get()
+            ]);
+            
+            // Calculate Leads
+            let totalLeads = 0, totalConfirmed = 0, adsSpend = 0;
+            lSnap.forEach(doc => {
+                const d = doc.data();
+                totalLeads += d.totalLeads || 0;
+                totalConfirmed += d.confirmedLeads || 0;
+                adsSpend += d.dailyBudget || 0;
+            });
+            
+            // Product Pricing Map
+            const priceMap = {};
+            cSnap.forEach(doc => { priceMap[doc.data().name] = doc.data().retailPrice || 0; });
+            
+            // Calculate Orders (Income)
+            let totalIncome = 0;
+            let salesByProduct = {};
+            let totalOrders = oSnap.size;
+            
+            oSnap.forEach(doc => {
+                const d = doc.data();
+                const product = d.product || 'Unknown';
+                const price = priceMap[product] || 0;
+                totalIncome += price;
+                
+                if(!salesByProduct[product]) salesByProduct[product] = {qty: 0, income: 0};
+                salesByProduct[product].qty += 1;
+                salesByProduct[product].income += price;
+            });
+            
+            // Calculate Expenses
+            let totalExpensesAmount = adsSpend;
+            let expensesByCategory = {'Facebook Ads': adsSpend};
+            
+            eSnap.forEach(doc => {
+                const d = doc.data();
+                totalExpensesAmount += d.amount || 0;
+                const cat = d.category || 'Other';
+                if(!expensesByCategory[cat]) expensesByCategory[cat] = 0;
+                expensesByCategory[cat] += d.amount || 0;
+            });
+            
+            // Add purchases to expenses (Factory purchases)
+            pSnap.forEach(doc => {
+                const d = doc.data();
+                const cost = (d.price || 0) * (d.qty || 0);
+                totalExpensesAmount += cost;
+                if(!expensesByCategory['Factory Purchases']) expensesByCategory['Factory Purchases'] = 0;
+                expensesByCategory['Factory Purchases'] += cost;
+            });
+            
+            // Update UI
+            const netProfit = totalIncome - totalExpensesAmount;
+            document.getElementById('rep-val-profit').textContent = formatRs(netProfit);
+            document.getElementById('rep-val-income').textContent = formatRs(totalIncome);
+            document.getElementById('rep-val-expenses').textContent = formatRs(totalExpensesAmount);
+            document.getElementById('rep-val-leads').textContent = `${totalLeads} / ${totalOrders}`;
+            
+            // Expenses Table
+            let expHtml = '';
+            for(const [cat, amt] of Object.entries(expensesByCategory)) {
+                if(amt > 0) expHtml += `<tr><td>${cat}</td><td style="color:var(--danger);">${formatRs(amt)}</td></tr>`;
+            }
+            document.getElementById('tbl-rep-expenses').innerHTML = expHtml;
+            
+            // Sales Table
+            let salesHtml = '';
+            for(const [prod, data] of Object.entries(salesByProduct)) {
+                salesHtml += `<tr><td>${prod}</td><td>${data.qty}</td><td style="color:var(--success);">${formatRs(data.income)}</td></tr>`;
+            }
+            document.getElementById('tbl-rep-sales').innerHTML = salesHtml;
+            
+        } catch(e) {
+            console.error(e);
+            notify("Error generating report", true);
+        }
+    };
 </script>
 </body>
 </html>
