@@ -107,6 +107,7 @@
         body.dark-mode td { background: transparent; }
         body.dark-mode th { color: #c4b5fd; border-bottom: 1px solid rgba(139, 92, 246, 0.2); }
         body.dark-mode tr:hover td { background: rgba(139, 92, 246, 0.1); color: #ffffff; border-color: rgba(139, 92, 246, 0.3); }
+        body.dark-mode .row-highlight td { background: rgba(99, 102, 241, 0.25) !important; }
         body.dark-mode .sidebar-header h2 { color: #ffffff; }
         body.dark-mode .login-overlay { background: #0f0a1c; }
 
@@ -324,11 +325,11 @@
 
         /* Tables */
         table { width: 100%; border-collapse: separate; border-spacing: 0 8px; margin-top: 15px; }
-        th, td { padding: 16px 20px; text-align: left; font-size: 14px; }
+        th, td { padding: 10px 14px; text-align: left; font-size: 13px; }
         th { 
             background: transparent; color: var(--text-muted); 
             font-weight: 800; font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px;
-            border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 12px;
+            border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 10px;
         }
         td { background: rgba(0,0,0,0.15); border-top: 1px solid transparent; border-bottom: 1px solid transparent; transition: all 0.3s ease; }
         td:first-child { border-top-left-radius: 10px; border-bottom-left-radius: 10px; border-left: 1px solid transparent; }
@@ -341,6 +342,7 @@
             transform: scale(1.01);
             color: var(--primary);
         }
+        .row-highlight td { background: rgba(99, 102, 241, 0.1) !important; }
 
         .btn-delete { background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239,68,68,0.2); padding: 8px 16px; font-size: 12px; font-weight: 700; color: var(--danger); border-radius: 8px; cursor: pointer; transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);}
         .btn-delete:hover { background: var(--danger); color: #fff; transform: translateY(-2px); box-shadow: 0 5px 15px rgba(239, 68, 68, 0.4);}
@@ -2058,13 +2060,13 @@
                 ? `<button class="action-btn" style="background:#10b981; color:white; padding:4px 8px; font-size:12px; margin-right:5px; margin-bottom:5px; border:none;" onclick="toggleSettlePurchase('${p.id}', false)">✅ Settled</button>`
                 : `<button class="action-btn" style="background:#f59e0b; color:white; padding:4px 8px; font-size:12px; margin-right:5px; margin-bottom:5px; border:none;" onclick="toggleSettlePurchase('${p.id}', true)">⏳ Pay/Settle</button>`;
 
-            const isSelected = p.date === selectedDate && !isMonth ? 'background-color: #fffbeb;' : '';
+            const isSelectedClass = p.date === selectedDate && !isMonth ? 'row-highlight' : '';
             const weekTd = isMonth ? `<td style="color:var(--text-muted); font-weight:600;">${p.week || 'Week 1'}</td>` : '';
             const displayTotal = showFinancials ? formatRs(total) : '***';
             const displayPrice = showFinancials ? formatRs(p.price) : '***';
-            const row = `<tr style="${isSelected}">${weekTd}<td>${p.date}</td><td style="font-weight:600;">${p.productName}</td><td>${p.qty}</td><td style="font-weight:bold; color:var(--warning);">${displayTotal}</td></tr>`;
+            const row = `<tr class="${isSelectedClass}">${weekTd}<td>${p.date}</td><td style="font-weight:600;">${p.productName}</td><td>${p.qty}</td><td style="font-weight:bold; color:var(--warning);">${displayTotal}</td></tr>`;
             pBodyDash += row;
-            pBodyManage += `<tr style="${isSelected}"><td>${p.date}</td><td style="font-weight:600;">${p.productName}</td><td>${p.qty}</td><td style="font-weight:bold; color:var(--warning);">${displayTotal}</td><td>${settleBtnHtml}<button class="action-btn" style="background:var(--primary); padding:4px 8px; font-size:12px; margin-right:5px; margin-bottom:5px;" onclick="printInvoice('${p.date}', '${p.productName}', ${p.price}, ${p.qty}, ${total}, '${p.id}')">📄 Invoice</button><button class="btn-delete" onclick="deleteRecord('products', '${p.id}')">Del</button></td></tr>`;
+            pBodyManage += `<tr class="${isSelectedClass}"><td>${p.date}</td><td style="font-weight:600;">${p.productName}</td><td>${p.qty}</td><td style="font-weight:bold; color:var(--warning);">${displayTotal}</td><td>${settleBtnHtml}<button class="action-btn" style="background:var(--primary); padding:4px 8px; font-size:12px; margin-right:5px; margin-bottom:5px;" onclick="printInvoice('${p.date}', '${p.productName}', ${p.price}, ${p.qty}, ${total}, '${p.id}')">📄 Invoice</button><button class="btn-delete" onclick="deleteRecord('products', '${p.id}')">Del</button></td></tr>`;
         });
         document.getElementById('tbl-dash-products').innerHTML = pBodyDash;
         document.getElementById('tbl-manage-products').innerHTML = pBodyManage;
@@ -2091,15 +2093,15 @@
             
             const costPerLead = l.totalLeads > 0 ? (l.dailyBudget / l.totalLeads) : 0;
             const costPerConfirmed = l.confirmedLeads > 0 ? (l.dailyBudget / l.confirmedLeads) : 0;
-            const isSelected = l.date === selectedDate && !isMonth ? 'background-color: #e0e7ff;' : '';
+            const isSelectedClass = l.date === selectedDate && !isMonth ? 'row-highlight' : '';
             const weekTd = isMonth ? `<td style="color:var(--text-muted); font-weight:600;">${l.week || 'Week 1'}</td>` : '';
 
             const dBudget = showFinancials ? formatRs(l.dailyBudget) : '***';
             const dCPL = showFinancials ? formatRs(costPerLead) : '***';
             const dCPC = showFinancials ? formatRs(costPerConfirmed) : '***';
 
-            lBodyDash += `<tr style="${isSelected}">${weekTd}<td><strong>${l.date}</strong></td><td style="font-weight:600;">${dBudget}</td><td>${l.totalLeads}</td><td><strong style="color:var(--success);">${l.confirmedLeads}</strong></td><td style="color:var(--primary); font-weight:bold;">${dCPL}</td><td style="color:var(--success); font-weight:bold;">${dCPC}</td></tr>`;
-            lBodyManage += `<tr style="${isSelected}"><td><strong>${l.date}</strong></td><td style="font-weight:600;">${dBudget}</td><td>${l.totalLeads}</td><td><strong style="color:var(--success);">${l.confirmedLeads}</strong></td><td style="color:var(--primary); font-weight:bold;">${dCPL}</td><td style="color:var(--success); font-weight:bold;">${dCPC}</td><td><button class="btn-delete" onclick="deleteRecord('leads', '${l.id}')">Del</button></td></tr>`;
+            lBodyDash += `<tr class="${isSelectedClass}">${weekTd}<td><strong>${l.date}</strong></td><td style="font-weight:600;">${dBudget}</td><td>${l.totalLeads}</td><td><strong style="color:var(--success);">${l.confirmedLeads}</strong></td><td style="color:var(--primary); font-weight:bold;">${dCPL}</td><td style="color:var(--success); font-weight:bold;">${dCPC}</td></tr>`;
+            lBodyManage += `<tr class="${isSelectedClass}"><td><strong>${l.date}</strong></td><td style="font-weight:600;">${dBudget}</td><td>${l.totalLeads}</td><td><strong style="color:var(--success);">${l.confirmedLeads}</strong></td><td style="color:var(--primary); font-weight:bold;">${dCPL}</td><td style="color:var(--success); font-weight:bold;">${dCPC}</td><td><button class="btn-delete" onclick="deleteRecord('leads', '${l.id}')">Del</button></td></tr>`;
         });
         document.getElementById('tbl-dash-leads').innerHTML = lBodyDash;
         document.getElementById('tbl-manage-leads').innerHTML = lBodyManage;
@@ -2118,11 +2120,11 @@
 
         let packBodyManage = '';
         packaging.forEach(pk => {
-            const isSelected = pk.date === selectedDate && !isMonth ? 'background-color: #fae8ff;' : '';
+            const isSelectedClass = pk.date === selectedDate && !isMonth ? 'row-highlight' : '';
             const pkQty = pk.qty || 1;
             const totalCost = pk.cost * pkQty;
             const dCost = showFinancials ? formatRs(totalCost) : '***';
-            packBodyManage += `<tr style="${isSelected}"><td>${pk.date}</td><td style="font-weight:600;">${pk.itemName}</td><td>${pkQty}</td><td style="font-weight:bold; color:var(--accent);">${dCost}</td><td><button class="btn-delete" onclick="deleteRecord('packaging', '${pk.id}')">Del</button></td></tr>`;
+            packBodyManage += `<tr class="${isSelectedClass}"><td>${pk.date}</td><td style="font-weight:600;">${pk.itemName}</td><td>${pkQty}</td><td style="font-weight:bold; color:var(--accent);">${dCost}</td><td><button class="btn-delete" onclick="deleteRecord('packaging', '${pk.id}')">Del</button></td></tr>`;
         });
         document.getElementById('tbl-manage-packaging').innerHTML = packBodyManage;
 
@@ -2220,13 +2222,13 @@
 
                 // Table rendering (always show all for context unless filtered heavily)
                 if(isMonth || s.week === week || !isDateFilterApplied) {
-                    const isSelected = s.date === selectedDate && !isMonth ? 'background-color: #f0fdf4;' : '';
+                    const isSelectedClass = s.date === selectedDate && !isMonth ? 'row-highlight' : '';
                     const actionBtns = isAdmin 
                         ? `<button class="action-btn" style="background:var(--primary); padding:4px 8px; font-size:12px; margin-right:5px; margin-bottom:5px;" onclick="printPayslip('${s.id}')">📄 Print</button><button class="btn-delete" onclick="deleteRecord('salaries', '${s.id}')">Del</button>`
                         : `<button class="action-btn" style="background:var(--primary); padding:4px 8px; font-size:12px; margin-right:5px; margin-bottom:5px;" onclick="printPayslip('${s.id}')">📄 Print</button>`;
                     
                     const totalExtras = (s.bonus || 0) + (s.comm || 0) + (s.allow || 0);
-                    sBody += `<tr style="${isSelected}"><td><strong>${s.date}</strong></td><td style="font-weight:600;">${s.employee}</td><td>${formatRs(s.basic)}</td><td style="color:var(--success);">${formatRs(totalExtras)}</td><td style="color:var(--danger);">${formatRs(s.deduct)}</td><td style="color:var(--primary); font-weight:bold;">${formatRs(s.netSalary)}</td><td>${actionBtns}</td></tr>`;
+                    sBody += `<tr class="${isSelectedClass}"><td><strong>${s.date}</strong></td><td style="font-weight:600;">${s.employee}</td><td>${formatRs(s.basic)}</td><td style="color:var(--success);">${formatRs(totalExtras)}</td><td style="color:var(--danger);">${formatRs(s.deduct)}</td><td style="color:var(--primary); font-weight:bold;">${formatRs(s.netSalary)}</td><td>${actionBtns}</td></tr>`;
                 }
             });
             document.getElementById('tbl-manage-salaries').innerHTML = sBody;
