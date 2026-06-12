@@ -1664,7 +1664,7 @@
     function applyPermissions() {
         if(!currentUser) return;
         let perms = currentUser.permissions || [];
-        const isAdmin = currentUser.username === 'admin' || currentUser.username === 'admin@company.com';
+        const isAdmin = currentUser.username === 'admin' || currentUser.username === 'admin@company.com' || (currentUser.permissions && currentUser.permissions.includes('staff'));
         
         if(isAdmin) {
             perms = ["dashboard", "leads", "orders", "purchases", "packaging", "profit", "catalog", "inventory", "reports", "salaries", "settings", "staff"];
@@ -1698,7 +1698,7 @@
         if(!currentUser) return;
         
         let perms = currentUser.permissions || [];
-        const isAdmin = currentUser.username === 'admin' || currentUser.username === 'admin@company.com';
+        const isAdmin = currentUser.username === 'admin' || currentUser.username === 'admin@company.com' || (currentUser.permissions && currentUser.permissions.includes('staff'));
         if(isAdmin) {
             perms = ["dashboard", "leads", "orders", "purchases", "packaging", "profit", "catalog", "inventory", "reports", "salaries", "settings", "staff"];
         }
@@ -2027,7 +2027,7 @@
         const isMonth = week === 'Month Overview';
         const selectedDate = document.getElementById('global-date').value;
         const isDateFilterApplied = document.getElementById('global-date').dataset.filtered === "true";
-        const isAdmin = currentUser.username === 'admin' || currentUser.username === 'admin@company.com';
+        const isAdmin = currentUser.username === 'admin' || currentUser.username === 'admin@company.com' || (currentUser.permissions && currentUser.permissions.includes('staff'));
         const showFinancials = isAdmin || !window.systemConfig.hideFinancials;
 
         // --- 1. PRODUCTS ---
@@ -2250,31 +2250,7 @@
             document.getElementById('lbl-sum-profit').textContent = showFinancials ? formatRs(totalExpensesProfit) : '***';
         }
 
-        // --- 9. LOAD ORDERS ---
-        if(currentPage === 'orders') {
-            const oSnap = await db.collection('orders').orderBy('date', 'desc').get();
-            let allOrders = oSnap.docs.map(d => ({id: d.id, ...d.data()}));
-            let oBody = '';
-            allOrders.forEach(o => {
-                let statusColor = 'var(--text-muted)';
-                if(o.status === 'Processing') statusColor = 'var(--warning)';
-                if(o.status === 'Delivered') statusColor = 'var(--success)';
-                if(o.status === 'Returned') statusColor = 'var(--danger)';
-
-                const isSelected = o.date === selectedDate && !isMonth ? 'background-color: #f0fdf4;' : '';
-                oBody += `<tr style="${isSelected}">
-                    <td><strong>${o.date}</strong></td>
-                    <td style="font-weight:600;">${o.customerName}</td>
-                    <td style="color:var(--accent);">${o.waybill}</td>
-                    <td style="color:${statusColor}; font-weight:bold;">${o.status}</td>
-                    <td><button class="btn-delete" onclick="deleteRecord('orders', '${o.id}')">Del</button></td>
-                </tr>`;
-            });
-            document.getElementById('tbl-manage-orders').innerHTML = oBody;
-            
-            // Ensure product dropdown is loaded
-            loadCatalogToDropdown();
-        }
+        // Orders are now loaded via loadScannedOrders() independently
 
         loadInventory();
         checkSmartAlerts(totalExpensesProfit);
@@ -2321,7 +2297,7 @@
 
     async function checkSmartAlerts(currentProfit) {
         let alertMsg = '';
-        const isAdmin = currentUser.username === 'admin' || currentUser.username === 'admin@company.com';
+        const isAdmin = currentUser.username === 'admin' || currentUser.username === 'admin@company.com' || (currentUser.permissions && currentUser.permissions.includes('staff'));
         const showFinancials = isAdmin || !window.systemConfig.hideFinancials;
         
         // Check Profit
@@ -2350,21 +2326,15 @@
             }
         } catch(e) {}
         
-        const alertBarDesktop = document.getElementById('smart-alert-bar-desktop');
-        const alertBarMobile = document.getElementById('smart-alert-bar-mobile');
+        const alertBar = document.getElementById('smart-alert-bar');
         
-        if(alertMsg !== '') {
-            if(alertBarDesktop) {
-                alertBarDesktop.innerHTML = alertMsg;
-                alertBarDesktop.style.display = 'block';
+        if(alertBar) {
+            if(alertMsg !== '') {
+                alertBar.innerHTML = alertMsg;
+                alertBar.style.display = 'block';
+            } else {
+                alertBar.style.display = 'none';
             }
-            if(alertBarMobile) {
-                alertBarMobile.innerHTML = alertMsg;
-                alertBarMobile.style.display = 'flex';
-            }
-        } else {
-            if(alertBarDesktop) alertBarDesktop.style.display = 'none';
-            if(alertBarMobile) alertBarMobile.style.display = 'none';
         }
     }
 
@@ -2467,7 +2437,7 @@
         btn.style.boxShadow = '0 4px 15px rgba(79, 70, 229, 0.3)';
         
         // Explicitly clear the date to force a fresh UI state
-        document.getElementById('global-date').value = '';
+        document.getElementById('global-date').valueAsDate = new Date();
         
         loadAllData();
         if(typeof autoSelectWeek === 'function') autoSelectWeek();
@@ -2506,7 +2476,7 @@
     }
 
     window.printInvoice = function(date, productName, price, qty, total, invoiceId) {
-        const isAdmin = currentUser.username === 'admin' || currentUser.username === 'admin@company.com';
+        const isAdmin = currentUser.username === 'admin' || currentUser.username === 'admin@company.com' || (currentUser.permissions && currentUser.permissions.includes('staff'));
         const showFinancials = isAdmin || !window.systemConfig.hideFinancials;
         document.getElementById('inv-date').textContent = date;
         document.getElementById('inv-user').textContent = currentUser ? currentUser.username : "Manager";
