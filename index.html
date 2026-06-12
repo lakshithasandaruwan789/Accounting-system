@@ -449,11 +449,12 @@
             .control-group { 
                 display: flex;
                 flex-direction: row; 
-                justify-content: center;
+                justify-content: flex-start;
                 align-items: center; 
                 padding: 0 !important; 
                 margin-bottom: 0; 
-                flex-shrink: 0; 
+                flex: 0 0 auto !important; 
+                width: auto !important;
                 border-radius: 0 !important; 
                 background: transparent !important;
                 border: none !important;
@@ -462,8 +463,9 @@
             }
             .control-group label { display: none; } /* Hide labels on mobile to save space */
             
-            .control-group select { padding: 4px 8px; font-size: 11px; }
-            .control-group input[type="date"] { padding: 4px 8px; font-size: 11px; min-width: 110px !important; }
+            .control-group select { padding: 4px 8px; font-size: 11px; width: auto !important; min-width: 0 !important; flex: none !important; }
+            .control-group input[type="date"] { padding: 4px 8px; font-size: 11px; min-width: 110px !important; width: auto !important; flex: none !important; }
+            .control-group .date-inputs { width: auto !important; flex: none !important; }
             
             /* Stack buttons vertically */
             .btn-stack { flex-direction: column !important; gap: 2px !important; width: auto !important; }
