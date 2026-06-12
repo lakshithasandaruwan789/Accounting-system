@@ -2336,6 +2336,10 @@
             if(alertMsg !== '') {
                 alertBar.innerHTML = alertMsg;
                 alertBar.style.display = 'block';
+                if(window.smartAlertTimeout) clearTimeout(window.smartAlertTimeout);
+                window.smartAlertTimeout = setTimeout(() => {
+                    alertBar.style.display = 'none';
+                }, 10000);
             } else {
                 alertBar.style.display = 'none';
             }
