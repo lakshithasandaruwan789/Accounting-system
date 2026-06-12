@@ -2073,8 +2073,8 @@
             
             const isSettled = p.isSettled || false;
             const settleBtnHtml = isSettled 
-                ? `<button class="action-btn" style="background:#10b981; color:white; padding:4px 8px; font-size:12px; margin-right:5px; margin-bottom:5px; border:none;" onclick="toggleSettlePurchase('${p.id}', false)">✅ Settled</button>`
-                : `<button class="action-btn" style="background:#f59e0b; color:white; padding:4px 8px; font-size:12px; margin-right:5px; margin-bottom:5px; border:none;" onclick="toggleSettlePurchase('${p.id}', true)">⏳ Pay/Settle</button>`;
+                ? `<button class="action-btn" style="background:#10b981; color:white; padding:4px 8px; font-size:11px; margin:0; border:none;" onclick="toggleSettlePurchase('${p.id}', false)">✅ Settled</button>`
+                : `<button class="action-btn" style="background:#f59e0b; color:white; padding:4px 8px; font-size:11px; margin:0; border:none;" onclick="toggleSettlePurchase('${p.id}', true)">⏳ Pay</button>`;
 
             const isSelectedClass = p.date === selectedDate && !isMonth ? 'row-highlight' : '';
             const weekTd = isMonth ? `<td style="color:var(--text-muted); font-weight:600;">${p.week || 'Week 1'}</td>` : '';
@@ -2082,7 +2082,7 @@
             const displayPrice = showFinancials ? formatRs(p.price) : '***';
             const row = `<tr class="${isSelectedClass}">${weekTd}<td>${p.date}</td><td style="font-weight:600;">${p.productName}</td><td>${p.qty}</td><td style="font-weight:bold; color:var(--warning);">${displayTotal}</td></tr>`;
             pBodyDash += row;
-            pBodyManage += `<tr class="${isSelectedClass}"><td>${p.date}</td><td style="font-weight:600;">${p.productName}</td><td>${p.qty}</td><td style="font-weight:bold; color:var(--warning);">${displayTotal}</td><td>${settleBtnHtml}<button class="action-btn" style="background:var(--primary); padding:4px 8px; font-size:12px; margin-right:5px; margin-bottom:5px;" onclick="printInvoice('${p.date}', '${p.productName}', ${p.price}, ${p.qty}, ${total}, '${p.id}')">📄 Invoice</button><button class="btn-delete" onclick="deleteRecord('products', '${p.id}')">Del</button></td></tr>`;
+            pBodyManage += `<tr class="${isSelectedClass}"><td>${p.date}</td><td style="font-weight:600;">${p.productName}</td><td>${p.qty}</td><td style="font-weight:bold; color:var(--warning);">${displayTotal}</td><td style="white-space: nowrap;"><div style="display:flex; gap:6px; align-items:center;">${settleBtnHtml}<button class="action-btn" style="background:var(--primary); padding:4px 8px; font-size:11px; margin:0;" onclick="printInvoice('${p.date}', '${p.productName}', ${p.price}, ${p.qty}, ${total}, '${p.id}')">📄 Bill</button><button class="btn-delete" style="margin:0; padding:4px 8px; font-size:11px;" onclick="deleteRecord('products', '${p.id}')">Del</button></div></td></tr>`;
         });
         document.getElementById('tbl-dash-products').innerHTML = pBodyDash;
         document.getElementById('tbl-manage-products').innerHTML = pBodyManage;
