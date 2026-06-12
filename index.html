@@ -1700,7 +1700,7 @@
         let perms = currentUser.permissions || [];
         const isAdmin = currentUser.username === 'admin' || currentUser.username === 'admin@company.com';
         if(isAdmin) {
-            perms = ["dashboard", "leads", "orders", "purchases", "packaging", "profit", "catalog", "salaries", "settings", "staff"];
+            perms = ["dashboard", "leads", "orders", "purchases", "packaging", "profit", "catalog", "inventory", "reports", "salaries", "settings", "staff"];
         }
 
         if(!isAdmin && (pageId === 'catalog' || pageId === 'settings' || pageId === 'staff')) {
