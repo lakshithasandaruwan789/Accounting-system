@@ -1178,6 +1178,7 @@
                             </tr>
                         </thead>
                         <tbody id="tbl-manage-salaries"></tbody>
+                        <tfoot id="tbl-foot-salaries"></tfoot>
                     </table>
                 </div>
             </div>
@@ -2245,6 +2246,8 @@
 
             let sBody = '';
             let totalSalaries = 0;
+            let sumBasic = 0, sumExtras = 0, sumDeduct = 0, sumNet = 0;
+            
             allSalaries.forEach(s => {
                 // If we are looking at a specific week/month, we might want to filter.
                 // However, salaries are usually independent of the exact weekly cycle (often monthly).
@@ -2261,10 +2264,30 @@
                         : `<button class="action-btn" style="background:var(--primary); padding:4px 8px; font-size:11px; margin:0;" onclick="printPayslip('${s.id}')">📄 Print</button>`;
                     
                     const totalExtras = (s.bonus || 0) + (s.comm || 0) + (s.allow || 0);
+                    
+                    sumBasic += s.basic || 0;
+                    sumExtras += totalExtras;
+                    sumDeduct += s.deduct || 0;
+                    sumNet += s.netSalary || 0;
+
                     sBody += `<tr class="${isSelectedClass}"><td><strong>${s.date}</strong></td><td style="font-weight:600;">${s.employee}</td><td>${formatRs(s.basic)}</td><td style="color:var(--success);">${formatRs(totalExtras)}</td><td style="color:var(--danger);">${formatRs(s.deduct)}</td><td style="color:var(--primary); font-weight:bold;">${formatRs(s.netSalary)}</td><td style="white-space: nowrap;"><div style="display:flex; gap:6px; align-items:center;">${actionBtns}</div></td></tr>`;
                 }
             });
             document.getElementById('tbl-manage-salaries').innerHTML = sBody;
+            
+            const tfoot = document.getElementById('tbl-foot-salaries');
+            if(tfoot) {
+                tfoot.innerHTML = `
+                    <tr style="background: rgba(139, 92, 246, 0.05); border-top: 2px solid var(--border);">
+                        <td colspan="2" style="text-align: right; font-weight: 800; color: var(--text-main);">TOTAL:</td>
+                        <td style="font-weight: 800; color: var(--text-main);">${formatRs(sumBasic)}</td>
+                        <td style="font-weight: 800; color: var(--success);">${formatRs(sumExtras)}</td>
+                        <td style="font-weight: 800; color: var(--danger);">${formatRs(sumDeduct)}</td>
+                        <td style="font-weight: 800; color: var(--primary); font-size: 15px;">${formatRs(sumNet)}</td>
+                        <td></td>
+                    </tr>
+                `;
+            }
 
             // Load employee dropdown (Admin only needs this)
             if(isAdmin) {
