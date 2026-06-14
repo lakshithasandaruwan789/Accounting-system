@@ -2157,7 +2157,7 @@
         let allPackaging = pkSnap.docs.map(d => ({id: d.id, ...d.data()}));
         if(!isMonth) allPackaging = allPackaging.filter(pk => pk.week === week);
         
-        let weeklyPackagingTotal = allPackaging.reduce((sum, pk) => sum + (pk.cost * (pk.qty || 1)), 0);
+        let weeklyPackagingTotal = allPackaging.reduce((sum, pk) => sum + (parseFloat(pk.cost) || 0), 0);
         
         let packaging = allPackaging;
         if(isDateFilterApplied && selectedDate && !isMonth) {
@@ -2168,7 +2168,7 @@
         packaging.forEach(pk => {
             const isSelectedClass = pk.date === selectedDate && !isMonth ? 'row-highlight' : '';
             const pkQty = pk.qty || 1;
-            const totalCost = pk.cost * pkQty;
+            const totalCost = parseFloat(pk.cost) || 0;
             const dCost = showFinancials ? formatRs(totalCost) : '***';
             packBodyManage += `<tr class="${isSelectedClass}"><td>${pk.date}</td><td style="font-weight:600;">${pk.itemName}</td><td>${pkQty}</td><td style="font-weight:bold; color:var(--accent);">${dCost}</td><td><button class="btn-delete" onclick="deleteRecord('packaging', '${pk.id}')">Del</button></td></tr>`;
         });
