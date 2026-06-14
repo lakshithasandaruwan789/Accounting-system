@@ -2299,7 +2299,7 @@
         if(currentPage !== 'inventory') return;
         try {
             const [cSnap, pSnap, oSnap] = await Promise.all([
-                db.collection('catalog').get(),
+                db.collection('product_catalog').get(),
                 db.collection('products').get(),
                 db.collection('orders').get()
             ]);
@@ -2350,7 +2350,7 @@
         // Check Stock
         try {
             const [cSnap, pSnap, oSnap] = await Promise.all([
-                db.collection('catalog').get(),
+                db.collection('product_catalog').get(),
                 db.collection('products').get(),
                 db.collection('orders').get()
             ]);
