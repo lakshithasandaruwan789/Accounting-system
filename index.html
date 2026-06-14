@@ -1946,39 +1946,54 @@
     }
 
     window.saveCatalogProduct = async function() {
-        const name = document.getElementById('cat-name').value;
+        const btn = document.getElementById('btn-save-catalog');
+        if(btn.disabled) return;
+        
+        const name = document.getElementById('cat-name').value.trim();
         const price = document.getElementById('cat-price').value;
 
         if(!name || !price) return notify("Please fill both Name and Price!", true);
 
-        // Check for duplicate name
-        const snap = await db.collection('product_catalog').get();
-        let exists = false;
-        snap.forEach(doc => {
-            if(doc.id !== currentCatalogId && doc.data().name.toLowerCase() === name.toLowerCase()) {
-                exists = true;
+        btn.disabled = true;
+        const originalText = btn.textContent;
+        btn.textContent = "Saving...";
+
+        try {
+            // Check for duplicate name
+            const snap = await db.collection('product_catalog').get();
+            let exists = false;
+            snap.forEach(doc => {
+                if(doc.id !== currentCatalogId && doc.data().name.trim().toLowerCase() === name.toLowerCase()) {
+                    exists = true;
+                }
+            });
+
+            if(exists) {
+                notify("A product with this name already exists!", true);
+                return;
             }
-        });
 
-        if(exists) return notify("A product with this name already exists!", true);
+            const payload = { name: name, price: parseFloat(price) };
 
-        const payload = { name: name, price: parseFloat(price) };
+            if(currentCatalogId) {
+                await db.collection('product_catalog').doc(currentCatalogId).update(payload);
+                notify("Product updated in catalog!");
+            } else {
+                await db.collection('product_catalog').add(payload);
+                notify("New Product added to catalog!");
+            }
 
-        if(currentCatalogId) {
-            await db.collection('product_catalog').doc(currentCatalogId).update(payload);
-            notify("Product updated in catalog!");
-        } else {
-            await db.collection('product_catalog').add(payload);
-            notify("New Product added to catalog!");
+            document.getElementById('cat-name').value = '';
+            document.getElementById('cat-price').value = '';
+            currentCatalogId = null;
+            document.getElementById('catalog-status-badge').style.display = 'none';
+            btn.textContent = "Save to Catalog";
+            
+            loadCatalogToDropdown();
+        } finally {
+            btn.disabled = false;
+            if (currentCatalogId) btn.textContent = "Update Catalog";
         }
-
-        document.getElementById('cat-name').value = '';
-        document.getElementById('cat-price').value = '';
-        currentCatalogId = null;
-        document.getElementById('catalog-status-badge').style.display = 'none';
-        document.getElementById('btn-save-catalog').textContent = "Save to Catalog";
-        
-        loadCatalogToDropdown();
     }
 
     function renderCharts(isMonth, leadsArray, productsArray, expensesArray, activeWeek) {
