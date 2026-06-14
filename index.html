@@ -1808,16 +1808,24 @@
     }
 
     window.saveStaffUser = async function() {
+        if(!navigator.onLine) return notify("No internet connection!", true);
+        const btn = document.getElementById('btn-save-staff');
+        if(btn.disabled) return;
+
         const u = document.getElementById('staff-user').value.trim();
         const p = document.getElementById('staff-pass').value.trim();
-        
         const perms = [];
         document.querySelectorAll('.perm-chk:checked').forEach(chk => { perms.push(chk.value); });
 
         if(!u || !p) return notify("Please fill Username and Password!", true);
         if(perms.length === 0) return notify("Please select at least one permission!", true);
 
-        const payload = { username: u, password: p, permissions: perms };
+        btn.disabled = true;
+        const originalText = btn.textContent;
+        btn.textContent = "Saving...";
+
+        try {
+            const payload = { username: u, password: p, permissions: perms };
 
         if(currentStaffId) {
             await db.collection('users').doc(currentStaffId).update(payload);
@@ -1833,10 +1841,14 @@
         document.getElementById('staff-pass').value = '';
         document.querySelectorAll('.perm-chk').forEach(chk => chk.checked = false);
         currentStaffId = null;
-        document.getElementById('staff-status-badge').style.display = 'none';
-        document.getElementById('btn-save-staff').textContent = "Save User Account";
-        
-        loadStaffTable();
+            document.getElementById('staff-status-badge').style.display = 'none';
+            btn.textContent = "Save User Account";
+            loadStaffTable();
+        } finally {
+            btn.disabled = false;
+            if(currentStaffId) btn.textContent = "Update User Account";
+            else btn.textContent = originalText;
+        }
     }
 
     window.editStaff = async function(id) {
@@ -2451,13 +2463,18 @@
     }
 
     window.deleteRecord = async function(table, id) {
-        if(confirm('Are you sure you want to delete this record?')) {
+        if(!confirm("⚠️ Are you sure you want to permanently delete this record?\n\nThis action cannot be undone.")) return;
+        
+        try {
             await db.collection(table).doc(id).delete();
             notify('Record deleted successfully');
             if(table === 'leads') handleDateChange();
             else if(table === 'product_catalog') loadCatalogToDropdown();
             else if(table === 'users') loadStaffTable();
             else loadAllData();
+        } catch(e) {
+            console.error("Delete error", e);
+            notify("Error deleting record", true);
         }
     }
 
@@ -2468,6 +2485,10 @@
     }
 
     window.saveLeadData = async function() {
+        if(!navigator.onLine) return notify("No internet connection!", true);
+        const btn = document.getElementById('btn-save-lead');
+        if(btn.disabled) return;
+
         const week = document.getElementById('active-week').value;
         if(week === 'Month Overview') return notify("Cannot add data in Month Overview!", true);
 
@@ -2487,38 +2508,49 @@
             confirmedLeads: parseInt(confirmedStr)
         };
 
-        if (!currentLeadId) {
-            const existing = await db.collection('leads').where('date', '==', date).get();
-            if(!existing.empty) currentLeadId = existing.docs[0].id;
-        }
+        btn.disabled = true;
+        const originalText = btn.textContent;
+        btn.textContent = 'Saving...';
 
-        if (currentLeadId) {
-            await db.collection('leads').doc(currentLeadId).update(payload);
-            notify(`Lead data UPDATED for ${week}!`);
-        } else {
-            await db.collection('leads').add(payload);
-            notify(`New Lead SAVED for ${week}!`);
+        try {
+            if (!currentLeadId) {
+                const existing = await db.collection('leads').where('date', '==', date).get();
+                if(!existing.empty) currentLeadId = existing.docs[0].id;
+            }
+
+            if (currentLeadId) {
+                await db.collection('leads').doc(currentLeadId).update(payload);
+                notify(`Lead data UPDATED for ${week}!`);
+            } else {
+                await db.collection('leads').add(payload);
+                notify(`New Lead SAVED for ${week}!`);
+            }
+            
+            document.getElementById('lead-budget').value = '';
+            document.getElementById('lead-count').value = '';
+            document.getElementById('lead-confirmed').value = '';
+            currentLeadId = null;
+            document.getElementById('lead-status-badge').style.display = 'none';
+            btn.textContent = 'Save Lead Data';
+            btn.style.background = 'var(--primary)';
+            btn.style.boxShadow = '0 4px 15px rgba(79, 70, 229, 0.3)';
+            
+            // Explicitly clear the date to force a fresh UI state
+            document.getElementById('global-date').valueAsDate = new Date();
+            
+            loadAllData();
+            if(typeof autoSelectWeek === 'function') autoSelectWeek();
+        } finally {
+            btn.disabled = false;
+            if(currentLeadId) btn.textContent = 'Update Lead Data';
         }
-        
-        document.getElementById('lead-budget').value = '';
-        document.getElementById('lead-count').value = '';
-        document.getElementById('lead-confirmed').value = '';
-        currentLeadId = null;
-        document.getElementById('lead-status-badge').style.display = 'none';
-        const btn = document.getElementById('btn-save-lead');
-        btn.textContent = 'Save Lead Data';
-        btn.style.background = 'var(--primary)';
-        btn.style.boxShadow = '0 4px 15px rgba(79, 70, 229, 0.3)';
-        
-        // Explicitly clear the date to force a fresh UI state
-        document.getElementById('global-date').valueAsDate = new Date();
-        
-        loadAllData();
-        if(typeof autoSelectWeek === 'function') autoSelectWeek();
-        // Removed handleDateChange(true) here so the boxes stay completely clear after saving
     }
 
     window.saveProductPurchase = async function() {
+        if(!navigator.onLine) return notify("No internet connection!", true);
+        const btn = document.querySelector('button[onclick="saveProductPurchase()"]');
+        if(btn && btn.disabled) return;
+
         const week = document.getElementById('active-week').value;
         if(week === 'Month Overview') return notify("Cannot add data in Month Overview!", true);
 
@@ -2530,23 +2562,29 @@
         if(!date) return notify("Please select a Date!", true);
         if(!name || !qty || qty <= 0) return notify("Please fill Product Name and Quantity!", true);
 
-        await db.collection('products').add({
-            week: week,
-            date: date,
-            productName: name,
-            price: parseFloat(price),
-            qty: parseInt(qty)
-        });
+        if(btn) { btn.disabled = true; btn.textContent = 'Saving...'; }
 
-        document.getElementById('prod-name').value = '';
-        document.getElementById('prod-price').value = '0';
-        document.getElementById('prod-qty').value = '';
+        try {
+            await db.collection('products').add({
+                week: week,
+                date: date,
+                productName: name,
+                price: parseFloat(price),
+                qty: parseInt(qty)
+            });
 
-        notify(`Product purchase added to ${week}!`);
-        loadAllData();
-        
-        const invoiceId = Date.now().toString().slice(-6);
-        printInvoice(date, name, price, qty, price * qty, invoiceId);
+            document.getElementById('prod-name').value = '';
+            document.getElementById('prod-price').value = '0';
+            document.getElementById('prod-qty').value = '';
+
+            notify(`Product purchase added to ${week}!`);
+            loadAllData();
+            
+            const invoiceId = Date.now().toString().slice(-6);
+            printInvoice(date, name, price, qty, price * qty, invoiceId);
+        } finally {
+            if(btn) { btn.disabled = false; btn.textContent = 'Save Purchase Data'; }
+        }
     }
 
     window.printInvoice = function(date, productName, price, qty, total, invoiceId) {
@@ -2571,6 +2609,10 @@
     }
 
     window.savePackaging = async function() {
+        if(!navigator.onLine) return notify("No internet connection!", true);
+        const btn = document.querySelector('button[onclick="savePackaging()"]');
+        if(btn && btn.disabled) return;
+
         const week = document.getElementById('active-week').value;
         if(week === 'Month Overview') return notify("Cannot add data in Month Overview!", true);
 
@@ -2582,23 +2624,33 @@
         if(!date) return notify("Please select a Date!", true);
         if(!name || !cost || cost <= 0) return notify("Please fill Item Description and Cost!", true);
 
-        await db.collection('packaging').add({
-            week: week,
-            date: date,
-            itemName: name,
-            qty: qty ? parseInt(qty) : 1,
-            cost: parseFloat(cost)
-        });
+        if(btn) { btn.disabled = true; btn.textContent = 'Saving...'; }
 
-        document.getElementById('pack-name').value = '';
-        document.getElementById('pack-qty').value = '';
-        document.getElementById('pack-cost').value = '';
+        try {
+            await db.collection('packaging').add({
+                week: week,
+                date: date,
+                itemName: name,
+                qty: qty ? parseInt(qty) : 1,
+                cost: parseFloat(cost)
+            });
 
-        notify(`Packaging cost added to ${week}!`);
-        loadAllData();
+            document.getElementById('pack-name').value = '';
+            document.getElementById('pack-qty').value = '';
+            document.getElementById('pack-cost').value = '';
+
+            notify(`Packaging cost added to ${week}!`);
+            loadAllData();
+        } finally {
+            if(btn) { btn.disabled = false; btn.textContent = 'Save Packaging'; }
+        }
     }
 
     window.saveExpenses = async function() {
+        if(!navigator.onLine) return notify("No internet connection!", true);
+        const btn = document.querySelector('button[onclick="saveExpenses()"]');
+        if(btn && btn.disabled) return;
+
         const week = document.getElementById('active-week').value;
         if(week === 'Month Overview') return notify("Cannot add data in Month Overview!", true);
 
@@ -2611,24 +2663,30 @@
             return notify("Please fill Received Payment!", true);
         }
 
-        const payload = {
-            week: week,
-            received: parseFloat(received),
-            adsSpent: parseFloat(autoAdsCost) || 0,
-            productCost: parseFloat(autoProdCost) || 0, 
-            otherCosts: parseFloat(autoOtherCost) || 0
-        };
+        if(btn) { btn.disabled = true; btn.textContent = 'Saving...'; }
 
-        const expSnap = await db.collection('expenses').where('week', '==', week).get();
-        if (!expSnap.empty) {
-            await db.collection('expenses').doc(expSnap.docs[0].id).update(payload);
-            notify(`Profit & Expenses UPDATED for ${week}!`);
-        } else {
-            await db.collection('expenses').add(payload);
-            notify(`Profit & Expenses SAVED for ${week}!`);
+        try {
+            const payload = {
+                week: week,
+                received: parseFloat(received),
+                adsSpent: parseFloat(autoAdsCost) || 0,
+                productCost: parseFloat(autoProdCost) || 0, 
+                otherCosts: parseFloat(autoOtherCost) || 0
+            };
+
+            const expSnap = await db.collection('expenses').where('week', '==', week).get();
+            if (!expSnap.empty) {
+                await db.collection('expenses').doc(expSnap.docs[0].id).update(payload);
+                notify(`Profit & Expenses UPDATED for ${week}!`);
+            } else {
+                await db.collection('expenses').add(payload);
+                notify(`Profit & Expenses SAVED for ${week}!`);
+            }
+
+            loadAllData();
+        } finally {
+            if(btn) { btn.disabled = false; btn.textContent = 'Save Profit & Expenses'; }
         }
-
-        loadAllData();
     }
     
     // --- STAFF SALARY LOGIC ---
@@ -2653,6 +2711,10 @@
     }
 
     window.saveSalaryData = async function() {
+        if(!navigator.onLine) return notify("No internet connection!", true);
+        const btn = document.getElementById('btn-save-salary');
+        if(btn && btn.disabled) return;
+
         const week = document.getElementById('active-week').value;
         if(week === 'Month Overview') return notify("Cannot add data in Month Overview!", true);
 
@@ -2673,42 +2735,48 @@
         if(!date) return notify("Please select a Payment Date!", true);
         if(!standardBasicStr) return notify("Please enter the Standard Basic Salary!", true);
 
-        const standardBasic = parseFloat(standardBasicStr) || 0;
-        const basic = parseFloat(basicStr) || 0;
-        const comm = parseFloat(commStr) || 0;
-        const bonus = parseFloat(bonusStr) || 0;
-        const allow = parseFloat(allowStr) || 0;
-        const deduct = parseFloat(deductStr) || 0;
-        const net = basic + comm + bonus + allow - deduct;
+        if(btn) { btn.disabled = true; btn.textContent = 'Saving...'; }
 
-        await db.collection('salaries').add({
-            week: week,
-            date: date,
-            employee: emp,
-            standardBasic: standardBasic,
-            monthDays: monthDays,
-            workedDays: workedDays,
-            basic: basic,
-            comm: comm,
-            bonus: bonus,
-            allow: allow,
-            deduct: deduct,
-            netSalary: net
-        });
+        try {
+            const standardBasic = parseFloat(standardBasicStr) || 0;
+            const basic = parseFloat(basicStr) || 0;
+            const comm = parseFloat(commStr) || 0;
+            const bonus = parseFloat(bonusStr) || 0;
+            const allow = parseFloat(allowStr) || 0;
+            const deduct = parseFloat(deductStr) || 0;
+            const net = basic + comm + bonus + allow - deduct;
 
-        document.getElementById('sal-basic-standard').value = '';
-        document.getElementById('sal-worked-days').value = '';
-        document.getElementById('sal-basic').value = '';
-        document.getElementById('sal-comm').value = '';
-        document.getElementById('sal-bonus').value = '';
-        document.getElementById('sal-allow').value = '';
-        document.getElementById('sal-deduct').value = '';
-        document.getElementById('sal-net').value = '';
-        document.getElementById('sal-employee').value = '';
-        document.getElementById('sal-date').value = '';
+            await db.collection('salaries').add({
+                week: week,
+                date: date,
+                employee: emp,
+                standardBasic: standardBasic,
+                monthDays: monthDays,
+                workedDays: workedDays,
+                basic: basic,
+                comm: comm,
+                bonus: bonus,
+                allow: allow,
+                deduct: deduct,
+                netSalary: net
+            });
 
-        notify(`Salary issued to ${emp} successfully!`);
-        loadAllData();
+            document.getElementById('sal-basic-standard').value = '';
+            document.getElementById('sal-worked-days').value = '';
+            document.getElementById('sal-basic').value = '';
+            document.getElementById('sal-comm').value = '';
+            document.getElementById('sal-bonus').value = '';
+            document.getElementById('sal-allow').value = '';
+            document.getElementById('sal-deduct').value = '';
+            document.getElementById('sal-net').value = '';
+            document.getElementById('sal-employee').value = '';
+            document.getElementById('sal-date').value = '';
+
+            notify(`Salary issued to ${emp} successfully!`);
+            loadAllData();
+        } finally {
+            if(btn) { btn.disabled = false; btn.textContent = 'Save & Issue Salary'; }
+        }
     }
 
     window.printPayslip = async function(id) {
@@ -3005,21 +3073,35 @@
     // 1. Handle Scanner Input
     window.handleBarcodeScan = async function(waybill) {
         if(!waybill || waybill.trim() === '') return;
-        
-        const product = document.getElementById('scan-product').value;
-        const scanDate = new Date().toISOString();
-        
+        if(!navigator.onLine) return notify("No internet connection! Please check your network.", true);
+
+        const btn = document.getElementById('scan-waybill').nextElementSibling;
+        if(btn.disabled) return;
+        btn.disabled = true;
+        btn.textContent = 'Scanning...';
+
         try {
+            const trimmedWaybill = waybill.trim();
+            const existSnap = await db.collection('orders').where('waybill', '==', trimmedWaybill).get();
+            if(!existSnap.empty) {
+                document.getElementById('scan-success-msg').innerHTML = `<span style="color:var(--danger);">⚠️ Duplicate! <b>${trimmedWaybill}</b> was already scanned.</span>`;
+                document.getElementById('scan-waybill').value = '';
+                setTimeout(() => { document.getElementById('scan-success-msg').textContent = ''; }, 3000);
+                return;
+            }
+
+            const product = document.getElementById('scan-product').value;
+            const scanDate = new Date().toISOString();
+
             await db.collection('orders').add({
-                waybill: waybill.trim(),
+                waybill: trimmedWaybill,
                 product: product,
-                status: 'Confirmed', // Initial status
+                status: 'Confirmed',
                 date: scanDate
             });
-            
-            // Clear input and show success
+
             document.getElementById('scan-waybill').value = '';
-            document.getElementById('scan-success-msg').textContent = `✅ Saved ${waybill.trim()}! Ready for next...`;
+            document.getElementById('scan-success-msg').textContent = `✅ Saved ${trimmedWaybill}! Ready for next.`;
             setTimeout(() => { document.getElementById('scan-success-msg').textContent = ''; }, 2000);
             
             loadScannedOrders();
@@ -3027,6 +3109,9 @@
         } catch(e) {
             console.error("Scan error:", e);
             notify("Failed to save scanned barcode!", true);
+        } finally {
+            btn.disabled = false;
+            btn.textContent = 'Scan & Save (Enter)';
         }
     };
 
