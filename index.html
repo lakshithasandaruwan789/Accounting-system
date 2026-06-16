@@ -874,7 +874,10 @@
                 </div>
 
                 <div class="table-card">
-                    <h2>Today's Scanned Orders</h2>
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;">
+                        <h2>Recent Scanned Orders <span style="font-size: 14px; font-weight: normal; color: var(--text-muted);">(Last 300)</span></h2>
+                        <input type="text" id="search-scanned" placeholder="🔍 Search waybill..." style="font-size:13px; padding:8px 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--input-bg); color: var(--text-main); width: 200px;" onkeyup="filterScannedOrders()">
+                    </div>
                     <table>
                         <thead>
                             <tr>
@@ -3115,38 +3118,54 @@
         }
     };
 
+    window.filterScannedOrders = function() {
+        const q = document.getElementById('search-scanned').value.toLowerCase();
+        const rows = document.querySelectorAll('#tbl-scanned-orders tr');
+        rows.forEach(r => {
+            const waybill = r.children[1].textContent.toLowerCase();
+            r.style.display = waybill.includes(q) ? '' : 'none';
+        });
+    };
+
     // 2. Load Scanned Orders Table
     window.loadScannedOrders = async function() {
         const tbody = document.getElementById('tbl-scanned-orders');
         if(!tbody) return;
         
         try {
-            // Get today's beginning
-            const startOfDay = new Date();
-            startOfDay.setHours(0,0,0,0);
-            
-            const snap = await db.collection('orders')
-                                 .where('date', '>=', startOfDay.toISOString())
-                                 .orderBy('date', 'desc')
-                                 .get();
-                                 
-            tbody.innerHTML = '';
+            const snap = await db.collection('orders').get();
+            let allOrders = [];
             snap.forEach(doc => {
-                const data = doc.data();
-                const timeStr = new Date(data.date).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                allOrders.push({ id: doc.id, ...doc.data() });
+            });
+            
+            // Sort by date descending
+            allOrders.sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
+            
+            // Limit to 300
+            allOrders = allOrders.slice(0, 300);
+
+            tbody.innerHTML = '';
+            allOrders.forEach(data => {
+                const dateObj = new Date(data.date);
+                const dateStr = dateObj.toLocaleDateString();
+                const timeStr = dateObj.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                
                 tbody.innerHTML += `
                     <tr>
-                        <td style="color:var(--text-muted);">${timeStr}</td>
+                        <td style="color:var(--text-muted); font-size: 12px;">${dateStr}<br/><strong>${timeStr}</strong></td>
                         <td style="font-weight:bold;">${data.waybill}</td>
                         <td>${data.product || '-'}</td>
                         <td><span class="badge ${data.status === 'Delivered' ? 'bg-success' : (data.status === 'Returned' ? 'bg-danger' : (data.status === 'ASSIGNED TO RIDER' ? 'bg-warning' : 'bg-primary'))}">${data.status}</span></td>
                         <td>
-                            <button onclick="deleteScannedOrder('${doc.id}')" style="background:none; border:none; cursor:pointer; color:var(--danger);" title="Delete Order">🗑️</button>
+                            <button onclick="deleteScannedOrder('${data.id}')" style="background:none; border:none; cursor:pointer; color:var(--danger);" title="Delete Order">🗑️</button>
                         </td>
                     </tr>
                 `;
             });
-        } catch(e) { console.error("Load scanned orders err:", e); }
+        } catch(e) { 
+            console.error("Load scanned orders err:", e); 
+        }
     };
 
     window.deleteScannedOrder = async function(docId) {
