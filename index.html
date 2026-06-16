@@ -1604,11 +1604,16 @@
         notify("Date filter applied!");
     }
 
-    function clearDateFilter() {
-        document.getElementById('global-date').valueAsDate = new Date();
+    async function clearDateFilter() {
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const day = String(now.getDate()).padStart(2, '0');
+        document.getElementById('global-date').value = `${year}-${month}-${day}`;
         isDateFilterApplied = false;
+        await handleDateChange();
         loadAllData();
-        notify("Date filter cleared!");
+        notify("Date filter cleared to Today!");
     }
 
     function toggleSidebar() {
