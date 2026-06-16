@@ -1284,6 +1284,10 @@
                         <label>Default Factory Price (Rs)</label>
                         <input type="number" id="cat-price" placeholder="0.00">
                     </div>
+                    <div class="form-group">
+                        <label>Default Selling Price (Rs)</label>
+                        <input type="number" id="cat-selling-price" placeholder="0.00">
+                    </div>
                     
                     <button class="action-btn" id="btn-save-catalog" style="background:var(--primary); box-shadow:0 4px 15px rgba(30, 41, 59, 0.3);" onclick="saveCatalogProduct()">Save to Catalog</button>
                 </div>
@@ -1295,6 +1299,7 @@
                             <tr>
                                 <th>Product Name</th>
                                 <th>Factory Price</th>
+                                <th>Selling Price</th>
                                 <th>Action</th>
                             </tr>
                         </thead>
@@ -1893,7 +1898,7 @@
         const isAdmin = currentUser.username === 'admin' || currentUser.username === 'admin@company.com' || (currentUser.permissions && currentUser.permissions.includes('staff'));
         
         if(isAdmin) {
-            perms = ["dashboard", "leads", "orders", "purchases", "packaging", "profit", "catalog", "inventory", "reports", "salaries", "settings", "staff"];
+            perms = ["dashboard", "add-order", "view-orders", "to-ship", "ship-list", "leads", "orders", "purchases", "packaging", "profit", "catalog", "inventory", "reports", "salaries", "settings", "staff"];
             currentUser.permissions = perms; 
         }
         
@@ -1902,7 +1907,7 @@
                 const pageId = item.id.replace('nav-', '');
                 
                 // Force hide sensitive pages if not admin
-                if(!isAdmin && (pageId === 'catalog' || pageId === 'settings' || pageId === 'staff')) {
+                if(!isAdmin && (pageId === 'catalog' || pageId === 'settings' || pageId === 'staff' || pageId === 'profit' || pageId === 'salaries' || pageId === 'reports')) {
                     item.style.display = 'none';
                     return;
                 }
@@ -2132,9 +2137,10 @@
                     <tr>
                         <td style="font-weight:bold; color:var(--text-main);">${p.name}</td>
                         <td style="color:var(--success); font-weight:bold;">${formatRs(p.price)}</td>
+                        <td style="color:var(--primary); font-weight:bold;">${formatRs(p.sellingPrice || 0)}</td>
                         <td style="white-space: nowrap;">
                             <div style="display:flex; gap:6px; align-items:center;">
-                                <button class="btn-edit" style="margin:0; padding:4px 8px; font-size:11px;" onclick="editCatalog('${p.id}', '${p.name}', ${p.price})">Edit</button>
+                                <button class="btn-edit" style="margin:0; padding:4px 8px; font-size:11px;" onclick="editCatalog('${p.id}', '${p.name}', ${p.price}, ${p.sellingPrice || 0})">Edit</button>
                                 <button class="btn-delete" style="margin:0; padding:4px 8px; font-size:11px;" onclick="deleteRecord('product_catalog', '${p.id}')">Del</button>
                             </div>
                         </td>
@@ -2154,10 +2160,11 @@
         }
     }
 
-    window.editCatalog = function(id, name, price) {
+    window.editCatalog = function(id, name, price, sellingPrice) {
         currentCatalogId = id;
         document.getElementById('cat-name').value = name;
         document.getElementById('cat-price').value = price;
+        document.getElementById('cat-selling-price').value = sellingPrice || 0;
         document.getElementById('catalog-status-badge').style.display = 'inline-block';
         document.getElementById('btn-save-catalog').textContent = "Update Catalog";
     }
@@ -2183,8 +2190,9 @@
         
         const name = document.getElementById('cat-name').value.trim();
         const price = document.getElementById('cat-price').value;
+        const sellingPrice = document.getElementById('cat-selling-price').value;
 
-        if(!name || !price) return notify("Please fill both Name and Price!", true);
+        if(!name || !price || !sellingPrice) return notify("Please fill Name, Factory Price and Selling Price!", true);
 
         btn.disabled = true;
         const originalText = btn.textContent;
@@ -2205,7 +2213,7 @@
                 return;
             }
 
-            const payload = { name: name, price: parseFloat(price) };
+            const payload = { name: name, price: parseFloat(price), sellingPrice: parseFloat(sellingPrice) };
 
             if(currentCatalogId) {
                 await db.collection('product_catalog').doc(currentCatalogId).update(payload);
@@ -2217,6 +2225,7 @@
 
             document.getElementById('cat-name').value = '';
             document.getElementById('cat-price').value = '';
+            document.getElementById('cat-selling-price').value = '';
             currentCatalogId = null;
             document.getElementById('catalog-status-badge').style.display = 'none';
             btn.textContent = "Save to Catalog";
