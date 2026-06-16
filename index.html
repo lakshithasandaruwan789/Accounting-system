@@ -2901,14 +2901,10 @@
         document.getElementById('inv-paid').textContent = showFinancials ? paid.toLocaleString('en-US', {minimumFractionDigits: 2}) : '***';
         document.getElementById('inv-balance').textContent = showFinancials ? balance.toLocaleString('en-US', {minimumFractionDigits: 2}) : '***';
         
-        const printArea = document.getElementById('invoice-print-area');
-        printArea.style.display = 'block';
-        
         // Short delay to ensure DOM renders before printing
         setTimeout(() => {
             window.print();
-            printArea.style.display = 'none';
-        }, 100);
+        }, 300);
     }
 
     window.savePackaging = async function() {
