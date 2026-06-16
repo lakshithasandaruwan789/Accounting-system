@@ -4033,6 +4033,7 @@
             if(nameFilter && (!o.customerName || !o.customerName.toLowerCase().includes(nameFilter))) return false;
             
             if(startFilter || endFilter) {
+                if(!o.createdAt) return false;
                 const oDate = new Date(o.createdAt);
                 oDate.setHours(0,0,0,0);
                 if(startFilter) {
@@ -4088,7 +4089,7 @@
                 return `
                 <tr style="${rowColor}">
                     <td><span style="background:#ef4444; color:white; padding:2px 4px; border-radius:2px; font-weight:bold;">${o.id.substring(0,6).toUpperCase()}</span></td>
-                    <td>${new Date(o.createdAt).toLocaleDateString()}</td>
+                    <td>${o.createdAt ? new Date(o.createdAt).toLocaleDateString() : '-'}</td>
                     <td><strong>${o.customerName}</strong></td>
                     <td><small>${o.address}, ${o.city}</small></td>
                     <td style="white-space:nowrap;"><a href="tel:${o.phone}" style="color:var(--success); text-decoration:none; font-weight:500;">📞 ${o.phone}</a></td>
@@ -4103,6 +4104,7 @@
                             <span title="Reject" onclick="updateOrderStatus('${o.id}', 'rejected')">🚫</span>
                             <span title="Fake" onclick="updateOrderStatus('${o.id}', 'fake')">⚠️</span>
                             <span title="Cancel" onclick="updateOrderStatus('${o.id}', 'cancelled')">❌</span>
+                            <span title="Print Label" onclick="printShippingLabel('${o.id}')">🖨️</span>
                         </div>
                     </td>
                 </tr>
@@ -4127,7 +4129,7 @@
         if(tblToShip) {
             tblToShip.innerHTML = confirmed.map(o => `
                 <tr>
-                    <td>${new Date(o.createdAt).toLocaleDateString()}</td>
+                    <td>${o.createdAt ? new Date(o.createdAt).toLocaleDateString() : '-'}</td>
                     <td><strong>${o.customerName}</strong></td>
                     <td>${o.city}</td>
                     <td>${o.product} x${o.qty}</td>
@@ -4330,7 +4332,7 @@
                         <div style="font-size: 14px; font-weight: bold;">TP: 0766066789</div>
                     </div>
                     <div style="text-align: right; font-size: 14px;">
-                        <div style="margin-bottom: 5px;">Date : ${new Date(o.createdAt).toLocaleDateString('en-GB', {year:'numeric', month:'short', day:'numeric'})}</div>
+                        <div style="margin-bottom: 5px;">Date : ${o.createdAt ? new Date(o.createdAt).toLocaleDateString('en-GB', {year:'numeric', month:'short', day:'numeric'}) : '-'}</div>
                         <div style="font-weight: bold;">ID : ${o.id.substring(0,8).toUpperCase()}</div>
                     </div>
                 </div>
@@ -4398,15 +4400,19 @@
             </div>
         `;
 
-        if (window.JsBarcode) {
-            JsBarcode("#barcode-" + o.id, trackingId, {
-                format: "CODE128",
-                width: 2,
-                height: 60,
-                displayValue: true,
-                fontSize: 16,
-                margin: 0
-            });
+        try {
+            if (window.JsBarcode) {
+                JsBarcode("#barcode-" + o.id, trackingId, {
+                    format: "CODE128",
+                    width: 2,
+                    height: 60,
+                    displayValue: true,
+                    fontSize: 16,
+                    margin: 0
+                });
+            }
+        } catch(e) {
+            console.error("Barcode error:", e);
         }
         
         setTimeout(() => { window.print(); }, 500);
