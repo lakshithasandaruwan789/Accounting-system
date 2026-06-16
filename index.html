@@ -11,6 +11,8 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <!-- html2pdf for PDF Export -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <!-- JsBarcode Library -->
+    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.0/dist/JsBarcode.all.min.js"></script>
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     
@@ -560,7 +562,7 @@
             <span class="nav-icon">✍️</span> <span class="nav-text">Add New Order</span>
         </li>
         <li class="nav-item" onclick="navigate('view-orders')" id="nav-view-orders">
-            <span class="nav-icon">📞</span> <span class="nav-text">Call Center List</span>
+            <span class="nav-icon">📞</span> <span class="nav-text">View Leads</span>
         </li>
         <li class="nav-item" onclick="navigate('leads')" id="nav-leads">
             <span class="nav-icon">🎯</span> <span class="nav-text">Daily Leads</span>
@@ -887,9 +889,15 @@
                         <label>Customer Name</label>
                         <input type="text" id="order-customer" placeholder="e.g. Kasun Kalhara">
                     </div>
-                    <div class="form-group">
-                        <label>Phone Number</label>
-                        <input type="text" id="order-phone" placeholder="e.g. 0712345678">
+                    <div style="display:flex; gap:15px;">
+                        <div class="form-group" style="flex:1;">
+                            <label>Phone Number 1</label>
+                            <input type="text" id="order-phone" placeholder="e.g. 0712345678">
+                        </div>
+                        <div class="form-group" style="flex:1;">
+                            <label>Contact #2 (Optional)</label>
+                            <input type="text" id="order-phone2" placeholder="e.g. 0771234567">
+                        </div>
                     </div>
                     <div class="form-group">
                         <label>City / Area</label>
@@ -938,23 +946,65 @@
 
         <!-- PAGE OMS 2: VIEW ORDERS (CALL CENTER) -->
         <div id="page-view-orders" class="page">
-            <div class="header">
-                <div>
-                    <h1>Call Center List</h1>
-                    <p>Verify pending orders</p>
+            <div class="form-card" style="margin-bottom:20px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                    <h2 style="margin:0;">Leads Search</h2>
                 </div>
-                <div style="font-size: 14px; font-weight:600; color: var(--primary);">Pending Orders: <span id="lbl-pending-count">0</span></div>
+                <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap:15px; margin-bottom:15px;">
+                    <div>
+                        <label style="font-size:12px; color:var(--text-muted);">Status</label>
+                        <select id="search-status" style="padding:6px; font-size:13px;">
+                            <option value="Any">Any</option>
+                            <option value="pending">Pending</option>
+                            <option value="confirmed">Confirmed (Ok)</option>
+                            <option value="no-answer">No Answer</option>
+                            <option value="rejected">Rejected</option>
+                            <option value="fake">Fake</option>
+                            <option value="cancelled">Cancelled</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label style="font-size:12px; color:var(--text-muted);">Customer Name</label>
+                        <input type="text" id="search-customer" placeholder="Select Customer" style="padding:6px; font-size:13px;">
+                    </div>
+                    <div>
+                        <label style="font-size:12px; color:var(--text-muted);">Start Date</label>
+                        <input type="date" id="search-start" style="padding:6px; font-size:13px;">
+                    </div>
+                    <div>
+                        <label style="font-size:12px; color:var(--text-muted);">End Date</label>
+                        <input type="date" id="search-end" style="padding:6px; font-size:13px;">
+                    </div>
+                </div>
+                <div style="display:flex; justify-content:flex-end; gap:10px;">
+                    <button class="action-btn" style="padding:6px 15px; font-size:13px; background:var(--primary);" onclick="filterViewLeads()">Search</button>
+                    <button class="action-btn" style="padding:6px 15px; font-size:13px; background:var(--bg-main); color:var(--text-main); border:1px solid #ddd;" onclick="loadOMSData()">🔄 Reload Data</button>
+                </div>
             </div>
+
+            <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-bottom:10px; font-size:13px; font-weight:bold;">
+                <span style="color:var(--primary);">🔵 Leads List: <span id="lbl-all-count" style="border:1px solid #ccc; padding:2px 8px; border-radius:4px;">0</span></span>
+                <span>Pending | <span id="lbl-pending-count" style="background:#fff; border:1px solid #ccc; padding:2px 8px; border-radius:4px;">0</span></span>
+                <span>Ok | <span id="lbl-confirmed-count" style="background:#22c55e; color:white; padding:2px 8px; border-radius:4px;">0</span></span>
+                <span>No Answer | <span id="lbl-noanswer-count" style="background:#eab308; color:white; padding:2px 8px; border-radius:4px;">0</span></span>
+                <span>Rejected | <span id="lbl-rejected-count" style="background:#6b7280; color:white; padding:2px 8px; border-radius:4px;">0</span></span>
+                <span>Fake | <span id="lbl-fake-count" style="background:#ef4444; color:white; padding:2px 8px; border-radius:4px;">0</span></span>
+                <span>Cancelled | <span id="lbl-cancelled-count" style="background:#ef4444; color:white; padding:2px 8px; border-radius:4px;">0</span></span>
+            </div>
+
             <div class="table-card">
-                <table>
+                <table style="font-size: 13px;">
                     <thead>
                         <tr>
-                            <th>Date</th>
-                            <th>Customer</th>
-                            <th>Phone</th>
+                            <th># ID</th>
+                            <th>Lead Date</th>
+                            <th>Customer Name</th>
+                            <th>Customer Address</th>
+                            <th>Contact #1</th>
+                            <th>Contact #2</th>
                             <th>Product</th>
-                            <th>Total (COD)</th>
-                            <th>Status Action</th>
+                            <th>Total (Rs)</th>
+                            <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody id="tbl-view-orders"></tbody>
@@ -3970,40 +4020,107 @@
     // ORDER MANAGEMENT SYSTEM (OMS) LOGIC
     // ==========================================
 
+    window.filterViewLeads = function() {
+        if(!window.allOMSOrders) return;
+        
+        const statusFilter = document.getElementById('search-status') ? document.getElementById('search-status').value : 'Any';
+        const nameFilter = document.getElementById('search-customer') ? document.getElementById('search-customer').value.toLowerCase() : '';
+        const startFilter = document.getElementById('search-start') ? document.getElementById('search-start').value : '';
+        const endFilter = document.getElementById('search-end') ? document.getElementById('search-end').value : '';
+
+        let filtered = window.allOMSOrders.filter(o => {
+            if(statusFilter !== 'Any' && o.status !== statusFilter) return false;
+            if(nameFilter && (!o.customerName || !o.customerName.toLowerCase().includes(nameFilter))) return false;
+            
+            if(startFilter || endFilter) {
+                const oDate = new Date(o.createdAt);
+                oDate.setHours(0,0,0,0);
+                if(startFilter) {
+                    const s = new Date(startFilter);
+                    s.setHours(0,0,0,0);
+                    if(oDate < s) return false;
+                }
+                if(endFilter) {
+                    const e = new Date(endFilter);
+                    e.setHours(0,0,0,0);
+                    if(oDate > e) return false;
+                }
+            }
+            return true;
+        });
+
+        const pending = filtered.filter(o => o.status === 'pending');
+        const confirmedList = filtered.filter(o => o.status === 'confirmed');
+        const rejected = filtered.filter(o => o.status === 'rejected');
+        const fakeList = filtered.filter(o => o.status === 'fake');
+        const cancelledList = filtered.filter(o => o.status === 'cancelled');
+        const noAnswer = filtered.filter(o => o.status === 'no-answer');
+
+        const eAll = document.getElementById('lbl-all-count');
+        const ePen = document.getElementById('lbl-pending-count');
+        const eCon = document.getElementById('lbl-confirmed-count');
+        const eNo = document.getElementById('lbl-noanswer-count');
+        const eRej = document.getElementById('lbl-rejected-count');
+        const eFake = document.getElementById('lbl-fake-count');
+        const eCan = document.getElementById('lbl-cancelled-count');
+
+        if(eAll) eAll.textContent = filtered.length;
+        if(ePen) ePen.textContent = pending.length;
+        if(eCon) eCon.textContent = confirmedList.length;
+        if(eNo) eNo.textContent = noAnswer.length;
+        if(eRej) eRej.textContent = rejected.length;
+        if(eFake) eFake.textContent = fakeList.length;
+        if(eCan) eCan.textContent = cancelledList.length;
+        
+        const tblViewOrders = document.getElementById('tbl-view-orders');
+        if(tblViewOrders) {
+            tblViewOrders.innerHTML = filtered.map(o => {
+                let rowColor = '';
+                if(o.status === 'confirmed') rowColor = 'background-color: #dcfce7;'; // green
+                else if(o.status === 'rejected') rowColor = 'background-color: #fee2e2;'; // red
+                else if(o.status === 'fake') rowColor = 'background-color: #ffedd5;'; // orange
+                else if(o.status === 'cancelled') rowColor = 'background-color: #e2e8f0;'; // slate
+                else if(o.status === 'no-answer') rowColor = 'background-color: #fef08a;'; // yellow
+                else if(o.status === 'shipped') rowColor = 'background-color: #e0f2fe;'; // blue
+                else if(o.status === 'delivered') rowColor = 'background-color: #dcfce7;'; // Delivered requested as GREEN
+                else if(o.status === 'returned') rowColor = 'background-color: #f3f4f6;'; // gray
+
+                return `
+                <tr style="${rowColor}">
+                    <td><span style="background:#ef4444; color:white; padding:2px 4px; border-radius:2px; font-weight:bold;">${o.id.substring(0,6).toUpperCase()}</span></td>
+                    <td>${new Date(o.createdAt).toLocaleDateString()}</td>
+                    <td><strong>${o.customerName}</strong></td>
+                    <td><small>${o.address}, ${o.city}</small></td>
+                    <td style="white-space:nowrap;"><a href="tel:${o.phone}" style="color:var(--success); text-decoration:none; font-weight:500;">📞 ${o.phone}</a></td>
+                    <td style="white-space:nowrap;">${o.phone2 ? `<a href="tel:${o.phone2}" style="color:var(--success); text-decoration:none; font-weight:500;">📞 ${o.phone2}</a>` : '-'}</td>
+                    <td>${o.product} <span style="color:var(--text-muted)">x${o.qty}</span></td>
+                    <td style="font-weight:bold; color:var(--primary)">${formatRs(o.grandTotal)}</td>
+                    <td style="white-space:nowrap;">
+                        <div style="display:flex; gap:6px; font-size:16px; cursor:pointer;">
+                            <span title="Pending" onclick="updateOrderStatus('${o.id}', 'pending')">🛒</span>
+                            <span title="No Answer" onclick="updateOrderStatus('${o.id}', 'no-answer')">📵</span>
+                            <span title="Confirm" onclick="updateOrderStatus('${o.id}', 'confirmed')">✅</span>
+                            <span title="Reject" onclick="updateOrderStatus('${o.id}', 'rejected')">🚫</span>
+                            <span title="Fake" onclick="updateOrderStatus('${o.id}', 'fake')">⚠️</span>
+                            <span title="Cancel" onclick="updateOrderStatus('${o.id}', 'cancelled')">❌</span>
+                        </div>
+                    </td>
+                </tr>
+                `;
+            }).join('');
+        }
+    }
+
     async function loadOMSData() {
         const oSnap = await db.collection('orders').orderBy('createdAt', 'desc').get();
         let allOrders = oSnap.docs.map(d => ({id: d.id, ...d.data()}));
 
         initAddOrderForm();
 
-        // View Leads (Pending)
-        const pending = allOrders.filter(o => o.status === 'pending');
-        const lblPendingCount = document.getElementById('lbl-pending-count');
-        if(lblPendingCount) lblPendingCount.textContent = pending.length;
+        // Store globally for filtering
+        window.allOMSOrders = allOrders;
+        window.filterViewLeads();
         
-        const tblViewOrders = document.getElementById('tbl-view-orders');
-        if(tblViewOrders) {
-            tblViewOrders.innerHTML = pending.map(o => `
-                <tr>
-                    <td>${new Date(o.createdAt).toLocaleDateString()}</td>
-                    <td><strong>${o.customerName}</strong><br><small>${o.city}</small></td>
-                    <td>${o.phone}</td>
-                    <td>${o.product} <span style="color:var(--text-muted)">x${o.qty}</span></td>
-                    <td style="font-weight:bold; color:var(--primary)">Rs ${o.grandTotal.toLocaleString()}</td>
-                    <td>
-                        <select onchange="updateOrderStatus('${o.id}', this.value)" style="padding:4px; border-radius:4px;">
-                            <option value="pending" selected>Pending</option>
-                            <option value="confirmed">✅ Confirm</option>
-                            <option value="rejected">❌ Reject</option>
-                            <option value="no-answer">📵 No Answer</option>
-                            <option value="fake">⚠️ Fake</option>
-                            <option value="cancelled">🚫 Cancelled</option>
-                        </select>
-                    </td>
-                </tr>
-            `).join('');
-        }
-
         // To Ship (Confirmed)
         const confirmed = allOrders.filter(o => o.status === 'confirmed');
         const tblToShip = document.getElementById('tbl-to-ship');
@@ -4092,6 +4209,7 @@
     window.saveNewOrder = async function() {
         const customer = document.getElementById('order-customer').value;
         const phone = document.getElementById('order-phone').value;
+        const phone2 = document.getElementById('order-phone2').value || '';
         const city = document.getElementById('order-city').value;
         const address = document.getElementById('order-address').value;
         const sel = document.getElementById('order-product');
@@ -4109,6 +4227,7 @@
             await db.collection('orders').add({
                 customerName: customer,
                 phone: phone,
+                phone2: phone2,
                 city: city,
                 address: address,
                 productId: opt.value,
@@ -4199,27 +4318,98 @@
         const o = doc.data();
 
         const printArea = document.getElementById('invoice-print-area');
+        const trackingId = o.trackingId || 'RA' + Math.floor(Math.random() * 100000000);
+
         printArea.innerHTML = `
-            <div style="padding: 20px; font-family: Arial, sans-serif; max-width: 400px; margin: 0 auto; border: 2px dashed #ccc;">
-                <div style="text-align: center; border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 15px;">
-                    <h1 style="margin: 0; font-size: 24px; text-transform: uppercase;">${o.courier || 'COURIER'}</h1>
-                    <div style="font-size: 16px; font-weight: bold; margin-top: 5px;">${o.trackingId || 'NO TRACKING ID'}</div>
-                </div>
+            <div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto; border: 3px solid #000; box-sizing: border-box; background: #fff;">
                 
-                <h2 style="font-size: 18px; margin: 0 0 5px 0;">To: ${o.customerName}</h2>
-                <div style="font-size: 14px; margin-bottom: 5px;">📞 ${o.phone}</div>
-                <div style="font-size: 14px; margin-bottom: 15px;">📍 ${o.address}, ${o.city}</div>
-                
-                <div style="border-top: 1px solid #ccc; padding-top: 10px; margin-top: 10px;">
-                    <div style="font-size: 14px;"><strong>Item:</strong> ${o.product} x${o.qty}</div>
-                    <div style="font-size: 24px; font-weight: bold; text-align: center; margin-top: 15px; border: 2px solid #000; padding: 10px;">
-                        COD: Rs ${o.grandTotal.toLocaleString()}
+                <!-- HEADER -->
+                <div style="display: flex; justify-content: space-between; border-bottom: 2px solid #000; padding: 10px;">
+                    <div>
+                        <h2 style="margin: 0 0 5px 0; font-size: 18px;">Herbal Crown Pvt Ltd</h2>
+                        <div style="font-size: 14px; font-weight: bold;">TP: 0766066789</div>
+                    </div>
+                    <div style="text-align: right; font-size: 14px;">
+                        <div style="margin-bottom: 5px;">Date : ${new Date(o.createdAt).toLocaleDateString('en-GB', {year:'numeric', month:'short', day:'numeric'})}</div>
+                        <div style="font-weight: bold;">ID : ${o.id.substring(0,8).toUpperCase()}</div>
                     </div>
                 </div>
-                <div style="text-align: center; font-size: 10px; margin-top: 20px; color: #666;">Generated by OMS Factory System</div>
+
+                <!-- BARCODE AND QTY -->
+                <div style="display: flex; border-bottom: 2px solid #000;">
+                    <div style="flex: 1; text-align: center; padding: 15px; border-right: 2px solid #000;">
+                        <svg id="barcode-${o.id}"></svg>
+                    </div>
+                    <div style="width: 100px; padding: 10px; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                        <div style="font-size: 14px; font-weight: bold;">Total Qty</div>
+                        <div style="font-size: 36px; font-weight: bold; margin-top: 5px;">${o.qty}</div>
+                    </div>
+                </div>
+
+                <!-- ITEM -->
+                <div style="padding: 15px; border-bottom: 2px solid #000; font-size: 18px;">
+                    ${o.product} <span style="margin-left: 10px;">x ${o.qty}</span>
+                </div>
+
+                <!-- CUSTOMER DETAILS & TOTALS -->
+                <div style="display: flex;">
+                    <!-- LEFT SIDE: CUSTOMER -->
+                    <div style="flex: 1; border-right: 2px solid #000;">
+                        <div style="padding: 10px; border-bottom: 2px solid #000; font-weight: bold; font-size: 14px;">
+                            Customer Details
+                        </div>
+                        <div style="padding: 10px; font-size: 14px; line-height: 1.4;">
+                            <strong>Name</strong><br>
+                            ${o.customerName}<br>
+                            <strong>Address</strong><br>
+                            ${o.address}<br>
+                            ${o.city}<br>
+                            <strong>Contacts</strong><br>
+                            ${o.phone} | ${o.phone2 || ''}
+                        </div>
+                    </div>
+
+                    <!-- RIGHT SIDE: TOTALS -->
+                    <div style="width: 200px;">
+                        <div style="display: flex; justify-content: space-between; padding: 10px; border-bottom: 2px solid #000; font-size: 14px;">
+                            <strong>Order Total</strong>
+                            <strong>${(o.price * o.qty).toLocaleString('en-US', {minimumFractionDigits: 2})}</strong>
+                        </div>
+                        <div style="padding: 10px; font-size: 14px; line-height: 1.8; border-bottom: 2px solid #000;">
+                            <div style="display: flex; justify-content: space-between;">
+                                <span>Delivery Cost</span>
+                                <span>${(o.deliveryCharge || 0).toLocaleString('en-US', {minimumFractionDigits: 2})}</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between;">
+                                <span>Discount (-)</span>
+                                <span>${(o.discount || 0).toLocaleString('en-US', {minimumFractionDigits: 2})}</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between;">
+                                <span>Paid (-)</span>
+                                <span>0.00</span>
+                            </div>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; padding: 10px; font-size: 14px; font-weight: bold;">
+                            <span>Grand Total</span>
+                            <span>${o.grandTotal.toLocaleString('en-US', {minimumFractionDigits: 2})}</span>
+                        </div>
+                    </div>
+                </div>
             </div>
         `;
-        setTimeout(() => { window.print(); }, 300);
+
+        if (window.JsBarcode) {
+            JsBarcode("#barcode-" + o.id, trackingId, {
+                format: "CODE128",
+                width: 2,
+                height: 60,
+                displayValue: true,
+                fontSize: 16,
+                margin: 0
+            });
+        }
+        
+        setTimeout(() => { window.print(); }, 500);
     }
 </script>
 </body>
