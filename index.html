@@ -507,7 +507,7 @@
             body { background: white !important; margin: 0; padding: 0; color: black; }
             #login-screen, .sidebar, .main-content > *:not(#invoice-print-area), .mobile-backdrop, .notification { display: none !important; }
             #invoice-print-area { display: block !important; position: absolute; left: 0; top: 0; width: 100%; background: white; z-index: 9999; }
-            .invoice-box { border: none !important; box-shadow: none !important; width: 100%; padding: 0 !important; }
+            .invoice-box { border: none !important; box-shadow: none !important; width: 100% !important; max-width: none !important; padding: 0 !important; }
             
             /* Ensure colors print correctly */
             * { -webkit-print-color-adjust: exact !important; color-adjust: exact !important; }
@@ -2140,24 +2140,67 @@
         
         let totalProductCostAmount = 0;
         let pBodyDash = '', pBodyManage = '';
+        
+        let groupedPurchases = {};
 
         products.forEach(p => {
             const total = p.price * p.qty;
             totalProductCostAmount += total;
             
-            const isSettled = p.isSettled || false;
-            const settleBtnHtml = isSettled 
-                ? `<button class="action-btn" style="background:#10b981; color:white; padding:4px 8px; font-size:11px; margin:0; border:none;" onclick="toggleSettlePurchase('${p.id}', false)">✅ Settled</button>`
-                : `<button class="action-btn" style="background:#f59e0b; color:white; padding:4px 8px; font-size:11px; margin:0; border:none;" onclick="toggleSettlePurchase('${p.id}', true)">⏳ Pay</button>`;
-
             const isSelectedClass = p.date === selectedDate && !isMonth ? 'row-highlight' : '';
             const weekTd = isMonth ? `<td style="color:var(--text-muted); font-weight:600;">${p.week || 'Week 1'}</td>` : '';
             const displayTotal = showFinancials ? formatRs(total) : '***';
-            const displayPrice = showFinancials ? formatRs(p.price) : '***';
-            const row = `<tr class="${isSelectedClass}">${weekTd}<td>${p.date}</td><td style="font-weight:600;">${p.productName}</td><td>${p.qty}</td><td style="font-weight:bold; color:var(--warning);">${displayTotal}</td></tr>`;
-            pBodyDash += row;
-            pBodyManage += `<tr class="${isSelectedClass}"><td>${p.date}</td><td style="font-weight:600;">${p.productName}</td><td>${p.qty}</td><td style="font-weight:bold; color:var(--warning);">${displayTotal}</td><td style="white-space: nowrap;"><div style="display:flex; gap:6px; align-items:center;">${settleBtnHtml}<button class="action-btn" style="background:var(--primary); padding:4px 8px; font-size:11px; margin:0;" onclick="printInvoice('${p.date}', '${p.productName}', ${p.price}, ${p.qty}, ${total}, '${p.id}')">📄 Bill</button><button class="btn-delete" style="margin:0; padding:4px 8px; font-size:11px;" onclick="deleteRecord('products', '${p.id}')">Del</button></div></td></tr>`;
+            
+            pBodyDash += `<tr class="${isSelectedClass}">${weekTd}<td>${p.date}</td><td style="font-weight:600;">${p.productName}</td><td>${p.qty}</td><td style="font-weight:bold; color:var(--warning);">${displayTotal}</td></tr>`;
+
+            const invId = p.invoiceId || p.id;
+            if(!groupedPurchases[invId]) {
+                groupedPurchases[invId] = {
+                    invoiceId: invId,
+                    date: p.date,
+                    week: p.week,
+                    items: [],
+                    totalCost: 0,
+                    isSettled: p.isSettled || false,
+                    ids: []
+                };
+            }
+            groupedPurchases[invId].items.push({ name: p.productName, price: p.price, qty: p.qty, total: total, date: p.date });
+            groupedPurchases[invId].totalCost += total;
+            groupedPurchases[invId].ids.push(p.id);
+            if(p.isSettled === false) groupedPurchases[invId].isSettled = false;
         });
+
+        // Render Grouped Purchases for Manage Table
+        const sortedGroups = Object.values(groupedPurchases).sort((a,b) => new Date(b.date) - new Date(a.date));
+        
+        sortedGroups.forEach(grp => {
+            const isSelectedClass = grp.date === selectedDate && !isMonth ? 'row-highlight' : '';
+            const displayTotal = showFinancials ? formatRs(grp.totalCost) : '***';
+            
+            let itemSummary = grp.items.length === 1 ? grp.items[0].name : `<span title="${grp.items.map(i=>i.name).join(', ')}">${grp.items[0].name} <span style="color:var(--primary); font-size:10px;">(+${grp.items.length - 1})</span></span>`;
+            let qtySummary = grp.items.length === 1 ? grp.items[0].qty : `<span style="color:var(--text-muted);">${grp.items.reduce((s,i)=>s+i.qty, 0)}</span>`;
+
+            // Note: toggleSettleInvoice and deleteInvoiceGroup are called with invId
+            const settleBtnHtml = grp.isSettled 
+                ? `<button class="action-btn" style="background:#10b981; color:white; padding:4px 8px; font-size:11px; margin:0; border:none;" onclick="toggleSettleInvoice('${grp.invoiceId}', false)">✅ Settled</button>`
+                : `<button class="action-btn" style="background:#f59e0b; color:white; padding:4px 8px; font-size:11px; margin:0; border:none;" onclick="toggleSettleInvoice('${grp.invoiceId}', true)">⏳ Pay</button>`;
+
+            pBodyManage += `<tr class="${isSelectedClass}">
+                <td>${grp.date}</td>
+                <td style="font-weight:600;">${itemSummary}</td>
+                <td>${qtySummary}</td>
+                <td style="font-weight:bold; color:var(--warning);">${displayTotal}</td>
+                <td style="white-space: nowrap;">
+                    <div style="display:flex; gap:6px; align-items:center;">
+                        ${settleBtnHtml}
+                        <button class="action-btn" style="background:var(--primary); padding:4px 8px; font-size:11px; margin:0;" onclick="reprintInvoice('${grp.invoiceId}', '${grp.date}')">📄 Bill</button>
+                        <button class="btn-delete" style="margin:0; padding:4px 8px; font-size:11px;" onclick="deleteInvoiceGroup('${grp.invoiceId}')">Del</button>
+                    </div>
+                </td>
+            </tr>`;
+        });
+
         document.getElementById('tbl-dash-products').innerHTML = pBodyDash;
         document.getElementById('tbl-manage-products').innerHTML = pBodyManage;
 
@@ -2718,6 +2761,78 @@
         }
     };
 
+    window.reprintInvoice = async function(invId, date) {
+        if(!navigator.onLine) return notify("No internet connection!", true);
+        const snap1 = await db.collection('products').where('invoiceId', '==', invId).get();
+        const snap2 = await db.collection('products').where(firebase.firestore.FieldPath.documentId(), '==', invId).get();
+        
+        let items = [];
+        snap1.docs.forEach(d => {
+            let data = d.data();
+            items.push({name: data.productName, price: data.price, qty: data.qty, total: data.price * data.qty, date: data.date});
+        });
+        snap2.docs.forEach(d => {
+            let data = d.data();
+            items.push({name: data.productName, price: data.price, qty: data.qty, total: data.price * data.qty, date: data.date});
+        });
+
+        if(items.length === 0) return notify("Invoice not found!", true);
+
+        let grandTotal = items.reduce((s,i) => s + i.total, 0);
+
+        let paid = grandTotal;
+        let balance = 0;
+        const outSnap = await db.collection('outstandings').where('invoiceId', '==', invId).get();
+        if(!outSnap.empty) {
+            let outData = outSnap.docs[0].data();
+            paid = outData.amountPaid || 0;
+            balance = outData.balance || 0;
+        }
+
+        printInvoice(date, items, grandTotal, paid, balance, invId);
+    };
+
+    window.toggleSettleInvoice = async function(invId, status) {
+        if(!navigator.onLine) return notify("No internet connection!", true);
+        const snap1 = await db.collection('products').where('invoiceId', '==', invId).get();
+        const snap2 = await db.collection('products').where(firebase.firestore.FieldPath.documentId(), '==', invId).get();
+        
+        let batch = db.batch();
+        snap1.docs.forEach(d => batch.update(d.ref, {isSettled: status}));
+        snap2.docs.forEach(d => batch.update(d.ref, {isSettled: status}));
+        
+        const outSnap = await db.collection('outstandings').where('invoiceId', '==', invId).get();
+        if(!outSnap.empty && status === true) {
+            // If marked as paid, update outstanding to 0 balance
+            outSnap.docs.forEach(d => {
+                let currentTotal = d.data().grandTotal || 0;
+                batch.update(d.ref, { amountPaid: currentTotal, balance: 0, status: 'Settled' });
+            });
+        }
+
+        await batch.commit();
+        notify("Payment status updated!");
+        loadAllData();
+    };
+
+    window.deleteInvoiceGroup = async function(invId) {
+        if(!navigator.onLine) return notify("No internet connection!", true);
+        if(!confirm("Are you sure you want to delete this ENTIRE purchase record and all its items?")) return;
+        
+        const snap1 = await db.collection('products').where('invoiceId', '==', invId).get();
+        const snap2 = await db.collection('products').where(firebase.firestore.FieldPath.documentId(), '==', invId).get();
+        const outSnap = await db.collection('outstandings').where('invoiceId', '==', invId).get();
+        
+        let batch = db.batch();
+        snap1.docs.forEach(d => batch.delete(d.ref));
+        snap2.docs.forEach(d => batch.delete(d.ref));
+        outSnap.docs.forEach(d => batch.delete(d.ref));
+        
+        await batch.commit();
+        notify("Purchase record deleted!");
+        loadAllData();
+    };
+
     window.printInvoice = function(date, itemsArray, grandTotal, paid, balance, invoiceId) {
         const isAdmin = currentUser.username === 'admin' || currentUser.username === 'admin@company.com' || (currentUser.permissions && currentUser.permissions.includes('staff'));
         const showFinancials = isAdmin || !window.systemConfig.hideFinancials;
@@ -2734,7 +2849,10 @@
             
             html += `
                 <tr>
-                    <td style="padding:15px 16px; border-bottom:1px solid #e2e8f0; font-weight:700; color:#0f172a; font-size:15px;">${item.name}</td>
+                    <td style="padding:15px 16px; border-bottom:1px solid #e2e8f0; font-weight:700; color:#0f172a; font-size:15px;">
+                        ${item.name}
+                        <div style="font-size: 11px; color: #64748b; font-weight: 500; margin-top: 4px;">Date: ${item.date || date}</div>
+                    </td>
                     <td style="padding:15px 16px; border-bottom:1px solid #e2e8f0; text-align:right; color:#475569; font-size:14px; font-weight:500;">${priceStr}</td>
                     <td style="padding:15px 16px; border-bottom:1px solid #e2e8f0; text-align:right; color:#475569; font-size:14px; font-weight:700;">${item.qty}</td>
                     <td style="padding:15px 16px; border-bottom:1px solid #e2e8f0; text-align:right; font-weight:800; color:#4f46e5; font-size:16px;">${totalStr}</td>
