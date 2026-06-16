@@ -954,6 +954,10 @@
                             <option value="">-- Select Product --</option>
                         </select>
                     </div>
+                    <div class="form-group">
+                        <label>Purchase Date</label>
+                        <input type="date" id="prod-item-date">
+                    </div>
                     <div class="form-group" id="fg-prod-price">
                         <label>Factory Price (Rs)</label>
                         <input type="number" id="prod-price" value="0" readonly style="background:#f1f5f9; color:var(--text-muted);">
@@ -2153,7 +2157,7 @@
             
             pBodyDash += `<tr class="${isSelectedClass}">${weekTd}<td>${p.date}</td><td style="font-weight:600;">${p.productName}</td><td>${p.qty}</td><td style="font-weight:bold; color:var(--warning);">${displayTotal}</td></tr>`;
 
-            const invId = p.invoiceId || p.id;
+            const invId = p.invoiceId || p.date; // Use date to group old purchases that don't have an invoiceId
             if(!groupedPurchases[invId]) {
                 groupedPurchases[invId] = {
                     invoiceId: invId,
@@ -2640,15 +2644,21 @@
         const name = document.getElementById('prod-name').value;
         const price = parseFloat(document.getElementById('prod-price').value) || 0;
         const qty = parseInt(document.getElementById('prod-qty').value) || 0;
+        let itemDate = document.getElementById('prod-item-date').value;
+        
+        if(!itemDate) {
+            itemDate = document.getElementById('global-date').value; // fallback to global
+        }
 
         if(!name || qty <= 0) return notify("Please select a product and valid quantity!", true);
 
         const total = price * qty;
-        purchaseDrafts.push({ name, price, qty, total });
+        purchaseDrafts.push({ name, price, qty, total, date: itemDate });
         
         document.getElementById('prod-name').value = '';
         document.getElementById('prod-price').value = '0';
         document.getElementById('prod-qty').value = '';
+        document.getElementById('prod-item-date').value = '';
         
         renderPurchaseDrafts();
     };
