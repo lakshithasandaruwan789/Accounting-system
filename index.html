@@ -1795,11 +1795,11 @@
         }
 
         if (!isMonth) {
-            const snap = await db.collection('leads').orderBy('date', 'asc').limit(1).get();
-            let refDate = snap.empty ? new Date() : new Date(snap.docs[0].data().date);
+            const curDateStr = document.getElementById('global-date').value || new Date().toISOString().split('T')[0];
+            let d = new Date(curDateStr);
             
-            // Find the first occurrence of the Start Day in the month of refDate
-            let monthStart = new Date(refDate.getFullYear(), refDate.getMonth(), 1);
+            // Find the first occurrence of the Start Day in the current month
+            let monthStart = new Date(d.getFullYear(), d.getMonth(), 1);
             let dayOfWeek = monthStart.getDay();
             let S = window.systemConfig ? window.systemConfig.weekStartDay : 3;
             let daysToStartDay = (S - dayOfWeek + 7) % 7;
@@ -3327,24 +3327,19 @@
             const selectedDate = document.getElementById('global-date').value;
             if(!selectedDate) return;
             
-            const snap = await db.collection('leads').orderBy('date', 'asc').limit(1).get();
-            let refDate = snap.empty ? new Date() : new Date(snap.docs[0].data().date);
-            
-            // Find the first occurrence of the Start Day in the month of refDate
-            let monthStart = new Date(refDate.getFullYear(), refDate.getMonth(), 1);
+            let d = new Date(selectedDate);
+            let monthStart = new Date(d.getFullYear(), d.getMonth(), 1);
             let dayOfWeek = monthStart.getDay();
             let S = window.systemConfig ? window.systemConfig.weekStartDay : 3;
             let daysToStartDay = (S - dayOfWeek + 7) % 7;
             let baseWed = new Date(monthStart);
             baseWed.setDate(1 + daysToStartDay);
             
-            let d = new Date(selectedDate);
-            // Calculate UTC midnight to avoid DST issues
             let diffTime = Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) - Date.UTC(baseWed.getFullYear(), baseWed.getMonth(), baseWed.getDate());
             let diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
             
             let weekNum = Math.floor(diffDays / 7) + 1;
-            if(weekNum < 1) weekNum = 4; // If it's before the first Wednesday, it belongs to week 4 of last month
+            if(weekNum < 1) weekNum = 4; // If it's before the first start day, it belongs to week 4
             if(weekNum > 4) weekNum = 4; // Cap at 4
             const targetWeek = "Week " + weekNum;
             
