@@ -648,14 +648,23 @@
                         <th style="padding:16px; text-align:right; font-weight:600; font-size:14px; border-radius: 0 8px 8px 0;">Total Amount (Rs)</th>
                     </tr>
                 </thead>
-                <tbody>
-                    <tr>
-                        <td id="inv-product" style="padding:20px 16px; border-bottom:1px solid #e2e8f0; font-weight:800; color:#0f172a; font-size:16px;"></td>
-                        <td id="inv-price" style="padding:20px 16px; border-bottom:1px solid #e2e8f0; text-align:right; color:#475569; font-size:15px; font-weight:500;"></td>
-                        <td id="inv-qty" style="padding:20px 16px; border-bottom:1px solid #e2e8f0; text-align:right; color:#475569; font-size:15px; font-weight:700;"></td>
-                        <td id="inv-total" style="padding:20px 16px; border-bottom:1px solid #e2e8f0; text-align:right; font-weight:800; color:#4f46e5; font-size:18px;"></td>
-                    </tr>
+                <tbody id="inv-items-body">
+                    <!-- Dynamic Items Go Here -->
                 </tbody>
+                <tfoot>
+                    <tr>
+                        <td colspan="3" style="padding:15px 16px; text-align:right; font-weight:700; color:#475569; font-size:14px; border-top:2px solid #0f172a;">Grand Total</td>
+                        <td id="inv-grand-total" style="padding:15px 16px; text-align:right; font-weight:900; color:#0f172a; font-size:18px; border-top:2px solid #0f172a;"></td>
+                    </tr>
+                    <tr>
+                        <td colspan="3" style="padding:10px 16px; text-align:right; font-weight:600; color:#64748b; font-size:13px;">Amount Paid</td>
+                        <td id="inv-paid" style="padding:10px 16px; text-align:right; font-weight:700; color:#10b981; font-size:16px;"></td>
+                    </tr>
+                    <tr>
+                        <td colspan="3" style="padding:15px 16px; text-align:right; font-weight:800; color:#ef4444; font-size:15px; border-top:1px dashed #e2e8f0; border-bottom:2px solid #0f172a;">Balance to Pay</td>
+                        <td id="inv-balance" style="padding:15px 16px; text-align:right; font-weight:900; color:#ef4444; font-size:20px; border-top:1px dashed #e2e8f0; border-bottom:2px solid #0f172a;"></td>
+                    </tr>
+                </tfoot>
             </table>
             
             <!-- SIGNATURES -->
@@ -953,7 +962,39 @@
                         <label>Quantity Bought</label>
                         <input type="number" id="prod-qty" placeholder="0">
                     </div>
-                    <button class="action-btn" style="background:var(--warning); box-shadow:0 4px 15px rgba(245, 158, 11, 0.3); color:#fff;" onclick="saveProductPurchase()">Add Purchase</button>
+                    <button class="action-btn" style="background:var(--secondary); color:#fff; margin-bottom: 20px;" onclick="addToPurchaseDraft()">➕ Add to Cart</button>
+
+                    <div id="purchase-cart-container" style="display: none; background: var(--card-bg); padding: 15px; border-radius: 8px; border: 1px solid var(--border);">
+                        <h3 style="margin-top:0; font-size:14px; color:var(--text-main);">Current GRN Cart</h3>
+                        <table style="width:100%; font-size:12px; margin-bottom:15px;">
+                            <thead>
+                                <tr style="background:var(--table-header-bg);">
+                                    <th style="padding:8px;">Product</th>
+                                    <th style="padding:8px; text-align:right;">Qty</th>
+                                    <th style="padding:8px; text-align:right;">Total</th>
+                                    <th style="padding:8px; text-align:center;">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tbl-purchase-draft"></tbody>
+                        </table>
+                        
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 10px; padding-top:10px; border-top:1px dashed var(--border);">
+                            <strong>Grand Total:</strong>
+                            <strong style="color:var(--primary); font-size: 16px;">Rs <span id="lbl-draft-total">0.00</span></strong>
+                        </div>
+                        
+                        <div class="form-group" style="margin-bottom: 10px;">
+                            <label style="font-size:12px;">Amount Paid Today (Rs)</label>
+                            <input type="number" id="draft-paid" placeholder="0" value="" onkeyup="calculateDraftBalance()" onchange="calculateDraftBalance()" style="padding: 8px;">
+                        </div>
+                        
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 15px;">
+                            <strong style="color:var(--text-muted);">Balance to Pay:</strong>
+                            <strong style="color:var(--danger); font-size: 14px;">Rs <span id="lbl-draft-balance">0.00</span></strong>
+                        </div>
+
+                        <button id="btn-save-drafts" class="action-btn" style="background:var(--success); color:#fff;" onclick="savePurchaseDrafts()">🖨️ Save All & Print GRN</button>
+                    </div>
                 </div>
 
                 <div class="table-card">
@@ -2549,57 +2590,163 @@
         }
     }
 
-    window.saveProductPurchase = async function() {
-        if(!navigator.onLine) return notify("No internet connection!", true);
-        const btn = document.querySelector('button[onclick="saveProductPurchase()"]');
-        if(btn && btn.disabled) return;
+    // --- CART SYSTEM FOR PURCHASES ---
+    window.purchaseDrafts = [];
 
+    window.addToPurchaseDraft = function() {
+        const name = document.getElementById('prod-name').value;
+        const price = parseFloat(document.getElementById('prod-price').value) || 0;
+        const qty = parseInt(document.getElementById('prod-qty').value) || 0;
+
+        if(!name || qty <= 0) return notify("Please select a product and valid quantity!", true);
+
+        const total = price * qty;
+        purchaseDrafts.push({ name, price, qty, total });
+        
+        document.getElementById('prod-name').value = '';
+        document.getElementById('prod-price').value = '0';
+        document.getElementById('prod-qty').value = '';
+        
+        renderPurchaseDrafts();
+    };
+
+    window.removePurchaseDraft = function(index) {
+        purchaseDrafts.splice(index, 1);
+        renderPurchaseDrafts();
+    };
+
+    window.renderPurchaseDrafts = function() {
+        const tbody = document.getElementById('tbl-purchase-draft');
+        let html = '';
+        let grandTotal = 0;
+        
+        purchaseDrafts.forEach((item, index) => {
+            grandTotal += item.total;
+            html += `
+                <tr>
+                    <td style="padding:8px; border-bottom: 1px solid var(--border);">${item.name}</td>
+                    <td style="padding:8px; text-align:right; border-bottom: 1px solid var(--border);">${item.qty}</td>
+                    <td style="padding:8px; text-align:right; border-bottom: 1px solid var(--border);">${item.total.toLocaleString()}</td>
+                    <td style="padding:8px; text-align:center; border-bottom: 1px solid var(--border);">
+                        <button onclick="removePurchaseDraft(${index})" style="color:var(--danger); background:none; border:none; cursor:pointer;" title="Remove">✖</button>
+                    </td>
+                </tr>
+            `;
+        });
+        
+        tbody.innerHTML = html;
+        document.getElementById('lbl-draft-total').textContent = grandTotal.toLocaleString('en-US', {minimumFractionDigits: 2});
+        
+        const container = document.getElementById('purchase-cart-container');
+        container.style.display = purchaseDrafts.length > 0 ? 'block' : 'none';
+        
+        calculateDraftBalance();
+    };
+
+    window.calculateDraftBalance = function() {
+        const grandTotalStr = document.getElementById('lbl-draft-total').textContent.replace(/,/g, '');
+        const grandTotal = parseFloat(grandTotalStr) || 0;
+        
+        const paidStr = document.getElementById('draft-paid').value;
+        const paid = parseFloat(paidStr) || 0;
+        
+        const balance = grandTotal - paid;
+        document.getElementById('lbl-draft-balance').textContent = balance.toLocaleString('en-US', {minimumFractionDigits: 2});
+    };
+
+    window.savePurchaseDrafts = async function() {
+        if(purchaseDrafts.length === 0) return;
+        if(!navigator.onLine) return notify("No internet connection!", true);
+        
+        const btn = document.getElementById('btn-save-drafts');
+        if(btn && btn.disabled) return;
+        
         const week = document.getElementById('active-week').value;
         if(week === 'Month Overview') return notify("Cannot add data in Month Overview!", true);
-
         const date = document.getElementById('global-date').value;
-        const name = document.getElementById('prod-name').value;
-        const price = document.getElementById('prod-price').value;
-        const qty = document.getElementById('prod-qty').value;
-
         if(!date) return notify("Please select a Date!", true);
-        if(!name || !qty || qty <= 0) return notify("Please fill Product Name and Quantity!", true);
-
+        
         if(btn) { btn.disabled = true; btn.textContent = 'Saving...'; }
-
+        
         try {
-            await db.collection('products').add({
-                week: week,
-                date: date,
-                productName: name,
-                price: parseFloat(price),
-                qty: parseInt(qty)
-            });
-
-            document.getElementById('prod-name').value = '';
-            document.getElementById('prod-price').value = '0';
-            document.getElementById('prod-qty').value = '';
-
-            notify(`Product purchase added to ${week}!`);
+            const invoiceId = Date.now().toString().slice(-6);
+            
+            // Save each product
+            for(let item of purchaseDrafts) {
+                await db.collection('products').add({
+                    week: week,
+                    date: date,
+                    productName: item.name,
+                    price: item.price,
+                    qty: item.qty,
+                    invoiceId: invoiceId
+                });
+            }
+            
+            const grandTotalStr = document.getElementById('lbl-draft-total').textContent.replace(/,/g, '');
+            const grandTotal = parseFloat(grandTotalStr) || 0;
+            const paid = parseFloat(document.getElementById('draft-paid').value) || 0;
+            const balance = grandTotal - paid;
+            
+            // Save Outstanding Balance if applicable
+            if(balance > 0) {
+                await db.collection('outstandings').add({
+                    date: date,
+                    week: week,
+                    invoiceId: invoiceId,
+                    type: 'Factory Purchase',
+                    grandTotal: grandTotal,
+                    amountPaid: paid,
+                    balance: balance,
+                    status: 'Pending'
+                });
+            }
+            
+            notify(`Saved ${purchaseDrafts.length} products to GRN!`);
             loadAllData();
             
-            const invoiceId = Date.now().toString().slice(-6);
-            printInvoice(date, name, price, qty, price * qty, invoiceId);
+            // Print
+            printInvoice(date, purchaseDrafts, grandTotal, paid, balance, invoiceId);
+            
+            // Clear UI
+            purchaseDrafts = [];
+            document.getElementById('draft-paid').value = '';
+            renderPurchaseDrafts();
+            
         } finally {
-            if(btn) { btn.disabled = false; btn.textContent = 'Save Purchase Data'; }
+            if(btn) { btn.disabled = false; btn.textContent = '🖨️ Save All & Print GRN'; }
         }
-    }
+    };
 
-    window.printInvoice = function(date, productName, price, qty, total, invoiceId) {
+    window.printInvoice = function(date, itemsArray, grandTotal, paid, balance, invoiceId) {
         const isAdmin = currentUser.username === 'admin' || currentUser.username === 'admin@company.com' || (currentUser.permissions && currentUser.permissions.includes('staff'));
         const showFinancials = isAdmin || !window.systemConfig.hideFinancials;
+        
         document.getElementById('inv-date').textContent = date;
         document.getElementById('inv-user').textContent = currentUser ? currentUser.username : "Manager";
         document.getElementById('inv-no').textContent = invoiceId;
-        document.getElementById('inv-product').textContent = productName;
-        document.getElementById('inv-price').textContent = showFinancials ? parseFloat(price).toLocaleString('en-US', {minimumFractionDigits: 2}) : '***';
-        document.getElementById('inv-qty').textContent = qty;
-        document.getElementById('inv-total').textContent = showFinancials ? parseFloat(total).toLocaleString('en-US', {minimumFractionDigits: 2}) : '***';
+        
+        const tbody = document.getElementById('inv-items-body');
+        let html = '';
+        itemsArray.forEach(item => {
+            const priceStr = showFinancials ? item.price.toLocaleString('en-US', {minimumFractionDigits: 2}) : '***';
+            const totalStr = showFinancials ? item.total.toLocaleString('en-US', {minimumFractionDigits: 2}) : '***';
+            
+            html += `
+                <tr>
+                    <td style="padding:15px 16px; border-bottom:1px solid #e2e8f0; font-weight:700; color:#0f172a; font-size:15px;">${item.name}</td>
+                    <td style="padding:15px 16px; border-bottom:1px solid #e2e8f0; text-align:right; color:#475569; font-size:14px; font-weight:500;">${priceStr}</td>
+                    <td style="padding:15px 16px; border-bottom:1px solid #e2e8f0; text-align:right; color:#475569; font-size:14px; font-weight:700;">${item.qty}</td>
+                    <td style="padding:15px 16px; border-bottom:1px solid #e2e8f0; text-align:right; font-weight:800; color:#4f46e5; font-size:16px;">${totalStr}</td>
+                </tr>
+            `;
+        });
+        
+        tbody.innerHTML = html;
+        
+        document.getElementById('inv-grand-total').textContent = showFinancials ? grandTotal.toLocaleString('en-US', {minimumFractionDigits: 2}) : '***';
+        document.getElementById('inv-paid').textContent = showFinancials ? paid.toLocaleString('en-US', {minimumFractionDigits: 2}) : '***';
+        document.getElementById('inv-balance').textContent = showFinancials ? balance.toLocaleString('en-US', {minimumFractionDigits: 2}) : '***';
         
         const printArea = document.getElementById('invoice-print-area');
         printArea.style.display = 'block';
