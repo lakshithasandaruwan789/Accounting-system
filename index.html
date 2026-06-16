@@ -503,11 +503,12 @@
         
         /* --- PRINT INVOICE CSS --- */
         @media print {
-            @page { size: auto; margin: 10mm; }
-            body { background: white !important; margin: 0; padding: 0; color: black; }
+            @page { size: auto; margin: 0; }
+            body { background: white !important; margin: 0; padding: 15mm; color: black; box-sizing: border-box; }
             #login-screen, .sidebar, .main-content > *:not(#invoice-print-area), .mobile-backdrop, .notification { display: none !important; }
-            #invoice-print-area { display: block !important; position: absolute; left: 0; top: 0; width: 100%; background: white; z-index: 9999; }
-            .invoice-box { border: none !important; box-shadow: none !important; width: 100% !important; max-width: none !important; padding: 0 !important; }
+            #invoice-print-area { display: block !important; position: static !important; width: 100% !important; margin: 0; padding: 0; }
+            .invoice-box { border: none !important; box-shadow: none !important; width: 100% !important; max-width: 100% !important; padding: 0 !important; margin: 0 !important; }
+            table { min-width: 100% !important; width: 100% !important; }
             
             /* Ensure colors print correctly */
             * { -webkit-print-color-adjust: exact !important; color-adjust: exact !important; }
@@ -2722,7 +2723,18 @@
         if(btn) { btn.disabled = true; btn.textContent = 'Saving...'; }
         
         try {
-            const invoiceId = Date.now().toString().slice(-6);
+            let newInvNumber = 1;
+            try {
+                const numSnap = await db.collection('config').doc('invoiceCounter').get();
+                if(numSnap.exists) {
+                    newInvNumber = (numSnap.data().lastNumber || 0) + 1;
+                }
+                await db.collection('config').doc('invoiceCounter').set({lastNumber: newInvNumber});
+            } catch(e) {
+                console.error("Counter error:", e);
+                newInvNumber = Math.floor(Math.random() * 10000);
+            }
+            const invoiceId = newInvNumber.toString().padStart(4, '0');
             
             // Save each product
             for(let item of purchaseDrafts) {
