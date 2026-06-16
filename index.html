@@ -554,9 +554,9 @@
         <p>Manager Portal v11</p>
     </div>
     <ul class="nav-menu">
-        <li class="nav-category">📌 Main</li>
-        <li class="nav-item active" onclick="navigate('dashboard')" id="nav-dashboard">
-            <span class="nav-icon">📊</span> <span class="nav-text">Dashboard</span>
+        <li class="nav-category">📦 Order Management</li>
+        <li class="nav-item active" onclick="navigate('order-dashboard')" id="nav-order-dashboard">
+            <span class="nav-icon">📈</span> <span class="nav-text">Order Dashboard</span>
         </li>
         <li class="nav-item" onclick="navigate('add-order')" id="nav-add-order">
             <span class="nav-icon">✍️</span> <span class="nav-text">Add New Order</span>
@@ -564,11 +564,6 @@
         <li class="nav-item" onclick="navigate('view-orders')" id="nav-view-orders">
             <span class="nav-icon">📞</span> <span class="nav-text">View Leads</span>
         </li>
-        <li class="nav-item" onclick="navigate('leads')" id="nav-leads">
-            <span class="nav-icon">🎯</span> <span class="nav-text">Daily Leads</span>
-        </li>
-
-        <li class="nav-category">🚚 Dispatch & Courier</li>
         <li class="nav-item" onclick="navigate('to-ship')" id="nav-to-ship">
             <span class="nav-icon">📦</span> <span class="nav-text">To Ship (Pack)</span>
         </li>
@@ -576,7 +571,13 @@
             <span class="nav-icon">🖨️</span> <span class="nav-text">Shipping Labels</span>
         </li>
 
-        <li class="nav-category">📦 Inventory & Purchases</li>
+        <li class="nav-category">💰 Finance Management</li>
+        <li class="nav-item" onclick="navigate('dashboard')" id="nav-dashboard">
+            <span class="nav-icon">📊</span> <span class="nav-text">Finance Dashboard</span>
+        </li>
+        <li class="nav-item" onclick="navigate('leads')" id="nav-leads">
+            <span class="nav-icon">🎯</span> <span class="nav-text">Daily Leads</span>
+        </li>
         <li class="nav-item" onclick="navigate('purchases')" id="nav-purchases">
             <span class="nav-icon">📥</span> <span class="nav-text">Purchases & GRN</span>
         </li>
@@ -589,8 +590,6 @@
         <li class="nav-item" onclick="navigate('packaging')" id="nav-packaging">
             <span class="nav-icon">🏷️</span> <span class="nav-text">Packaging & Other</span>
         </li>
-
-        <li class="nav-category">💰 Finance & Reports</li>
         <li class="nav-item" onclick="navigate('reports')" id="nav-reports">
             <span class="nav-icon">📈</span> <span class="nav-text">Advanced Reports</span>
         </li>
@@ -725,7 +724,7 @@
                     </div>
                 </div>
 
-                <div class="topbar-controls">
+                <div class="topbar-controls" id="finance-topbar-controls">
                     <div class="control-group">
                         <label>Filter:</label>
                         <select id="active-week" onchange="handleContextChange()">
@@ -753,13 +752,69 @@
                         </div>
                     </div>
                 </div>
+                
+                <div class="topbar-controls" id="order-topbar-controls" style="display:none;">
+                    <div class="control-group">
+                        <label>Order Date:</label>
+                        <div class="date-inputs" style="display:flex; gap:5px;">
+                            <input type="date" id="order-dashboard-date" onchange="loadOrderDashboard()" style="flex:1; min-width:150px;">
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </header>
 
     <div class="page-container">
         
-        <!-- PAGE 1: DASHBOARD -->
+        <!-- PAGE 0: ORDER DASHBOARD -->
+        <div id="page-order-dashboard" class="page">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; background:linear-gradient(135deg, var(--primary), var(--primary-light)); padding:20px; border-radius:15px; color:white; box-shadow: var(--card-shadow);">
+                <div>
+                    <h2 style="margin:0; font-size:24px;">Order Management Overview</h2>
+                    <p style="margin:5px 0 0 0; opacity:0.9;">Track and manage your daily orders and leads efficiently.</p>
+                </div>
+                <div style="font-size:40px; opacity:0.8;">📦</div>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-card" style="border-top: 4px solid var(--primary);">
+                    <h3>Total Orders</h3>
+                    <p id="odash-total" style="color: var(--primary);">0</p>
+                </div>
+                <div class="stat-card" style="border-top: 4px solid var(--success);">
+                    <h3>Confirmed</h3>
+                    <p id="odash-confirmed" style="color: var(--success);">0</p>
+                </div>
+                <div class="stat-card" style="border-top: 4px solid var(--warning);">
+                    <h3>Shipped / Assigned</h3>
+                    <p id="odash-shipped" style="color: var(--warning);">0</p>
+                </div>
+                <div class="stat-card" style="border-top: 4px solid #10b981;">
+                    <h3>Delivered</h3>
+                    <p id="odash-delivered" style="color: #10b981;">0</p>
+                </div>
+                <div class="stat-card" style="border-top: 4px solid #f97316;">
+                    <h3>Returned</h3>
+                    <p id="odash-returned" style="color: #f97316;">0</p>
+                </div>
+                <div class="stat-card" style="border-top: 4px solid var(--danger);">
+                    <h3>Rejected/Fake/Cancel</h3>
+                    <p id="odash-rejected" style="color: var(--danger);">0</p>
+                </div>
+            </div>
+            
+            <div style="margin-top: 30px; background: white; padding: 25px; border-radius: 15px; box-shadow: var(--card-shadow);">
+                <h3 style="margin-top: 0; margin-bottom: 20px; border-bottom: 1px solid var(--border); padding-bottom: 10px;">Quick Actions</h3>
+                <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+                    <button class="action-btn" style="flex:1; min-width:200px; padding:15px;" onclick="navigate('add-order')">➕ Add New Order</button>
+                    <button class="action-btn" style="flex:1; min-width:200px; padding:15px; background:var(--bg-main); color:var(--text-main); border:1px solid #ddd;" onclick="navigate('view-orders')">📞 View Leads</button>
+                    <button class="action-btn" style="flex:1; min-width:200px; padding:15px; background:var(--accent);" onclick="navigate('to-ship')">📦 To Ship (Pack)</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- PAGE 1: FINANCE DASHBOARD -->
         <div id="page-dashboard" class="page active">
             
             <!-- BULK COURIER DASHBOARD -->
@@ -1981,7 +2036,7 @@
         let perms = currentUser.permissions || [];
         const isAdmin = currentUser.username === 'admin' || currentUser.username === 'admin@company.com' || (currentUser.permissions && currentUser.permissions.includes('staff'));
         if(isAdmin) {
-            perms = ["dashboard", "add-order", "view-orders", "to-ship", "ship-list", "leads", "orders", "purchases", "packaging", "profit", "catalog", "inventory", "reports", "salaries", "settings", "staff"];
+            perms = ["order-dashboard", "dashboard", "add-order", "view-orders", "to-ship", "ship-list", "leads", "orders", "purchases", "packaging", "profit", "catalog", "inventory", "reports", "salaries", "settings", "staff"];
         }
 
         if(!isAdmin && (pageId === 'catalog' || pageId === 'settings' || pageId === 'staff' || pageId === 'profit' || pageId === 'salaries' || pageId === 'reports')) {
@@ -1997,7 +2052,19 @@
         if(navItem) navItem.classList.add('active');
 
         document.querySelectorAll('.page').forEach(el => el.classList.remove('active'));
-        document.getElementById(`page-${pageId}`).classList.add('active');
+        const activePage = document.getElementById(`page-${pageId}`);
+        if(activePage) activePage.classList.add('active');
+
+        // Toggle Topbar Controls Based on Section
+        const financePages = ['dashboard', 'leads', 'purchases', 'catalog', 'inventory', 'packaging', 'reports', 'salaries', 'profit'];
+        const financeControls = document.getElementById('finance-topbar-controls');
+        const orderControls = document.getElementById('order-topbar-controls');
+        
+        if (financeControls) financeControls.style.display = financePages.includes(pageId) ? 'flex' : 'none';
+        if (orderControls) orderControls.style.display = (pageId === 'order-dashboard') ? 'flex' : 'none';
+
+        if(pageId === 'order-dashboard' && window.loadOrderDashboard) window.loadOrderDashboard();
+        if(pageId === 'dashboard') loadOMSData();
 
         if(window.innerWidth <= 900) {
             document.getElementById('sidebar').classList.remove('mobile-open');
@@ -4020,6 +4087,49 @@
     // ORDER MANAGEMENT SYSTEM (OMS) LOGIC
     // ==========================================
 
+    window.loadOrderDashboard = async function() {
+        const dateInput = document.getElementById('order-dashboard-date');
+        if(!dateInput) return;
+        if(!dateInput.value) {
+            dateInput.valueAsDate = new Date(); // default to today
+        }
+        
+        let start = new Date(dateInput.value);
+        start.setHours(0,0,0,0);
+        let end = new Date(dateInput.value);
+        end.setHours(23,59,59,999);
+
+        try {
+            const oSnap = await db.collection('orders')
+                .where('createdAt', '>=', start.getTime())
+                .where('createdAt', '<=', end.getTime())
+                .get();
+                
+            let total = 0, confirmed = 0, shipped = 0, delivered = 0, returned = 0, rejected = 0;
+            oSnap.docs.forEach(d => {
+                const o = d.data();
+                total++;
+                if(o.status === 'confirmed') confirmed++;
+                else if(o.status === 'shipped') shipped++;
+                else if(o.status === 'delivered') delivered++;
+                else if(o.status === 'returned') returned++;
+                else if(o.status === 'rejected' || o.status === 'fake' || o.status === 'cancelled') rejected++;
+            });
+
+            const eTotal = document.getElementById('odash-total');
+            if(eTotal) {
+                eTotal.textContent = total;
+                document.getElementById('odash-confirmed').textContent = confirmed;
+                document.getElementById('odash-shipped').textContent = shipped;
+                document.getElementById('odash-delivered').textContent = delivered;
+                document.getElementById('odash-returned').textContent = returned;
+                document.getElementById('odash-rejected').textContent = rejected;
+            }
+        } catch(e) {
+            console.error(e);
+        }
+    }
+
     window.filterViewLeads = function() {
         if(!window.allOMSOrders) return;
         
@@ -4318,6 +4428,7 @@
         const doc = await db.collection('orders').doc(id).get();
         if(!doc.exists) return;
         const o = doc.data();
+        o.id = doc.id; // Assign ID to object to prevent undefined errors in substring or template literal
 
         const printArea = document.getElementById('invoice-print-area');
         const trackingId = o.trackingId || 'RA' + Math.floor(Math.random() * 100000000);
