@@ -151,7 +151,7 @@
             color: var(--sidebar-text);
             display: flex; flex-direction: column; z-index: 100;
             box-shadow: 5px 0 15px rgba(0,0,0,0.2);
-            transition: width 0.3s ease; overflow-y: auto;
+            transition: width 0.3s ease; overflow: hidden; height: 100vh;
         }
         .sidebar::-webkit-scrollbar { width: 4px; }
         .sidebar::-webkit-scrollbar-thumb { background: #323254; border-radius: 4px; }
@@ -556,11 +556,22 @@
         <li class="nav-item active" onclick="navigate('dashboard')" id="nav-dashboard">
             <span class="nav-icon">📊</span> <span class="nav-text">Dashboard</span>
         </li>
+        <li class="nav-item" onclick="navigate('add-order')" id="nav-add-order">
+            <span class="nav-icon">✍️</span> <span class="nav-text">Add New Order</span>
+        </li>
+        <li class="nav-item" onclick="navigate('view-orders')" id="nav-view-orders">
+            <span class="nav-icon">📞</span> <span class="nav-text">Call Center List</span>
+        </li>
         <li class="nav-item" onclick="navigate('leads')" id="nav-leads">
             <span class="nav-icon">🎯</span> <span class="nav-text">Daily Leads</span>
         </li>
-        <li class="nav-item" onclick="navigate('orders')" id="nav-orders">
-            <span class="nav-icon">📦</span> <span class="nav-text">Orders & Scan</span>
+
+        <li class="nav-category">🚚 Dispatch & Courier</li>
+        <li class="nav-item" onclick="navigate('to-ship')" id="nav-to-ship">
+            <span class="nav-icon">📦</span> <span class="nav-text">To Ship (Pack)</span>
+        </li>
+        <li class="nav-item" onclick="navigate('ship-list')" id="nav-ship-list">
+            <span class="nav-icon">🖨️</span> <span class="nav-text">Shipping Labels</span>
         </li>
 
         <li class="nav-category">📦 Inventory & Purchases</li>
@@ -595,15 +606,17 @@
         <li class="nav-item" onclick="navigate('settings')" id="nav-settings">
             <span class="nav-icon">🛠️</span> <span class="nav-text">System Settings</span>
         </li>
-        
-        <li class="nav-item" onclick="performLogout()" id="nav-logout" style="margin-top:auto; color: var(--danger); background: #fee2e2; overflow:hidden;">
+    </ul>
+
+    <div style="padding: 15px 10px; border-top: 1px solid var(--border); background: var(--sidebar-bg); z-index: 5;">
+        <div class="nav-item" onclick="performLogout()" id="nav-logout" style="color: var(--danger); background: #fee2e2; margin:0; padding: 12px 15px; border-radius: 8px;">
             <span class="nav-icon">🚪</span> 
             <span class="nav-text" style="display:flex; flex-direction:column; line-height:1.2; overflow:hidden;">
-                <span>Logout</span>
+                <span style="font-weight: 700;">Logout</span>
                 <span id="lbl-current-user" style="font-size:11px; opacity:0.8; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; width:100%;"></span>
             </span>
-        </li>
-    </ul>
+        </div>
+    </div>
 </aside>
 
 <!-- MAIN CONTENT -->
@@ -856,6 +869,146 @@
                         <tbody id="tbl-dash-expenses"></tbody>
                     </table>
                 </div>
+            </div>
+        </div>
+
+        <!-- PAGE OMS 1: ADD NEW ORDER -->
+        <div id="page-add-order" class="page">
+            <div class="header">
+                <div>
+                    <h1>Add New Order</h1>
+                    <p>Enter customer details and assign products</p>
+                </div>
+            </div>
+            <div class="two-col-layout">
+                <div class="form-card">
+                    <h2>Customer Details</h2>
+                    <div class="form-group">
+                        <label>Customer Name</label>
+                        <input type="text" id="order-customer" placeholder="e.g. Kasun Kalhara">
+                    </div>
+                    <div class="form-group">
+                        <label>Phone Number</label>
+                        <input type="text" id="order-phone" placeholder="e.g. 0712345678">
+                    </div>
+                    <div class="form-group">
+                        <label>City / Area</label>
+                        <input type="text" id="order-city" placeholder="e.g. Colombo 07">
+                    </div>
+                    <div class="form-group">
+                        <label>Delivery Address</label>
+                        <input type="text" id="order-address" placeholder="Full address">
+                    </div>
+                </div>
+                <div class="form-card">
+                    <h2>Product Selection</h2>
+                    <div class="form-group">
+                        <label>Select Product</label>
+                        <select id="order-product" onchange="updateOrderPrice()"></select>
+                    </div>
+                    <div style="display:flex; gap:15px;">
+                        <div class="form-group" style="flex:1;">
+                            <label>Product Price (Rs)</label>
+                            <input type="number" id="order-price" placeholder="Auto-filled" readonly>
+                        </div>
+                        <div class="form-group" style="width: 100px;">
+                            <label>Quantity</label>
+                            <input type="number" id="order-qty" value="1" min="1" oninput="calculateOrderTotal()">
+                        </div>
+                    </div>
+                    <div style="display:flex; gap:15px;">
+                        <div class="form-group" style="flex:1;">
+                            <label>Delivery Charge (Rs)</label>
+                            <input type="number" id="order-delivery" value="350" oninput="calculateOrderTotal()">
+                        </div>
+                        <div class="form-group" style="flex:1;">
+                            <label>Discount (Rs)</label>
+                            <input type="number" id="order-discount" value="0" oninput="calculateOrderTotal()">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label style="font-weight:700; color:var(--text-main);">Grand Total (Rs)</label>
+                        <input type="number" id="order-total" style="font-size:20px; font-weight:800; color:var(--primary); background:#eef2ff;" readonly>
+                    </div>
+                    
+                    <button class="action-btn" onclick="saveNewOrder()" style="margin-top: 20px;">🛒 Save Order (Pending)</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- PAGE OMS 2: VIEW ORDERS (CALL CENTER) -->
+        <div id="page-view-orders" class="page">
+            <div class="header">
+                <div>
+                    <h1>Call Center List</h1>
+                    <p>Verify pending orders</p>
+                </div>
+                <div style="font-size: 14px; font-weight:600; color: var(--primary);">Pending Orders: <span id="lbl-pending-count">0</span></div>
+            </div>
+            <div class="table-card">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Customer</th>
+                            <th>Phone</th>
+                            <th>Product</th>
+                            <th>Total (COD)</th>
+                            <th>Status Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbl-view-orders"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- PAGE OMS 3: TO SHIP (DISPATCH) -->
+        <div id="page-to-ship" class="page">
+            <div class="header">
+                <div>
+                    <h1>To Ship (Pack)</h1>
+                    <p>Confirmed orders ready for packing and courier</p>
+                </div>
+            </div>
+            <div class="table-card">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Customer</th>
+                            <th>City</th>
+                            <th>Product</th>
+                            <th>Courier Info</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbl-to-ship"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- PAGE OMS 4: SHIP LIST & PRINTING -->
+        <div id="page-ship-list" class="page">
+            <div class="header">
+                <div>
+                    <h1>Shipping Labels</h1>
+                    <p>Print labels for shipped packages</p>
+                </div>
+            </div>
+            <div class="table-card">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Date Shipped</th>
+                            <th>Customer</th>
+                            <th>Courier</th>
+                            <th>Tracking ID</th>
+                            <th>COD Amount</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbl-ship-list"></tbody>
+                </table>
             </div>
         </div>
 
@@ -1261,9 +1414,13 @@
                         <label>Permissions (Tick what they can access)</label>
                         <div class="perm-grid">
                             <label class="perm-lbl"><input type="checkbox" class="perm-chk" value="dashboard"> 📊 Dashboard</label>
+                            <label class="perm-lbl"><input type="checkbox" class="perm-chk" value="add-order"> ✍️ Add Order</label>
+                            <label class="perm-lbl"><input type="checkbox" class="perm-chk" value="view-orders"> 📞 Call Center</label>
+                            <label class="perm-lbl"><input type="checkbox" class="perm-chk" value="to-ship"> 📦 To Ship</label>
+                            <label class="perm-lbl"><input type="checkbox" class="perm-chk" value="ship-list"> 🖨️ Ship List</label>
                             <label class="perm-lbl"><input type="checkbox" class="perm-chk" value="leads"> 🎯 Daily Leads</label>
-                            <label class="perm-lbl"><input type="checkbox" class="perm-chk" value="orders"> 📦 Orders & Scan</label>
-                            <label class="perm-lbl"><input type="checkbox" class="perm-chk" value="purchases"> 📦 Purchases</label>
+                            <label class="perm-lbl"><input type="checkbox" class="perm-chk" value="orders"> 📦 Orders & Scan (Old)</label>
+                            <label class="perm-lbl"><input type="checkbox" class="perm-chk" value="purchases"> 📥 Purchases</label>
                             <label class="perm-lbl"><input type="checkbox" class="perm-chk" value="packaging"> 🏷️ Packaging</label>
                             <label class="perm-lbl"><input type="checkbox" class="perm-chk" value="profit"> 💰 Profit/Loss</label>
                             <label class="perm-lbl"><input type="checkbox" class="perm-chk" value="catalog"> ⚙️ Catalog</label>
@@ -1769,10 +1926,10 @@
         let perms = currentUser.permissions || [];
         const isAdmin = currentUser.username === 'admin' || currentUser.username === 'admin@company.com' || (currentUser.permissions && currentUser.permissions.includes('staff'));
         if(isAdmin) {
-            perms = ["dashboard", "leads", "orders", "purchases", "packaging", "profit", "catalog", "inventory", "reports", "salaries", "settings", "staff"];
+            perms = ["dashboard", "add-order", "view-orders", "to-ship", "ship-list", "leads", "orders", "purchases", "packaging", "profit", "catalog", "inventory", "reports", "salaries", "settings", "staff"];
         }
 
-        if(!isAdmin && (pageId === 'catalog' || pageId === 'settings' || pageId === 'staff')) {
+        if(!isAdmin && (pageId === 'catalog' || pageId === 'settings' || pageId === 'staff' || pageId === 'profit' || pageId === 'salaries' || pageId === 'reports')) {
             return notify("Access Denied! Admin only.", true);
         }
 
@@ -2455,7 +2612,7 @@
             oSnap.forEach(d => {
                 const prod = d.data().product;
                 if(prod && catMap[prod] && d.data().status !== 'Returned') {
-                    catMap[prod].dispatched += 1;
+                    catMap[prod].dispatched += (d.data().qty || 1);
                 }
             });
             
@@ -2497,7 +2654,7 @@
             let catMap = {};
             cSnap.forEach(d => { catMap[d.data().name] = {purchased:0, dispatched:0}; });
             pSnap.forEach(d => { const n = d.data().productName; if(catMap[n]) catMap[n].purchased += (d.data().qty||0); });
-            oSnap.forEach(d => { const n = d.data().product; if(n && catMap[n] && d.data().status !== 'Returned') catMap[n].dispatched += 1; });
+            oSnap.forEach(d => { const n = d.data().product; if(n && catMap[n] && d.data().status !== 'Returned') catMap[n].dispatched += (d.data().qty || 1); });
             
             let lowStockItems = [];
             for(const [name, stats] of Object.entries(catMap)) {
@@ -2522,6 +2679,8 @@
                 alertBar.style.display = 'none';
             }
         }
+        
+        await loadOMSData();
     }
 
     // --- DATA SAVING LOGIC ---
@@ -3798,6 +3957,261 @@
             notify("Error generating report", true);
         }
     };
+    // ==========================================
+    // ORDER MANAGEMENT SYSTEM (OMS) LOGIC
+    // ==========================================
+
+    async function loadOMSData() {
+        const oSnap = await db.collection('orders').orderBy('createdAt', 'desc').get();
+        let allOrders = oSnap.docs.map(d => ({id: d.id, ...d.data()}));
+
+        initAddOrderForm();
+
+        // View Leads (Pending)
+        const pending = allOrders.filter(o => o.status === 'pending');
+        const lblPendingCount = document.getElementById('lbl-pending-count');
+        if(lblPendingCount) lblPendingCount.textContent = pending.length;
+        
+        const tblViewOrders = document.getElementById('tbl-view-orders');
+        if(tblViewOrders) {
+            tblViewOrders.innerHTML = pending.map(o => `
+                <tr>
+                    <td>${new Date(o.createdAt).toLocaleDateString()}</td>
+                    <td><strong>${o.customerName}</strong><br><small>${o.city}</small></td>
+                    <td>${o.phone}</td>
+                    <td>${o.product} <span style="color:var(--text-muted)">x${o.qty}</span></td>
+                    <td style="font-weight:bold; color:var(--primary)">Rs ${o.grandTotal.toLocaleString()}</td>
+                    <td>
+                        <select onchange="updateOrderStatus('${o.id}', this.value)" style="padding:4px; border-radius:4px;">
+                            <option value="pending" selected>Pending</option>
+                            <option value="confirmed">✅ Confirm</option>
+                            <option value="rejected">❌ Reject</option>
+                            <option value="no-answer">📵 No Answer</option>
+                            <option value="fake">⚠️ Fake</option>
+                            <option value="cancelled">🚫 Cancelled</option>
+                        </select>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // To Ship (Confirmed)
+        const confirmed = allOrders.filter(o => o.status === 'confirmed');
+        const tblToShip = document.getElementById('tbl-to-ship');
+        if(tblToShip) {
+            tblToShip.innerHTML = confirmed.map(o => `
+                <tr>
+                    <td>${new Date(o.createdAt).toLocaleDateString()}</td>
+                    <td><strong>${o.customerName}</strong></td>
+                    <td>${o.city}</td>
+                    <td>${o.product} x${o.qty}</td>
+                    <td>
+                        <select id="courier-${o.id}" style="padding:4px; margin-bottom:4px; width:100%;">
+                            <option value="">Select Courier</option>
+                            <option value="Koombiyo">Koombiyo</option>
+                            <option value="Prompt">Prompt Express</option>
+                            <option value="Domex">Domex</option>
+                            <option value="Royal">Royal Express</option>
+                            <option value="Fardar">Fardar</option>
+                            <option value="Certis">Certis</option>
+                        </select>
+                        <input type="text" id="track-${o.id}" placeholder="Tracking Number" style="padding:4px; width:100%;">
+                    </td>
+                    <td>
+                        <button class="action-btn" style="padding:6px 10px; font-size:12px; background:var(--primary);" onclick="shipOrder('${o.id}')">📦 Ship Now</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // Ship List (Shipped)
+        const shipped = allOrders.filter(o => o.status === 'shipped');
+        const tblShipList = document.getElementById('tbl-ship-list');
+        if(tblShipList) {
+            tblShipList.innerHTML = shipped.map(o => `
+                <tr>
+                    <td>${o.shippedAt ? new Date(o.shippedAt).toLocaleDateString() : '-'}</td>
+                    <td><strong>${o.customerName}</strong><br><small>${o.phone}</small></td>
+                    <td><span class="badge" style="background:#eef2ff; color:#4f46e5">${o.courier}</span></td>
+                    <td style="font-family:monospace; font-weight:bold;">${o.trackingId}</td>
+                    <td style="font-weight:bold;">Rs ${o.grandTotal.toLocaleString()}</td>
+                    <td>
+                        <button class="action-btn" style="padding:6px 10px; font-size:12px; background:var(--accent); margin-bottom: 5px;" onclick="printShippingLabel('${o.id}')">🖨️ Print Label</button><br>
+                        <select onchange="updateDeliveryStatus('${o.id}', this.value, ${o.grandTotal})" style="padding:4px; margin-top:4px; width:100%;">
+                            <option value="">Update Delivery...</option>
+                            <option value="delivered">✅ Delivered (Cash Collected)</option>
+                            <option value="returned">🔙 Returned to Sender</option>
+                        </select>
+                    </td>
+                </tr>
+            `).join('');
+        }
+    }
+
+    async function initAddOrderForm() {
+        const sel = document.getElementById('order-product');
+        if(!sel) return;
+        if(sel.options.length > 1) return; // Already loaded
+        const cSnap = await db.collection('product_catalog').get();
+        sel.innerHTML = '<option value="">Select a product...</option>';
+        cSnap.forEach(d => {
+            sel.innerHTML += `<option value="${d.id}" data-price="${d.data().sellingPrice}" data-name="${d.data().name}">${d.data().name}</option>`;
+        });
+    }
+
+    window.updateOrderPrice = function() {
+        const sel = document.getElementById('order-product');
+        const opt = sel.options[sel.selectedIndex];
+        if(opt && opt.value) {
+            document.getElementById('order-price').value = opt.dataset.price;
+        } else {
+            document.getElementById('order-price').value = '';
+        }
+        calculateOrderTotal();
+    }
+
+    window.calculateOrderTotal = function() {
+        const price = parseFloat(document.getElementById('order-price').value) || 0;
+        const qty = parseInt(document.getElementById('order-qty').value) || 1;
+        const delivery = parseFloat(document.getElementById('order-delivery').value) || 0;
+        const discount = parseFloat(document.getElementById('order-discount').value) || 0;
+        
+        const total = (price * qty) + delivery - discount;
+        document.getElementById('order-total').value = total > 0 ? total : 0;
+    }
+
+    window.saveNewOrder = async function() {
+        const customer = document.getElementById('order-customer').value;
+        const phone = document.getElementById('order-phone').value;
+        const city = document.getElementById('order-city').value;
+        const address = document.getElementById('order-address').value;
+        const sel = document.getElementById('order-product');
+        const opt = sel.options[sel.selectedIndex];
+        const qty = parseInt(document.getElementById('order-qty').value) || 1;
+        const delivery = parseFloat(document.getElementById('order-delivery').value) || 0;
+        const discount = parseFloat(document.getElementById('order-discount').value) || 0;
+        const total = parseFloat(document.getElementById('order-total').value) || 0;
+
+        if(!customer || !phone || !address || !opt || !opt.value) {
+            return notify("Please fill all required fields!", true);
+        }
+
+        try {
+            await db.collection('orders').add({
+                customerName: customer,
+                phone: phone,
+                city: city,
+                address: address,
+                productId: opt.value,
+                product: opt.dataset.name,
+                price: parseFloat(opt.dataset.price),
+                qty: qty,
+                deliveryCharge: delivery,
+                discount: discount,
+                grandTotal: total,
+                status: 'pending',
+                createdAt: Date.now()
+            });
+            notify("New order saved to Pending!");
+            
+            // Clear form
+            document.getElementById('order-customer').value = '';
+            document.getElementById('order-phone').value = '';
+            document.getElementById('order-city').value = '';
+            document.getElementById('order-address').value = '';
+            sel.value = '';
+            document.getElementById('order-price').value = '';
+            document.getElementById('order-qty').value = '1';
+            document.getElementById('order-delivery').value = '350';
+            document.getElementById('order-discount').value = '0';
+            document.getElementById('order-total').value = '';
+
+            loadOMSData();
+        } catch(e) {
+            notify("Error saving order", true);
+        }
+    }
+
+    window.updateOrderStatus = async function(id, status) {
+        if(status === 'pending') return;
+        try {
+            await db.collection('orders').doc(id).update({ status: status });
+            notify(`Order marked as ${status.toUpperCase()}`);
+            loadOMSData();
+        } catch(e) { notify("Error updating status", true); }
+    }
+
+    window.shipOrder = async function(id) {
+        const courier = document.getElementById(`courier-${id}`).value;
+        const track = document.getElementById(`track-${id}`).value;
+        if(!courier) return notify("Please select a courier", true);
+        
+        try {
+            await db.collection('orders').doc(id).update({ 
+                status: 'shipped',
+                courier: courier,
+                trackingId: track,
+                shippedAt: Date.now()
+            });
+            notify("Order moved to Shipping List!");
+            loadOMSData();
+        } catch(e) { notify("Error shipping order", true); }
+    }
+
+    window.updateDeliveryStatus = async function(id, status, grandTotal) {
+        if(!status) return;
+        if(!confirm(`Mark this order as ${status.toUpperCase()}?`)) return;
+        
+        try {
+            await db.collection('orders').doc(id).update({ status: status });
+            
+            if(status === 'delivered') {
+                const date = new Date().toISOString().split('T')[0];
+                const week = document.getElementById('active-week').value !== 'Month Overview' ? document.getElementById('active-week').value : 'Week 1';
+                
+                await db.collection('expenses').add({
+                    week: week,
+                    date: date,
+                    desc: 'COD Order Revenue',
+                    amount: grandTotal,
+                    type: 'Income'
+                });
+                notify("Order Delivered & Revenue Added to Profit!", false);
+            } else {
+                notify(`Order marked as ${status}`);
+            }
+            loadAllData();
+        } catch(e) { notify("Error updating delivery", true); }
+    }
+
+    window.printShippingLabel = async function(id) {
+        const doc = await db.collection('orders').doc(id).get();
+        if(!doc.exists) return;
+        const o = doc.data();
+
+        const printArea = document.getElementById('invoice-print-area');
+        printArea.innerHTML = `
+            <div style="padding: 20px; font-family: Arial, sans-serif; max-width: 400px; margin: 0 auto; border: 2px dashed #ccc;">
+                <div style="text-align: center; border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 15px;">
+                    <h1 style="margin: 0; font-size: 24px; text-transform: uppercase;">${o.courier || 'COURIER'}</h1>
+                    <div style="font-size: 16px; font-weight: bold; margin-top: 5px;">${o.trackingId || 'NO TRACKING ID'}</div>
+                </div>
+                
+                <h2 style="font-size: 18px; margin: 0 0 5px 0;">To: ${o.customerName}</h2>
+                <div style="font-size: 14px; margin-bottom: 5px;">📞 ${o.phone}</div>
+                <div style="font-size: 14px; margin-bottom: 15px;">📍 ${o.address}, ${o.city}</div>
+                
+                <div style="border-top: 1px solid #ccc; padding-top: 10px; margin-top: 10px;">
+                    <div style="font-size: 14px;"><strong>Item:</strong> ${o.product} x${o.qty}</div>
+                    <div style="font-size: 24px; font-weight: bold; text-align: center; margin-top: 15px; border: 2px solid #000; padding: 10px;">
+                        COD: Rs ${o.grandTotal.toLocaleString()}
+                    </div>
+                </div>
+                <div style="text-align: center; font-size: 10px; margin-top: 20px; color: #666;">Generated by OMS Factory System</div>
+            </div>
+        `;
+        setTimeout(() => { window.print(); }, 300);
+    }
 </script>
 </body>
 </html>
