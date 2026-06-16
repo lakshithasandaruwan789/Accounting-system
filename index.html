@@ -4060,11 +4060,11 @@
     async function initAddOrderForm() {
         const sel = document.getElementById('order-product');
         if(!sel) return;
-        if(sel.options.length > 1) return; // Already loaded
         const cSnap = await db.collection('product_catalog').get();
         sel.innerHTML = '<option value="">Select a product...</option>';
         cSnap.forEach(d => {
-            sel.innerHTML += `<option value="${d.id}" data-price="${d.data().sellingPrice}" data-name="${d.data().name}">${d.data().name}</option>`;
+            const sp = d.data().sellingPrice || 0;
+            sel.innerHTML += `<option value="${d.id}" data-price="${sp}" data-name="${d.data().name}">${d.data().name}</option>`;
         });
     }
 
