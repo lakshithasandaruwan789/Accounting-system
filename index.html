@@ -558,6 +558,9 @@
         <li class="nav-item active" onclick="navigate('dashboard')" id="nav-dashboard">
             <span class="nav-icon">📊</span> <span class="nav-text">Dashboard</span>
         </li>
+        <li class="nav-item" onclick="navigate('order-view')" id="nav-order-view">
+            <span class="nav-icon">📋</span> <span class="nav-text">Order View</span>
+        </li>
         <li class="nav-item" onclick="navigate('leads')" id="nav-leads">
             <span class="nav-icon">🎯</span> <span class="nav-text">Daily Leads</span>
         </li>
@@ -1097,6 +1100,75 @@
             </div>
         </div>
 
+        <!-- PAGE: ORDER VIEW -->
+        <div id="page-order-view" class="page">
+            <div class="two-col-layout">
+                <div class="form-card">
+                    <h2>📋 Daily Order Status <span id="ov-status-badge" class="badge" style="display:none;">Editing</span></h2>
+                    <p style="font-size:13px; color:var(--text-muted); margin-top:-15px;">Input the status counts for the selected date. This automatically updates Daily Leads.</p>
+                    
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+                        <div class="form-group">
+                            <label>Total Leads</label>
+                            <input type="number" id="ov-total" placeholder="0">
+                        </div>
+                        <div class="form-group">
+                            <label>Confirm</label>
+                            <input type="number" id="ov-confirm" placeholder="0">
+                        </div>
+                        <div class="form-group">
+                            <label>No Answer</label>
+                            <input type="number" id="ov-noanswer" placeholder="0">
+                        </div>
+                        <div class="form-group">
+                            <label>Rejected</label>
+                            <input type="number" id="ov-reject" placeholder="0">
+                        </div>
+                        <div class="form-group">
+                            <label>Fake</label>
+                            <input type="number" id="ov-fake" placeholder="0">
+                        </div>
+                        <div class="form-group">
+                            <label>Cancelled</label>
+                            <input type="number" id="ov-cancel" placeholder="0">
+                        </div>
+                        <div class="form-group">
+                            <label>On Hold</label>
+                            <input type="number" id="ov-hold" placeholder="0">
+                        </div>
+                        <div class="form-group">
+                            <label>Deleted</label>
+                            <input type="number" id="ov-deleted" placeholder="0">
+                        </div>
+                    </div>
+                    <button class="action-btn" id="btn-save-ov" onclick="saveOrderViewData()">Save Order View</button>
+                </div>
+                
+                <div class="table-card">
+                    <h2>Order View Records</h2>
+                    <div style="overflow-x:auto;">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Total</th>
+                                    <th>Confirm</th>
+                                    <th>No Ans</th>
+                                    <th>Reject</th>
+                                    <th>Fake</th>
+                                    <th>Cancel</th>
+                                    <th>Hold</th>
+                                    <th>Del</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tbl-manage-order-view"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- PAGE 2: DAILY LEADS -->
         <div id="page-leads" class="page">
             <div class="two-col-layout">
@@ -1107,12 +1179,12 @@
                         <input type="text" id="lead-budget" placeholder="0.00" oninput="formatNumberInput(event)">
                     </div>
                     <div class="form-group">
-                        <label>Total Leads Received</label>
-                        <input type="text" id="lead-count" placeholder="0" oninput="formatNumberInput(event)">
+                        <label>Total Leads Received <span style="font-size:10px; color:var(--text-muted);">(Auto-synced)</span></label>
+                        <input type="text" id="lead-count" placeholder="0" readonly style="background:var(--bg-card); opacity:0.8;">
                     </div>
                     <div class="form-group">
-                        <label>Confirmed Leads</label>
-                        <input type="text" id="lead-confirmed" placeholder="0" oninput="formatNumberInput(event)">
+                        <label>Confirmed Leads <span style="font-size:10px; color:var(--text-muted);">(Auto-synced)</span></label>
+                        <input type="text" id="lead-confirmed" placeholder="0" readonly style="background:var(--bg-card); opacity:0.8;">
                     </div>
                     <button class="action-btn" id="btn-save-lead" onclick="saveLeadData()">Save Lead Data</button>
                 </div>
@@ -1451,12 +1523,8 @@
                         <label>Permissions (Tick what they can access)</label>
                         <div class="perm-grid">
                             <label class="perm-lbl"><input type="checkbox" class="perm-chk" value="dashboard"> 📊 Dashboard</label>
-                            <label class="perm-lbl"><input type="checkbox" class="perm-chk" value="add-order"> ✍️ Add Order</label>
-                            <label class="perm-lbl"><input type="checkbox" class="perm-chk" value="view-orders"> 📞 Call Center</label>
-                            <label class="perm-lbl"><input type="checkbox" class="perm-chk" value="to-ship"> 📦 To Ship</label>
-                            <label class="perm-lbl"><input type="checkbox" class="perm-chk" value="ship-list"> 🖨️ Ship List</label>
+                            <label class="perm-lbl"><input type="checkbox" class="perm-chk" value="order-view"> 📋 Order View</label>
                             <label class="perm-lbl"><input type="checkbox" class="perm-chk" value="leads"> 🎯 Daily Leads</label>
-                            <label class="perm-lbl"><input type="checkbox" class="perm-chk" value="orders"> 📦 Orders & Scan (Old)</label>
                             <label class="perm-lbl"><input type="checkbox" class="perm-chk" value="purchases"> 📥 Purchases</label>
                             <label class="perm-lbl"><input type="checkbox" class="perm-chk" value="packaging"> 🏷️ Packaging</label>
                             <label class="perm-lbl"><input type="checkbox" class="perm-chk" value="profit"> 💰 Profit/Loss</label>
@@ -1963,7 +2031,7 @@
         let perms = currentUser.permissions || [];
         const isAdmin = currentUser.username === 'admin' || currentUser.username === 'admin@company.com' || (currentUser.permissions && currentUser.permissions.includes('staff'));
         if(isAdmin) {
-            perms = ["dashboard", "add-order", "view-orders", "to-ship", "ship-list", "leads", "orders", "purchases", "packaging", "profit", "catalog", "inventory", "reports", "salaries", "settings", "staff"];
+            perms = ["dashboard", "order-view", "leads", "purchases", "packaging", "profit", "catalog", "inventory", "reports", "salaries", "settings", "staff"];
         }
 
         if(!isAdmin && (pageId === 'catalog' || pageId === 'settings' || pageId === 'staff' || pageId === 'profit' || pageId === 'salaries' || pageId === 'reports')) {
@@ -1983,7 +2051,7 @@
         if(activePage) activePage.classList.add('active');
 
         // Toggle Topbar Controls Based on Section
-        const financePages = ['dashboard', 'leads', 'purchases', 'catalog', 'inventory', 'packaging', 'reports', 'salaries', 'profit'];
+        const financePages = ['dashboard', 'order-view', 'leads', 'purchases', 'catalog', 'inventory', 'packaging', 'reports', 'salaries', 'profit'];
         const financeControls = document.querySelector('.topbar-controls');
         
         if (financeControls) financeControls.style.display = financePages.includes(pageId) ? 'flex' : 'none';
@@ -2067,8 +2135,19 @@
             currentLeadId = null;
             badge.style.display = 'none';
             btn.textContent = 'Save Lead Data';
-            btn.style.background = 'var(--primary)';
             btn.style.boxShadow = '0 4px 15px rgba(79, 70, 229, 0.3)';
+        }
+
+        if(typeof clearOrderViewForm === 'function') {
+            const ovSnap = await db.collection('order_views').where('date', '==', date).get();
+            if(!ovSnap.empty) {
+                const existingOV = {id: ovSnap.docs[0].id, ...ovSnap.docs[0].data()};
+                if(existingOV.week === week && typeof editOrderView === 'function') {
+                    editOrderView(existingOV.id, existingOV.total, existingOV.confirm, existingOV.noanswer, existingOV.reject, existingOV.fake, existingOV.cancel, existingOV.hold, existingOV.deleted);
+                }
+            } else {
+                clearOrderViewForm();
+            }
         }
     }
 
@@ -2464,6 +2543,37 @@
         document.getElementById('tbl-dash-leads').innerHTML = lBodyDash;
         document.getElementById('tbl-manage-leads').innerHTML = lBodyManage;
 
+        // --- 2.5 ORDER VIEWS ---
+        const ovSnap = await db.collection('order_views').orderBy('date', 'desc').get();
+        let allOrderViews = ovSnap.docs.map(d => ({id: d.id, ...d.data()}));
+        if(!isMonth) allOrderViews = allOrderViews.filter(o => o.week === week);
+        
+        let orderViews = allOrderViews;
+        if(isDateFilterApplied && selectedDate && !isMonth) {
+            orderViews = orderViews.filter(o => o.date === selectedDate);
+        }
+        
+        let ovBodyManage = '';
+        orderViews.forEach(o => {
+            const isSelectedClass = o.date === selectedDate && !isMonth ? 'row-highlight' : '';
+            ovBodyManage += `<tr class="${isSelectedClass}">
+                <td><strong>${o.date}</strong></td>
+                <td>${o.total}</td>
+                <td style="color:var(--success); font-weight:bold;">${o.confirm}</td>
+                <td>${o.noanswer}</td>
+                <td style="color:var(--danger);">${o.reject}</td>
+                <td>${o.fake}</td>
+                <td style="color:var(--warning);">${o.cancel}</td>
+                <td>${o.hold}</td>
+                <td>${o.deleted}</td>
+                <td style="white-space: nowrap;">
+                    <button class="btn-edit" onclick="editOrderView('${o.id}', ${o.total}, ${o.confirm}, ${o.noanswer}, ${o.reject}, ${o.fake}, ${o.cancel}, ${o.hold}, ${o.deleted})">Edit</button>
+                    <button class="btn-delete" onclick="deleteRecord('order_views', '${o.id}')">Del</button>
+                </td>
+            </tr>`;
+        });
+        document.getElementById('tbl-manage-order-view').innerHTML = ovBodyManage;
+
         // --- 3. PACKAGING COSTS ---
         const pkSnap = await db.collection('packaging').orderBy('date', 'desc').get();
         let allPackaging = pkSnap.docs.map(d => ({id: d.id, ...d.data()}));
@@ -2786,6 +2896,11 @@
                 handleDateChange();
                 loadAllData();
             }
+            else if(table === 'order_views') {
+                clearOrderViewForm();
+                handleDateChange(true);
+                loadAllData();
+            }
             else if(table === 'product_catalog') loadCatalogToDropdown();
             else if(table === 'users') loadStaffTable();
             else loadAllData();
@@ -2800,6 +2915,98 @@
         notify(state ? "Purchase marked as Settled!" : "Purchase marked as Unsettled!");
         loadAllData();
     }
+
+    let currentOrderViewId = null;
+    
+    window.saveOrderViewData = async function() {
+        if(!navigator.onLine) return notify("No internet connection!", true);
+        const btn = document.getElementById('btn-save-ov');
+        if(btn.disabled) return;
+
+        const week = document.getElementById('active-week').value;
+        if(week === 'Month Overview') return notify("Cannot add data in Month Overview!", true);
+
+        const date = document.getElementById('global-date').value;
+        if(!date) return notify("Please select a date!", true);
+
+        const payload = {
+            date: date,
+            week: week,
+            total: parseInt(document.getElementById('ov-total').value) || 0,
+            confirm: parseInt(document.getElementById('ov-confirm').value) || 0,
+            noanswer: parseInt(document.getElementById('ov-noanswer').value) || 0,
+            reject: parseInt(document.getElementById('ov-reject').value) || 0,
+            fake: parseInt(document.getElementById('ov-fake').value) || 0,
+            cancel: parseInt(document.getElementById('ov-cancel').value) || 0,
+            hold: parseInt(document.getElementById('ov-hold').value) || 0,
+            deleted: parseInt(document.getElementById('ov-deleted').value) || 0
+        };
+
+        btn.textContent = 'Saving...';
+        btn.disabled = true;
+
+        try {
+            if(currentOrderViewId) {
+                await db.collection('order_views').doc(currentOrderViewId).update(payload);
+            } else {
+                await db.collection('order_views').add(payload);
+            }
+            
+            // Auto-sync with Leads
+            const lSnap = await db.collection('leads').where('date', '==', date).get();
+            if(!lSnap.empty) {
+                await db.collection('leads').doc(lSnap.docs[0].id).update({
+                    totalLeads: payload.total,
+                    confirmedLeads: payload.confirm
+                });
+            } else {
+                await db.collection('leads').add({
+                    date: date,
+                    week: week,
+                    dailyBudget: 0,
+                    totalLeads: payload.total,
+                    confirmedLeads: payload.confirm
+                });
+            }
+
+            notify("Order View Saved!");
+            clearOrderViewForm();
+            loadAllData();
+            if(window.handleDateChange) handleDateChange(true);
+        } catch(e) {
+            console.error(e);
+            notify("Error saving data", true);
+        }
+        
+        btn.textContent = 'Save Order View';
+        btn.disabled = false;
+    };
+
+    window.clearOrderViewForm = function() {
+        ['ov-total','ov-confirm','ov-noanswer','ov-reject','ov-fake','ov-cancel','ov-hold','ov-deleted'].forEach(id => {
+            const el = document.getElementById(id);
+            if(el) el.value = '';
+        });
+        currentOrderViewId = null;
+        document.getElementById('btn-save-ov').textContent = 'Save Order View';
+        document.getElementById('ov-status-badge').style.display = 'none';
+    };
+
+    window.editOrderView = function(id, total, confirm, noanswer, reject, fake, cancel, hold, deleted) {
+        document.getElementById('ov-total').value = total || '';
+        document.getElementById('ov-confirm').value = confirm || '';
+        document.getElementById('ov-noanswer').value = noanswer || '';
+        document.getElementById('ov-reject').value = reject || '';
+        document.getElementById('ov-fake').value = fake || '';
+        document.getElementById('ov-cancel').value = cancel || '';
+        document.getElementById('ov-hold').value = hold || '';
+        document.getElementById('ov-deleted').value = deleted || '';
+        
+        currentOrderViewId = id;
+        document.getElementById('btn-save-ov').textContent = 'Update Order View';
+        document.getElementById('ov-status-badge').style.display = 'inline-block';
+        window.scrollTo({top:0, behavior:'smooth'});
+    };
 
     window.saveLeadData = async function() {
         if(!navigator.onLine) return notify("No internet connection!", true);
