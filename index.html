@@ -2420,7 +2420,7 @@
                     <div style="display:flex; gap:6px; align-items:center;">
                         ${settleBtnHtml}
                         <button class="action-btn" style="background:var(--primary); padding:4px 8px; font-size:11px; margin:0;" onclick="reprintInvoice('${grp.invoiceId}', '${grp.date}')">📄 Bill</button>
-                        <button class="btn-delete" style="margin:0; padding:4px 8px; font-size:11px;" onclick="deleteInvoiceGroup('${grp.invoiceId}')">Del</button>
+                        <button class="btn-delete" style="margin:0; padding:4px 8px; font-size:11px;" onclick="deleteInvoiceGroup('${grp.invoiceId}', '${grp.ids.join(',')}')">Del</button>
                     </div>
                 </td>
             </tr>`;
@@ -2782,7 +2782,10 @@
         try {
             await db.collection(table).doc(id).delete();
             notify('Record deleted successfully');
-            if(table === 'leads') handleDateChange();
+            if(table === 'leads') {
+                handleDateChange();
+                loadAllData();
+            }
             else if(table === 'product_catalog') loadCatalogToDropdown();
             else if(table === 'users') loadStaffTable();
             else loadAllData();
@@ -3059,22 +3062,37 @@
         loadAllData();
     };
 
-    window.deleteInvoiceGroup = async function(invId) {
+    window.deleteInvoiceGroup = async function(invId, productIdsStr) {
         if(!navigator.onLine) return notify("No internet connection!", true);
         if(!confirm("Are you sure you want to delete this ENTIRE purchase record and all its items?")) return;
         
-        const snap1 = await db.collection('products').where('invoiceId', '==', invId).get();
-        const snap2 = await db.collection('products').where(firebase.firestore.FieldPath.documentId(), '==', invId).get();
-        const outSnap = await db.collection('outstandings').where('invoiceId', '==', invId).get();
-        
-        let batch = db.batch();
-        snap1.docs.forEach(d => batch.delete(d.ref));
-        snap2.docs.forEach(d => batch.delete(d.ref));
-        outSnap.docs.forEach(d => batch.delete(d.ref));
-        
-        await batch.commit();
-        notify("Purchase record deleted!");
-        loadAllData();
+        try {
+            let batch = db.batch();
+            
+            if (productIdsStr) {
+                const ids = productIdsStr.split(',');
+                ids.forEach(id => {
+                    if(id) batch.delete(db.collection('products').doc(id));
+                });
+            } else {
+                const snap1 = await db.collection('products').where('invoiceId', '==', invId).get();
+                const snap2 = await db.collection('products').where(firebase.firestore.FieldPath.documentId(), '==', invId).get();
+                snap1.docs.forEach(d => batch.delete(d.ref));
+                snap2.docs.forEach(d => batch.delete(d.ref));
+            }
+
+            if (invId) {
+                const outSnap = await db.collection('outstandings').where('invoiceId', '==', invId).get();
+                outSnap.docs.forEach(d => batch.delete(d.ref));
+            }
+            
+            await batch.commit();
+            notify("Purchase record deleted!");
+            loadAllData();
+        } catch(e) {
+            console.error("Delete Error:", e);
+            notify("Failed to delete record", true);
+        }
     };
 
     window.printInvoice = function(date, itemsArray, grandTotal, paid, balance, invoiceId) {
