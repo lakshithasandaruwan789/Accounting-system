@@ -558,12 +558,16 @@
         <li class="nav-item active" onclick="navigate('order-dashboard')" id="nav-order-dashboard">
             <span class="nav-icon">📈</span> <span class="nav-text">Order Dashboard</span>
         </li>
+
+        <li class="nav-category">📌 Main</li>
         <li class="nav-item" onclick="navigate('add-order')" id="nav-add-order">
             <span class="nav-icon">✍️</span> <span class="nav-text">Add New Order</span>
         </li>
         <li class="nav-item" onclick="navigate('view-orders')" id="nav-view-orders">
             <span class="nav-icon">📞</span> <span class="nav-text">View Leads</span>
         </li>
+
+        <li class="nav-category">🚚 Dispatch & Courier</li>
         <li class="nav-item" onclick="navigate('to-ship')" id="nav-to-ship">
             <span class="nav-icon">📦</span> <span class="nav-text">To Ship (Pack)</span>
         </li>
@@ -755,9 +759,9 @@
                 
                 <div class="topbar-controls" id="order-topbar-controls" style="display:none;">
                     <div class="control-group">
-                        <label>Order Date:</label>
+                        <label>Order Month:</label>
                         <div class="date-inputs" style="display:flex; gap:5px;">
-                            <input type="date" id="order-dashboard-date" onchange="loadOrderDashboard()" style="flex:1; min-width:150px;">
+                            <input type="month" id="order-dashboard-month" onchange="loadOrderDashboard()" style="flex:1; min-width:150px;">
                         </div>
                     </div>
                 </div>
@@ -4088,15 +4092,22 @@
     // ==========================================
 
     window.loadOrderDashboard = async function() {
-        const dateInput = document.getElementById('order-dashboard-date');
-        if(!dateInput) return;
-        if(!dateInput.value) {
-            dateInput.valueAsDate = new Date(); // default to today
+        const monthInput = document.getElementById('order-dashboard-month');
+        if(!monthInput) return;
+        if(!monthInput.value) {
+            const d = new Date();
+            const yyyy = d.getFullYear();
+            const mm = String(d.getMonth() + 1).padStart(2, '0');
+            monthInput.value = `${yyyy}-${mm}`;
         }
         
-        let start = new Date(dateInput.value);
+        const [yearStr, monthStr] = monthInput.value.split('-');
+        const year = parseInt(yearStr);
+        const month = parseInt(monthStr) - 1;
+
+        let start = new Date(year, month, 1);
         start.setHours(0,0,0,0);
-        let end = new Date(dateInput.value);
+        let end = new Date(year, month + 1, 0);
         end.setHours(23,59,59,999);
 
         try {
