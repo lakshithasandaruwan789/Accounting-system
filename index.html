@@ -1107,7 +1107,11 @@
                     <h2>📋 Daily Order Status <span id="ov-status-badge" class="badge" style="display:none;">Editing</span></h2>
                     <p style="font-size:13px; color:var(--text-muted); margin-top:-15px;">Input the status counts for the selected date. This automatically updates Daily Leads.</p>
                     
-                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+                    <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:8px;">
+                        <style>
+                            #page-order-view .form-group label { font-size: 11px; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+                            #page-order-view .form-group input { padding: 5px 8px; font-size: 13px; height: 32px; }
+                        </style>
                         <div class="form-group">
                             <label>Total Leads</label>
                             <input type="number" id="ov-total" placeholder="0">
@@ -1133,12 +1137,16 @@
                             <input type="number" id="ov-cancel" placeholder="0">
                         </div>
                         <div class="form-group">
-                            <label>On Hold</label>
+                            <label>Hold</label>
                             <input type="number" id="ov-hold" placeholder="0">
                         </div>
                         <div class="form-group">
                             <label>Deleted</label>
                             <input type="number" id="ov-deleted" placeholder="0">
+                        </div>
+                        <div class="form-group">
+                            <label>Dispatch</label>
+                            <input type="number" id="ov-dispatch" placeholder="0">
                         </div>
                     </div>
                     <button class="action-btn" id="btn-save-ov" onclick="saveOrderViewData()">Save Order View</button>
@@ -1147,12 +1155,18 @@
                 <div class="table-card">
                     <h2>Order View Records</h2>
                     <div style="overflow-x:auto;">
+                        <style>
+                            #page-order-view table th { padding: 8px 5px; font-size: 10px; }
+                            #tbl-manage-order-view td { padding: 4px 5px; font-size: 11px; }
+                            #tbl-manage-order-view button { padding: 3px 6px; font-size: 10px; margin: 0; }
+                        </style>
                         <table>
                             <thead>
                                 <tr>
                                     <th>Date</th>
                                     <th>Total</th>
                                     <th>Confirm</th>
+                                    <th>Dispatch</th>
                                     <th>No Ans</th>
                                     <th>Reject</th>
                                     <th>Fake</th>
@@ -1174,24 +1188,37 @@
             <div class="two-col-layout">
                 <div class="form-card">
                     <h2>Daily Leads Entry <span id="lead-status-badge" class="badge" style="display:none;">Editing</span></h2>
-                    <div class="form-group">
-                        <label>Daily Ads Budget (Rs)</label>
-                        <input type="text" id="lead-budget" placeholder="0.00" oninput="formatNumberInput(event)">
-                    </div>
-                    <div class="form-group">
-                        <label>Total Leads Received <span style="font-size:10px; color:var(--text-muted);">(Auto-synced)</span></label>
-                        <input type="text" id="lead-count" placeholder="0" readonly style="background:var(--bg-card); opacity:0.8;">
-                    </div>
-                    <div class="form-group">
-                        <label>Confirmed Leads <span style="font-size:10px; color:var(--text-muted);">(Auto-synced)</span></label>
-                        <input type="text" id="lead-confirmed" placeholder="0" readonly style="background:var(--bg-card); opacity:0.8;">
+                    
+                    <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:8px;">
+                        <style>
+                            #page-leads .form-group label { font-size: 11px; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+                            #page-leads .form-group input { padding: 5px 8px; font-size: 13px; height: 32px; }
+                        </style>
+                        <div class="form-group">
+                            <label>Ads Budget (Rs)</label>
+                            <input type="text" id="lead-budget" placeholder="0.00" oninput="formatNumberInput(event)">
+                        </div>
+                        <div class="form-group">
+                            <label>Total Leads <span style="font-size:9px; color:var(--text-muted);">(Auto)</span></label>
+                            <input type="text" id="lead-count" placeholder="0" readonly style="background:var(--bg-card); opacity:0.8;">
+                        </div>
+                        <div class="form-group">
+                            <label>Confirm <span style="font-size:9px; color:var(--text-muted);">(Auto)</span></label>
+                            <input type="text" id="lead-confirmed" placeholder="0" readonly style="background:var(--bg-card); opacity:0.8;">
+                        </div>
                     </div>
                     <button class="action-btn" id="btn-save-lead" onclick="saveLeadData()">Save Lead Data</button>
                 </div>
                 
                 <div class="table-card">
                     <h2>Lead Records</h2>
-                    <table>
+                    <div style="overflow-x:auto;">
+                        <style>
+                            #page-leads table th { padding: 8px 5px; font-size: 10px; }
+                            #tbl-manage-leads td { padding: 4px 5px; font-size: 11px; }
+                            #tbl-manage-leads button { padding: 3px 6px; font-size: 10px; margin: 0; }
+                        </style>
+                        <table>
                         <thead>
                             <tr>
                                 <th>Date</th>
@@ -1205,6 +1232,7 @@
                         </thead>
                         <tbody id="tbl-manage-leads"></tbody>
                     </table>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1998,7 +2026,7 @@
         const isAdmin = currentUser.username === 'admin' || currentUser.username === 'admin@company.com' || (currentUser.permissions && currentUser.permissions.includes('staff'));
         
         if(isAdmin) {
-            perms = ["dashboard", "add-order", "view-orders", "to-ship", "ship-list", "leads", "orders", "purchases", "packaging", "profit", "catalog", "inventory", "reports", "salaries", "settings", "staff"];
+            perms = ["dashboard", "order-view", "leads", "purchases", "packaging", "profit", "catalog", "inventory", "reports", "salaries", "settings", "staff"];
             currentUser.permissions = perms; 
         }
         
@@ -2031,7 +2059,7 @@
         let perms = currentUser.permissions || [];
         const isAdmin = currentUser.username === 'admin' || currentUser.username === 'admin@company.com' || (currentUser.permissions && currentUser.permissions.includes('staff'));
         if(isAdmin) {
-            perms = ["dashboard", "order-view", "leads", "purchases", "packaging", "profit", "catalog", "inventory", "reports", "salaries", "settings", "staff"];
+            perms = ["add-order", "orders", "to-ship", "ship-list", "dashboard", "order-view", "leads", "purchases", "packaging", "profit", "catalog", "inventory", "reports", "salaries", "settings", "staff"];
         }
 
         if(!isAdmin && (pageId === 'catalog' || pageId === 'settings' || pageId === 'staff' || pageId === 'profit' || pageId === 'salaries' || pageId === 'reports')) {
@@ -2538,7 +2566,7 @@
             const dCPC = showFinancials ? formatRs(costPerConfirmed) : '***';
 
             lBodyDash += `<tr class="${isSelectedClass}">${weekTd}<td><strong>${l.date}</strong></td><td style="font-weight:600;">${dBudget}</td><td>${l.totalLeads}</td><td><strong style="color:var(--success);">${l.confirmedLeads}</strong></td><td style="color:var(--primary); font-weight:bold;">${dCPL}</td><td style="color:var(--success); font-weight:bold;">${dCPC}</td></tr>`;
-            lBodyManage += `<tr class="${isSelectedClass}"><td><strong>${l.date}</strong></td><td style="font-weight:600;">${dBudget}</td><td>${l.totalLeads}</td><td><strong style="color:var(--success);">${l.confirmedLeads}</strong></td><td style="color:var(--primary); font-weight:bold;">${dCPL}</td><td style="color:var(--success); font-weight:bold;">${dCPC}</td><td style="white-space: nowrap;"><button class="btn-edit" onclick="editLead('${l.id}', '${l.date}', ${l.dailyBudget}, ${l.totalLeads}, ${l.confirmedLeads})">Edit</button><button class="btn-delete" onclick="deleteRecord('leads', '${l.id}')">Del</button></td></tr>`;
+            lBodyManage += `<tr class="${isSelectedClass}"><td style="white-space: nowrap;"><strong>${l.date}</strong></td><td style="font-weight:600;">${dBudget}</td><td>${l.totalLeads}</td><td><strong style="color:var(--success);">${l.confirmedLeads}</strong></td><td style="color:var(--primary); font-weight:bold;">${dCPL}</td><td style="color:var(--success); font-weight:bold;">${dCPC}</td><td style="white-space: nowrap;"><button class="btn-edit" onclick="editLead('${l.id}', '${l.date}', ${l.dailyBudget}, ${l.totalLeads}, ${l.confirmedLeads})">Edit</button><button class="btn-delete" onclick="deleteRecord('leads', '${l.id}')">Del</button></td></tr>`;
         });
         document.getElementById('tbl-dash-leads').innerHTML = lBodyDash;
         document.getElementById('tbl-manage-leads').innerHTML = lBodyManage;
@@ -2557,9 +2585,10 @@
         orderViews.forEach(o => {
             const isSelectedClass = o.date === selectedDate && !isMonth ? 'row-highlight' : '';
             ovBodyManage += `<tr class="${isSelectedClass}">
-                <td><strong>${o.date}</strong></td>
+                <td style="white-space:nowrap;"><strong>${o.date}</strong></td>
                 <td>${o.total}</td>
                 <td style="color:var(--success); font-weight:bold;">${o.confirm}</td>
+                <td style="color:var(--primary); font-weight:bold;">${o.dispatch || 0}</td>
                 <td>${o.noanswer}</td>
                 <td style="color:var(--danger);">${o.reject}</td>
                 <td>${o.fake}</td>
@@ -2567,7 +2596,7 @@
                 <td>${o.hold}</td>
                 <td>${o.deleted}</td>
                 <td style="white-space: nowrap;">
-                    <button class="btn-edit" onclick="editOrderView('${o.id}', ${o.total}, ${o.confirm}, ${o.noanswer}, ${o.reject}, ${o.fake}, ${o.cancel}, ${o.hold}, ${o.deleted})">Edit</button>
+                    <button class="btn-edit" onclick="editOrderView('${o.id}', ${o.total}, ${o.confirm}, ${o.noanswer}, ${o.reject}, ${o.fake}, ${o.cancel}, ${o.hold}, ${o.deleted}, ${o.dispatch || 0})">Edit</button>
                     <button class="btn-delete" onclick="deleteRecord('order_views', '${o.id}')">Del</button>
                 </td>
             </tr>`;
@@ -2877,6 +2906,12 @@
                 for(let pk of packaging) await db.collection('packaging').doc(pk.id).delete();
                 const expenses = (await db.collection('expenses').get()).docs.map(d => ({id: d.id}));
                 for(let e of expenses) await db.collection('expenses').doc(e.id).delete();
+                const order_views = (await db.collection('order_views').get()).docs.map(d => ({id: d.id}));
+                for(let ov of order_views) await db.collection('order_views').doc(ov.id).delete();
+                const orders = (await db.collection('orders').get()).docs.map(d => ({id: d.id}));
+                for(let o of orders) await db.collection('orders').doc(o.id).delete();
+                const outstandings = (await db.collection('outstandings').get()).docs.map(d => ({id: d.id}));
+                for(let out of outstandings) await db.collection('outstandings').doc(out.id).delete();
                 
                 notify(`All monthly data has been wiped! Fresh start ready.`);
                 
@@ -2939,7 +2974,8 @@
             fake: parseInt(document.getElementById('ov-fake').value) || 0,
             cancel: parseInt(document.getElementById('ov-cancel').value) || 0,
             hold: parseInt(document.getElementById('ov-hold').value) || 0,
-            deleted: parseInt(document.getElementById('ov-deleted').value) || 0
+            deleted: parseInt(document.getElementById('ov-deleted').value) || 0,
+            dispatch: parseInt(document.getElementById('ov-dispatch').value) || 0
         };
 
         btn.textContent = 'Saving...';
@@ -2983,7 +3019,7 @@
     };
 
     window.clearOrderViewForm = function() {
-        ['ov-total','ov-confirm','ov-noanswer','ov-reject','ov-fake','ov-cancel','ov-hold','ov-deleted'].forEach(id => {
+        ['ov-total','ov-confirm','ov-noanswer','ov-reject','ov-fake','ov-cancel','ov-hold','ov-deleted','ov-dispatch'].forEach(id => {
             const el = document.getElementById(id);
             if(el) el.value = '';
         });
@@ -2992,7 +3028,7 @@
         document.getElementById('ov-status-badge').style.display = 'none';
     };
 
-    window.editOrderView = function(id, total, confirm, noanswer, reject, fake, cancel, hold, deleted) {
+    window.editOrderView = function(id, total, confirm, noanswer, reject, fake, cancel, hold, deleted, dispatch) {
         document.getElementById('ov-total').value = total || '';
         document.getElementById('ov-confirm').value = confirm || '';
         document.getElementById('ov-noanswer').value = noanswer || '';
@@ -3001,6 +3037,8 @@
         document.getElementById('ov-cancel').value = cancel || '';
         document.getElementById('ov-hold').value = hold || '';
         document.getElementById('ov-deleted').value = deleted || '';
+        const dispEl = document.getElementById('ov-dispatch');
+        if(dispEl) dispEl.value = dispatch || '';
         
         currentOrderViewId = id;
         document.getElementById('btn-save-ov').textContent = 'Update Order View';
