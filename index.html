@@ -190,6 +190,8 @@
         .hamburger-btn:hover { transform: scale(1.1); }
 
         /* --- MAIN CONTENT --- */
+        body.is-staff .admin-only { display: none !important; }
+        body.hide-financials-staff .financial-data { display: none !important; }
         .main-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; position: relative; }
 
         /* --- TOPBAR --- */
@@ -506,10 +508,10 @@
         
         /* --- PRINT INVOICE CSS --- */
         @media print {
-            @page { size: auto; margin: 0; }
-            body { background: white !important; margin: 0; padding: 15mm; color: black; box-sizing: border-box; }
+            @page { size: A4 portrait; margin: 0; }
+            body { background: white !important; margin: 0; padding: 0; color: black; box-sizing: border-box; }
             #login-screen, .sidebar, .main-content > *:not(#invoice-print-area), .mobile-backdrop, .notification { display: none !important; }
-            #invoice-print-area { display: block !important; position: static !important; width: 100% !important; margin: 0; padding: 0; }
+            #invoice-print-area { display: block !important; position: static !important; width: 210mm !important; min-height: 297mm !important; margin: 0 auto !important; padding: 15mm !important; box-sizing: border-box !important; }
             .invoice-box { border: none !important; box-shadow: none !important; width: 100% !important; max-width: 100% !important; padding: 0 !important; margin: 0 !important; }
             table { min-width: 100% !important; width: 100% !important; }
             
@@ -554,6 +556,8 @@
         <p>Manager Portal v11</p>
     </div>
     <ul class="nav-menu">
+
+
         <li class="nav-category">💰 Finance Management</li>
         <li class="nav-item active" onclick="navigate('dashboard')" id="nav-dashboard">
             <span class="nav-icon">📊</span> <span class="nav-text">Dashboard</span>
@@ -611,7 +615,7 @@
     
     <!-- INVOICE PRINT AREA (Hidden by default) -->
     <div id="invoice-print-area" style="display:none;">
-        <div class="invoice-box" style="padding: 40px; background: white; max-width: 800px; margin: 0 auto; font-family: 'Plus Jakarta Sans', sans-serif;">
+        <div class="invoice-box" style="padding: 40px; background: white; margin: 0 auto; font-family: 'Plus Jakarta Sans', sans-serif;">
             
             <!-- HEADER -->
             <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom: 40px;">
@@ -775,6 +779,16 @@
                     </div>
                     <button class="action-btn" style="background:linear-gradient(135deg, var(--primary), var(--primary-light)); width:auto; border: 1px solid var(--primary-light); box-shadow: 0 5px 15px rgba(166, 0, 255, 0.4); flex-shrink: 0;" onclick="fetchBulkCourierStats()">Sync Now</button>
                 </div>
+                
+                <!-- Quick Waybill Add -->
+                <div style="width:100%; margin-top: 10px; display:flex; gap:10px; flex-wrap:wrap; align-items:center; z-index:1; position:relative;">
+                    <input type="text" id="quick-waybill-input" placeholder="Scan or Type Waybill..." style="flex:1; min-width:200px; padding:8px 12px; border-radius:8px; border:1px solid var(--border); background:var(--bg-main); color:var(--text-main); font-size:14px;">
+                    <select id="quick-waybill-product" style="padding:8px 12px; border-radius:8px; border:1px solid var(--border); background:var(--bg-main); color:var(--text-main); font-size:14px;">
+                        <option value="">Select Product...</option>
+                    </select>
+                    <button class="action-btn" style="width:auto; margin:0; padding:8px 16px; font-size:14px;" onclick="quickAddWaybill()">➕ Track Waybill</button>
+                    <p id="quick-waybill-msg" style="margin:0; font-size:12px; font-weight:bold;"></p>
+                </div>
             </div>
 
             <div class="stats-grid">
@@ -859,246 +873,7 @@
             </div>
         </div>
 
-        <!-- PAGE OMS 1: ADD NEW ORDER -->
-        <div id="page-add-order" class="page">
-            <div class="header">
-                <div>
-                    <h1>Add New Order</h1>
-                    <p>Enter customer details and assign products</p>
-                </div>
-            </div>
-            <div class="two-col-layout">
-                <div class="form-card">
-                    <h2>Customer Details</h2>
-                    <div class="form-group">
-                        <label>Customer Name</label>
-                        <input type="text" id="order-customer" placeholder="e.g. Kasun Kalhara">
-                    </div>
-                    <div style="display:flex; gap:15px;">
-                        <div class="form-group" style="flex:1;">
-                            <label>Phone Number 1</label>
-                            <input type="text" id="order-phone" placeholder="e.g. 0712345678">
-                        </div>
-                        <div class="form-group" style="flex:1;">
-                            <label>Contact #2 (Optional)</label>
-                            <input type="text" id="order-phone2" placeholder="e.g. 0771234567">
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label>City / Area</label>
-                        <input type="text" id="order-city" placeholder="e.g. Colombo 07">
-                    </div>
-                    <div class="form-group">
-                        <label>Delivery Address</label>
-                        <input type="text" id="order-address" placeholder="Full address">
-                    </div>
-                </div>
-                <div class="form-card">
-                    <h2>Product Selection</h2>
-                    <div class="form-group">
-                        <label>Select Product</label>
-                        <select id="order-product" onchange="updateOrderPrice()"></select>
-                    </div>
-                    <div style="display:flex; gap:15px;">
-                        <div class="form-group" style="flex:1;">
-                            <label>Product Price (Rs)</label>
-                            <input type="number" id="order-price" placeholder="Auto-filled" readonly>
-                        </div>
-                        <div class="form-group" style="width: 100px;">
-                            <label>Quantity</label>
-                            <input type="number" id="order-qty" value="1" min="1" oninput="calculateOrderTotal()">
-                        </div>
-                    </div>
-                    <div style="display:flex; gap:15px;">
-                        <div class="form-group" style="flex:1;">
-                            <label>Delivery Charge (Rs)</label>
-                            <input type="number" id="order-delivery" value="350" oninput="calculateOrderTotal()">
-                        </div>
-                        <div class="form-group" style="flex:1;">
-                            <label>Discount (Rs)</label>
-                            <input type="number" id="order-discount" value="0" oninput="calculateOrderTotal()">
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label style="font-weight:700; color:var(--text-main);">Grand Total (Rs)</label>
-                        <input type="number" id="order-total" style="font-size:20px; font-weight:800; color:var(--primary); background:#eef2ff;" readonly>
-                    </div>
-                    
-                    <button class="action-btn" onclick="saveNewOrder()" style="margin-top: 20px;">🛒 Save Order (Pending)</button>
-                </div>
-            </div>
-        </div>
 
-        <!-- PAGE OMS 2: VIEW ORDERS (CALL CENTER) -->
-        <div id="page-view-orders" class="page">
-            <div class="form-card" style="margin-bottom:20px;">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
-                    <h2 style="margin:0;">Leads Search</h2>
-                </div>
-                <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap:15px; margin-bottom:15px;">
-                    <div>
-                        <label style="font-size:12px; color:var(--text-muted);">Status</label>
-                        <select id="search-status" style="padding:6px; font-size:13px;">
-                            <option value="Any">Any</option>
-                            <option value="pending">Pending</option>
-                            <option value="confirmed">Confirmed (Ok)</option>
-                            <option value="no-answer">No Answer</option>
-                            <option value="rejected">Rejected</option>
-                            <option value="fake">Fake</option>
-                            <option value="cancelled">Cancelled</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label style="font-size:12px; color:var(--text-muted);">Customer Name</label>
-                        <input type="text" id="search-customer" placeholder="Select Customer" style="padding:6px; font-size:13px;">
-                    </div>
-                    <div>
-                        <label style="font-size:12px; color:var(--text-muted);">Start Date</label>
-                        <input type="date" id="search-start" style="padding:6px; font-size:13px;">
-                    </div>
-                    <div>
-                        <label style="font-size:12px; color:var(--text-muted);">End Date</label>
-                        <input type="date" id="search-end" style="padding:6px; font-size:13px;">
-                    </div>
-                </div>
-                <div style="display:flex; justify-content:flex-end; gap:10px;">
-                    <button class="action-btn" style="padding:6px 15px; font-size:13px; background:var(--primary);" onclick="filterViewLeads()">Search</button>
-                    <button class="action-btn" style="padding:6px 15px; font-size:13px; background:var(--bg-main); color:var(--text-main); border:1px solid #ddd;" onclick="loadOMSData()">🔄 Reload Data</button>
-                </div>
-            </div>
-
-            <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-bottom:10px; font-size:13px; font-weight:bold;">
-                <span style="color:var(--primary);">🔵 Leads List: <span id="lbl-all-count" style="border:1px solid #ccc; padding:2px 8px; border-radius:4px;">0</span></span>
-                <span>Pending | <span id="lbl-pending-count" style="background:#fff; border:1px solid #ccc; padding:2px 8px; border-radius:4px;">0</span></span>
-                <span>Ok | <span id="lbl-confirmed-count" style="background:#22c55e; color:white; padding:2px 8px; border-radius:4px;">0</span></span>
-                <span>No Answer | <span id="lbl-noanswer-count" style="background:#eab308; color:white; padding:2px 8px; border-radius:4px;">0</span></span>
-                <span>Rejected | <span id="lbl-rejected-count" style="background:#6b7280; color:white; padding:2px 8px; border-radius:4px;">0</span></span>
-                <span>Fake | <span id="lbl-fake-count" style="background:#ef4444; color:white; padding:2px 8px; border-radius:4px;">0</span></span>
-                <span>Cancelled | <span id="lbl-cancelled-count" style="background:#ef4444; color:white; padding:2px 8px; border-radius:4px;">0</span></span>
-            </div>
-
-            <div class="table-card">
-                <table style="font-size: 13px;">
-                    <thead>
-                        <tr>
-                            <th># ID</th>
-                            <th>Lead Date</th>
-                            <th>Customer Name</th>
-                            <th>Customer Address</th>
-                            <th>Contact #1</th>
-                            <th>Contact #2</th>
-                            <th>Product</th>
-                            <th>Total (Rs)</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tbl-view-orders"></tbody>
-                </table>
-            </div>
-        </div>
-
-        <!-- PAGE OMS 3: TO SHIP (DISPATCH) -->
-        <div id="page-to-ship" class="page">
-            <div class="header">
-                <div>
-                    <h1>To Ship (Pack)</h1>
-                    <p>Confirmed orders ready for packing and courier</p>
-                </div>
-            </div>
-            <div class="table-card">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Date</th>
-                            <th>Customer</th>
-                            <th>City</th>
-                            <th>Product</th>
-                            <th>Courier Info</th>
-                            <th>Action</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tbl-to-ship"></tbody>
-                </table>
-            </div>
-        </div>
-
-        <!-- PAGE OMS 4: SHIP LIST & PRINTING -->
-        <div id="page-ship-list" class="page">
-            <div class="header">
-                <div>
-                    <h1>Shipping Labels</h1>
-                    <p>Print labels for shipped packages</p>
-                </div>
-            </div>
-            <div class="table-card">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Date Shipped</th>
-                            <th>Customer</th>
-                            <th>Courier</th>
-                            <th>Tracking ID</th>
-                            <th>COD Amount</th>
-                            <th>Action</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tbl-ship-list"></tbody>
-                </table>
-            </div>
-        </div>
-
-        <!-- PAGE 1.5: ORDERS & SCAN (ULTRA-FAST) -->
-        <div id="page-orders" class="page">
-            <div class="two-col-layout">
-                <div class="form-card" style="text-align: center;">
-                    <h2 style="font-size:24px;">Ultra-Fast Barcode Scanner</h2>
-                    <p style="color:var(--text-muted); font-size:14px; margin-bottom: 25px;">Click inside the box below and scan your waybills non-stop.</p>
-                    
-                    <div class="form-group" style="max-width: 400px; margin: 0 auto 20px auto; text-align: left;">
-                        <label>Select Product (Optional - for auto deduction)</label>
-                        <select id="scan-product"></select>
-                    </div>
-
-                    <div style="margin: 0 auto 30px auto; max-width: 400px;">
-                        <label style="display:block; text-align:left; margin-bottom:8px; font-weight:700; font-size:13px; color:var(--text-main);">Type or Scan Waybill</label>
-                        <div style="display: flex; gap: 10px;">
-                            <input type="text" id="scan-waybill" placeholder="Scan or Type..." 
-                                style="flex: 1; font-size: 16px; padding: 12px 15px; border: 2px solid var(--primary); background: #f0f9ff; border-radius: 12px; box-sizing: border-box; outline: none;"
-                                onkeydown="if(event.key === 'Enter') handleBarcodeScan(this.value)">
-                            <button class="action-btn" style="width: auto; padding: 12px 20px; border-radius: 12px; white-space: nowrap;" onclick="handleBarcodeScan(document.getElementById('scan-waybill').value)">Add</button>
-                        </div>
-                        <p style="font-size: 12px; color: var(--success); margin-top: 10px; font-weight: bold; text-align: left;" id="scan-success-msg"></p>
-                    </div>
-
-                    <div style="margin-top: 50px; padding-top: 20px; border-top: 2px dashed #e2e8f0;">
-                        <h3 style="color: var(--danger); font-size: 14px;">Developer API Testing Tools</h3>
-                        <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
-                            <button class="action-btn" style="background: var(--warning); color: #fff; width: auto;" onclick="testWaybillAPI()">Test API with Last Scanned Waybill</button>
-                            <button class="action-btn" style="background: var(--danger); color: #fff; width: auto;" onclick="clearAllOrders()">Wipe All Orders DB</button>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="table-card">
-                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;">
-                        <h2>Recent Scanned Orders <span style="font-size: 14px; font-weight: normal; color: var(--text-muted);">(Last 300)</span></h2>
-                        <input type="text" id="search-scanned" placeholder="🔍 Search waybill..." style="font-size:13px; padding:8px 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--input-bg); color: var(--text-main); width: 200px;" onkeyup="filterScannedOrders()">
-                    </div>
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Time</th>
-                                <th>Waybill Number</th>
-                                <th>Product</th>
-                                <th>Status</th>
-                                <th style="width: 40px;"></th>
-                            </tr>
-                        </thead>
-                        <tbody id="tbl-scanned-orders"></tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
 
         <!-- PAGE: ORDER VIEW -->
         <div id="page-order-view" class="page">
@@ -1144,10 +919,6 @@
                             <label>Deleted</label>
                             <input type="number" id="ov-deleted" placeholder="0">
                         </div>
-                        <div class="form-group">
-                            <label>Dispatch</label>
-                            <input type="number" id="ov-dispatch" placeholder="0">
-                        </div>
                     </div>
                     <button class="action-btn" id="btn-save-ov" onclick="saveOrderViewData()">Save Order View</button>
                 </div>
@@ -1166,7 +937,6 @@
                                     <th>Date</th>
                                     <th>Total</th>
                                     <th>Confirm</th>
-                                    <th>Dispatch</th>
                                     <th>No Ans</th>
                                     <th>Reject</th>
                                     <th>Fake</th>
@@ -1252,7 +1022,7 @@
                         <label>Purchase Date</label>
                         <input type="date" id="prod-item-date">
                     </div>
-                    <div class="form-group" id="fg-prod-price">
+                    <div class="form-group financial-data" id="fg-prod-price">
                         <label>Factory Price (Rs)</label>
                         <input type="number" id="prod-price" value="0" readonly style="background:#f1f5f9; color:var(--text-muted);">
                     </div>
@@ -1269,24 +1039,24 @@
                                 <tr style="background:var(--table-header-bg);">
                                     <th style="padding:8px;">Product</th>
                                     <th style="padding:8px; text-align:right;">Qty</th>
-                                    <th style="padding:8px; text-align:right;">Total</th>
+                                    <th class="financial-data" style="padding:8px; text-align:right;">Total</th>
                                     <th style="padding:8px; text-align:center;">Action</th>
                                 </tr>
                             </thead>
                             <tbody id="tbl-purchase-draft"></tbody>
                         </table>
                         
-                        <div style="display: flex; justify-content: space-between; margin-bottom: 10px; padding-top:10px; border-top:1px dashed var(--border);">
+                        <div class="financial-data" style="display: flex; justify-content: space-between; margin-bottom: 10px; padding-top:10px; border-top:1px dashed var(--border);">
                             <strong>Grand Total:</strong>
                             <strong style="color:var(--primary); font-size: 16px;">Rs <span id="lbl-draft-total">0.00</span></strong>
                         </div>
                         
-                        <div class="form-group" style="margin-bottom: 10px;">
+                        <div class="form-group financial-data" style="margin-bottom: 10px;">
                             <label style="font-size:12px;">Amount Paid Today (Rs)</label>
                             <input type="number" id="draft-paid" placeholder="0" value="" onkeyup="calculateDraftBalance()" onchange="calculateDraftBalance()" style="padding: 8px;">
                         </div>
                         
-                        <div style="display: flex; justify-content: space-between; margin-bottom: 15px;">
+                        <div class="financial-data" style="display: flex; justify-content: space-between; margin-bottom: 15px;">
                             <strong style="color:var(--text-muted);">Balance to Pay:</strong>
                             <strong style="color:var(--danger); font-size: 14px;">Rs <span id="lbl-draft-balance">0.00</span></strong>
                         </div>
@@ -1303,7 +1073,7 @@
                                 <th>Date</th>
                                 <th>Product</th>
                                 <th>Qty</th>
-                                <th>Total Cost</th>
+                                <th class="financial-data">Total Cost</th>
                                 <th>Action</th>
                             </tr>
                         </thead>
@@ -1412,7 +1182,7 @@
                         <label>Product Name</label>
                         <input type="text" id="cat-name" placeholder="e.g. New Herbal Soap">
                     </div>
-                    <div class="form-group">
+                    <div class="form-group financial-data">
                         <label>Default Factory Price (Rs)</label>
                         <input type="number" id="cat-price" placeholder="0.00">
                     </div>
@@ -1430,7 +1200,7 @@
                         <thead>
                             <tr>
                                 <th>Product Name</th>
-                                <th>Factory Price</th>
+                                <th class="financial-data">Factory Price</th>
                                 <th>Selling Price</th>
                                 <th>Action</th>
                             </tr>
@@ -1551,6 +1321,7 @@
                         <label>Permissions (Tick what they can access)</label>
                         <div class="perm-grid">
                             <label class="perm-lbl"><input type="checkbox" class="perm-chk" value="dashboard"> 📊 Dashboard</label>
+
                             <label class="perm-lbl"><input type="checkbox" class="perm-chk" value="order-view"> 📋 Order View</label>
                             <label class="perm-lbl"><input type="checkbox" class="perm-chk" value="leads"> 🎯 Daily Leads</label>
                             <label class="perm-lbl"><input type="checkbox" class="perm-chk" value="purchases"> 📥 Purchases</label>
@@ -1774,31 +1545,37 @@
 
     function initTheme() {
         const savedTheme = localStorage.getItem('systemTheme') || 'light';
+        applyThemeUI(savedTheme);
+    }
+
+    function applyThemeUI(theme) {
         const toggle = document.getElementById('setting-theme-toggle');
-        if(savedTheme === 'dark') {
+        if(theme === 'dark') {
             document.body.classList.add('dark-mode');
             if(toggle) toggle.checked = true;
-            applyChartTheme(true);
+            if(typeof applyChartTheme === 'function') applyChartTheme(true);
         } else {
             document.body.classList.remove('dark-mode');
             if(toggle) toggle.checked = false;
-            applyChartTheme(false);
+            if(typeof applyChartTheme === 'function') applyChartTheme(false);
         }
     }
+    
+    // Call initTheme after db is defined, we'll just run it now for local cache
     initTheme();
 
-    window.toggleTheme = function() {
+    window.toggleTheme = async function() {
         const toggle = document.getElementById('setting-theme-toggle');
-        if(toggle && toggle.checked) {
-            document.body.classList.add('dark-mode');
-            localStorage.setItem('systemTheme', 'dark');
-            applyChartTheme(true);
-            notify("Switched to Dark Mode");
-        } else {
-            document.body.classList.remove('dark-mode');
-            localStorage.setItem('systemTheme', 'light');
-            applyChartTheme(false);
-            notify("Switched to Light Mode");
+        const newTheme = (toggle && toggle.checked) ? 'dark' : 'light';
+        
+        applyThemeUI(newTheme);
+        localStorage.setItem('systemTheme', newTheme);
+        
+        try {
+            await db.collection('config').doc('theme').set({ mode: newTheme }, { merge: true });
+            notify(`Switched to ${newTheme === 'dark' ? 'Dark' : 'Light'} Mode (Synced Globally)`);
+        } catch (e) {
+            console.error("Failed to sync theme:", e);
         }
     }
 
@@ -1838,6 +1615,17 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
+    // Listen for global theme changes
+    db.collection('config').doc('theme').onSnapshot(doc => {
+        if (doc.exists) {
+            const globalTheme = doc.data().mode || 'light';
+            localStorage.setItem('systemTheme', globalTheme);
+            if (typeof applyThemeUI === 'function') {
+                applyThemeUI(globalTheme);
+            }
+        }
+    });
+
     const formatRs = (val) => "Rs. " + parseFloat(val).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
 
     async function initDB() {
@@ -1860,7 +1648,7 @@
             await db.collection('users').add({
                 username: "admin@company.com",
                 password: "123",
-                permissions: ["dashboard", "leads", "orders", "purchases", "packaging", "profit", "catalog", "inventory", "reports", "salaries", "staff"]
+                permissions: ["dashboard", "leads", "purchases", "packaging", "profit", "catalog", "inventory", "reports", "salaries", "staff"]
             });
         }
 
@@ -2001,6 +1789,7 @@
     function finalizeLogin() {
         document.getElementById('login-screen').style.display = 'none';
         document.getElementById('lbl-current-user').textContent = currentUser.username;
+        initTheme();
         applyPermissions();
         if(typeof autoSelectWeek === 'function') autoSelectWeek();
     }
@@ -2026,19 +1815,25 @@
         const isAdmin = currentUser.username === 'admin' || currentUser.username === 'admin@company.com' || (currentUser.permissions && currentUser.permissions.includes('staff'));
         
         if(isAdmin) {
-            perms = ["dashboard", "order-view", "leads", "purchases", "packaging", "profit", "catalog", "inventory", "reports", "salaries", "settings", "staff"];
+            document.body.classList.add('is-admin');
+            document.body.classList.remove('is-staff');
+            perms = ["dashboard", "order-view", "leads", "purchases", "packaging", "profit", "catalog", "salaries", "staff", "inventory", "reports", "settings"];
             currentUser.permissions = perms; 
+        } else {
+            document.body.classList.add('is-staff');
+            document.body.classList.remove('is-admin');
+        }
+
+        const showFinancials = isAdmin || (window.systemConfig && !window.systemConfig.hideFinancials);
+        if(!showFinancials) {
+            document.body.classList.add('hide-financials-staff');
+        } else {
+            document.body.classList.remove('hide-financials-staff');
         }
         
         document.querySelectorAll('.nav-item').forEach(item => {
             if(item.id !== 'nav-logout' && item.id !== '') {
                 const pageId = item.id.replace('nav-', '');
-                
-                // Force hide sensitive pages if not admin
-                if(!isAdmin && (pageId === 'catalog' || pageId === 'settings' || pageId === 'staff' || pageId === 'profit' || pageId === 'salaries' || pageId === 'reports')) {
-                    item.style.display = 'none';
-                    return;
-                }
 
                 if(perms.includes(pageId)) {
                     item.style.display = 'flex';
@@ -2059,12 +1854,10 @@
         let perms = currentUser.permissions || [];
         const isAdmin = currentUser.username === 'admin' || currentUser.username === 'admin@company.com' || (currentUser.permissions && currentUser.permissions.includes('staff'));
         if(isAdmin) {
-            perms = ["add-order", "orders", "to-ship", "ship-list", "dashboard", "order-view", "leads", "purchases", "packaging", "profit", "catalog", "inventory", "reports", "salaries", "settings", "staff"];
+            perms = ["dashboard", "order-view", "leads", "purchases", "packaging", "profit", "catalog", "salaries", "staff", "inventory", "reports", "settings"];
         }
 
-        if(!isAdmin && (pageId === 'catalog' || pageId === 'settings' || pageId === 'staff' || pageId === 'profit' || pageId === 'salaries' || pageId === 'reports')) {
-            return notify("Access Denied! Admin only.", true);
-        }
+
 
         if(!perms.includes(pageId)) return notify("Access Denied! You don't have permission.", true);
 
@@ -2083,8 +1876,6 @@
         const financeControls = document.querySelector('.topbar-controls');
         
         if (financeControls) financeControls.style.display = financePages.includes(pageId) ? 'flex' : 'none';
-
-        if(pageId === 'dashboard') loadOMSData();
 
         if(window.innerWidth <= 900) {
             document.getElementById('sidebar').classList.remove('mobile-open');
@@ -2270,11 +2061,16 @@
         const catalog = snap.docs.map(d => ({id: d.id, ...d.data()}));
         const select = document.getElementById('prod-name');
         const selectOrder = document.getElementById('scan-product');
+        const quickWaybillProduct = document.getElementById('quick-waybill-product');
+        
         if(select) select.innerHTML = '<option value="">-- Select Product --</option>';
         if(selectOrder) selectOrder.innerHTML = '<option value="">-- No Product (Track Only) --</option>';
+        if(quickWaybillProduct) quickWaybillProduct.innerHTML = '<option value="">-- No Product (Track Only) --</option>';
+        
         catalog.forEach(p => {
             if(select) select.innerHTML += `<option value="${p.name}" data-price="${p.price}">${p.name}</option>`;
             if(selectOrder) selectOrder.innerHTML += `<option value="${p.name}">${p.name}</option>`;
+            if(quickWaybillProduct) quickWaybillProduct.innerHTML += `<option value="${p.name}">${p.name}</option>`;
         });
         
         const tbody = document.getElementById('tbl-manage-catalog');
@@ -2284,7 +2080,7 @@
                 tbody.innerHTML += `
                     <tr>
                         <td style="font-weight:bold; color:var(--text-main);">${p.name}</td>
-                        <td style="color:var(--success); font-weight:bold;">${formatRs(p.price)}</td>
+                        <td class="financial-data" style="color:var(--success); font-weight:bold;">${formatRs(p.price)}</td>
                         <td style="color:var(--primary); font-weight:bold;">${formatRs(p.sellingPrice || 0)}</td>
                         <td style="white-space: nowrap;">
                             <div style="display:flex; gap:6px; align-items:center;">
@@ -2522,7 +2318,7 @@
                 <td>${grp.date}</td>
                 <td style="font-weight:600;">${itemSummary}</td>
                 <td>${qtySummary}</td>
-                <td style="font-weight:bold; color:var(--warning);">${displayTotal}</td>
+                <td class="financial-data" style="font-weight:bold; color:var(--warning);">${displayTotal}</td>
                 <td style="white-space: nowrap;">
                     <div style="display:flex; gap:6px; align-items:center;">
                         ${settleBtnHtml}
@@ -2588,7 +2384,6 @@
                 <td style="white-space:nowrap;"><strong>${o.date}</strong></td>
                 <td>${o.total}</td>
                 <td style="color:var(--success); font-weight:bold;">${o.confirm}</td>
-                <td style="color:var(--primary); font-weight:bold;">${o.dispatch || 0}</td>
                 <td>${o.noanswer}</td>
                 <td style="color:var(--danger);">${o.reject}</td>
                 <td>${o.fake}</td>
@@ -2596,7 +2391,7 @@
                 <td>${o.hold}</td>
                 <td>${o.deleted}</td>
                 <td style="white-space: nowrap;">
-                    <button class="btn-edit" onclick="editOrderView('${o.id}', ${o.total}, ${o.confirm}, ${o.noanswer}, ${o.reject}, ${o.fake}, ${o.cancel}, ${o.hold}, ${o.deleted}, ${o.dispatch || 0})">Edit</button>
+                    <button class="btn-edit" onclick="editOrderView('${o.id}', ${o.total}, ${o.confirm}, ${o.noanswer}, ${o.reject}, ${o.fake}, ${o.cancel}, ${o.hold}, ${o.deleted})">Edit</button>
                     <button class="btn-delete" onclick="deleteRecord('order_views', '${o.id}')">Del</button>
                 </td>
             </tr>`;
@@ -2637,30 +2432,50 @@
         const eSnap = await db.collection('expenses').get();
         let expenses = eSnap.docs.map(d => ({id: d.id, ...d.data()}));
         if(!isMonth) expenses = expenses.filter(e => e.week === week);
-        expenses.sort((a, b) => (a.week || '').localeCompare(b.week || ''));
+
+        // Include weeks that might only have salaries and no expenses yet
+        let combinedWeeks = {};
+        expenses.forEach(e => {
+            combinedWeeks[e.week] = e;
+        });
+        
+        if (isMonth) {
+            Object.keys(salaryByWeek).forEach(w => {
+                if (!combinedWeeks[w]) {
+                    combinedWeeks[w] = { week: w, received: 0, adsSpent: 0, productCost: 0, otherCosts: 0, isDummy: true };
+                }
+            });
+        } else if (salaryByWeek[week] && !combinedWeeks[week]) {
+            combinedWeeks[week] = { week: week, received: 0, adsSpent: 0, productCost: 0, otherCosts: 0, isDummy: true };
+        }
+
+        let combinedArray = Object.values(combinedWeeks);
+        combinedArray.sort((a, b) => (a.week || '').localeCompare(b.week || ''));
         
         let totalExpensesProfit = 0;
         let eBodyDash = '', eBodyManage = '';
 
-        expenses.forEach(e => {
+        combinedArray.forEach(e => {
             const received = e.received || 0;
             const weekSalaries = salaryByWeek[e.week] || 0;
-            const totalSpentBase = e.adsSpent + e.productCost + e.otherCosts; 
+            const totalSpentBase = (e.adsSpent || 0) + (e.productCost || 0) + (e.otherCosts || 0); 
             const baseProfit = received - totalSpentBase;
-            totalExpensesProfit += baseProfit;
+            totalExpensesProfit += baseProfit; // salaries deducted later globally
             
             const rowProfit = baseProfit - weekSalaries;
 
             const weekTd = isMonth ? `<td><strong style="color:var(--text-muted);">${e.week || 'Week 1'}</strong></td>` : '';
             const dRec = showFinancials ? formatRs(received) : '***';
-            const dAds = showFinancials ? formatRs(e.adsSpent) : '***';
-            const dProd = showFinancials ? formatRs(e.productCost) : '***';
-            const dOth = showFinancials ? formatRs(e.otherCosts) : '***';
+            const dAds = showFinancials ? formatRs(e.adsSpent || 0) : '***';
+            const dProd = showFinancials ? formatRs(e.productCost || 0) : '***';
+            const dOth = showFinancials ? formatRs(e.otherCosts || 0) : '***';
             const dSal = showFinancials ? formatRs(weekSalaries) : '***';
             const dProf = showFinancials ? formatRs(rowProfit) : '***';
 
             eBodyDash += `<tr>${weekTd}<td style="color:var(--success); font-weight:bold;">${dRec}</td><td style="font-weight:600;">${dAds}</td><td style="font-weight:600;">${dProd}</td><td style="font-weight:600;">${dOth}</td><td style="color:var(--danger); font-weight:600;">${dSal}</td><td style="color:var(--primary); font-weight:bold;">${dProf}</td></tr>`;
-            eBodyManage += `<tr><td><strong style="color:var(--text-muted);">${e.week || 'Week 1'}</strong></td><td style="color:var(--success); font-weight:bold;">${dRec}</td><td style="font-weight:600;">${dAds}</td><td style="font-weight:600;">${dProd}</td><td style="font-weight:600;">${dOth}</td><td style="color:var(--danger); font-weight:600;">${dSal}</td><td style="color:var(--primary); font-weight:bold;">${dProf}</td><td><button class="btn-delete" onclick="deleteRecord('expenses', '${e.id}')">Del</button></td></tr>`;
+            
+            const delBtn = e.isDummy ? '' : `<button class="btn-delete" onclick="deleteRecord('expenses', '${e.id}')">Del</button>`;
+            eBodyManage += `<tr><td><strong style="color:var(--text-muted);">${e.week || 'Week 1'}</strong></td><td style="color:var(--success); font-weight:bold;">${dRec}</td><td style="font-weight:600;">${dAds}</td><td style="font-weight:600;">${dProd}</td><td style="font-weight:600;">${dOth}</td><td style="color:var(--danger); font-weight:600;">${dSal}</td><td style="color:var(--primary); font-weight:bold;">${dProf}</td><td>${delBtn}</td></tr>`;
         });
         document.getElementById('tbl-dash-expenses').innerHTML = eBodyDash;
         document.getElementById('tbl-manage-expenses').innerHTML = eBodyManage;
@@ -2868,8 +2683,6 @@
                 alertBar.style.display = 'none';
             }
         }
-        
-        await loadOMSData();
     }
 
     // --- DATA SAVING LOGIC ---
@@ -2925,6 +2738,33 @@
         if(!confirm("⚠️ Are you sure you want to permanently delete this record?\n\nThis action cannot be undone.")) return;
         
         try {
+            if (table === 'order_views') {
+                const docSnap = await db.collection(table).doc(id).get();
+                if (docSnap.exists) {
+                    const ovData = docSnap.data();
+                    const date = ovData.date;
+                    const deletedTotal = parseInt(ovData.total) || 0;
+                    const deletedConfirm = parseInt(ovData.confirm) || 0;
+                    
+                    const lSnap = await db.collection('leads').where('date', '==', date).get();
+                    if (!lSnap.empty) {
+                        const leadDoc = lSnap.docs[0];
+                        const leadData = leadDoc.data();
+                        
+                        let newTotal = (parseInt(leadData.totalLeads) || 0) - deletedTotal;
+                        let newConfirm = (parseInt(leadData.confirmedLeads) || 0) - deletedConfirm;
+                        
+                        if (newTotal < 0) newTotal = 0;
+                        if (newConfirm < 0) newConfirm = 0;
+                        
+                        await db.collection('leads').doc(leadDoc.id).update({
+                            totalLeads: newTotal,
+                            confirmedLeads: newConfirm
+                        });
+                    }
+                }
+            }
+
             await db.collection(table).doc(id).delete();
             notify('Record deleted successfully');
             if(table === 'leads') {
@@ -2974,8 +2814,7 @@
             fake: parseInt(document.getElementById('ov-fake').value) || 0,
             cancel: parseInt(document.getElementById('ov-cancel').value) || 0,
             hold: parseInt(document.getElementById('ov-hold').value) || 0,
-            deleted: parseInt(document.getElementById('ov-deleted').value) || 0,
-            dispatch: parseInt(document.getElementById('ov-dispatch').value) || 0
+            deleted: parseInt(document.getElementById('ov-deleted').value) || 0
         };
 
         btn.textContent = 'Saving...';
@@ -3019,7 +2858,7 @@
     };
 
     window.clearOrderViewForm = function() {
-        ['ov-total','ov-confirm','ov-noanswer','ov-reject','ov-fake','ov-cancel','ov-hold','ov-deleted','ov-dispatch'].forEach(id => {
+        ['ov-total','ov-confirm','ov-noanswer','ov-reject','ov-fake','ov-cancel','ov-hold','ov-deleted'].forEach(id => {
             const el = document.getElementById(id);
             if(el) el.value = '';
         });
@@ -3028,7 +2867,7 @@
         document.getElementById('ov-status-badge').style.display = 'none';
     };
 
-    window.editOrderView = function(id, total, confirm, noanswer, reject, fake, cancel, hold, deleted, dispatch) {
+    window.editOrderView = function(id, total, confirm, noanswer, reject, fake, cancel, hold, deleted) {
         document.getElementById('ov-total').value = total || '';
         document.getElementById('ov-confirm').value = confirm || '';
         document.getElementById('ov-noanswer').value = noanswer || '';
@@ -3037,8 +2876,6 @@
         document.getElementById('ov-cancel').value = cancel || '';
         document.getElementById('ov-hold').value = hold || '';
         document.getElementById('ov-deleted').value = deleted || '';
-        const dispEl = document.getElementById('ov-dispatch');
-        if(dispEl) dispEl.value = dispatch || '';
         
         currentOrderViewId = id;
         document.getElementById('btn-save-ov').textContent = 'Update Order View';
@@ -3150,7 +2987,7 @@
                 <tr>
                     <td style="padding:8px; border-bottom: 1px solid var(--border);">${item.name}</td>
                     <td style="padding:8px; text-align:right; border-bottom: 1px solid var(--border);">${item.qty}</td>
-                    <td style="padding:8px; text-align:right; border-bottom: 1px solid var(--border);">${item.total.toLocaleString()}</td>
+                    <td class="financial-data" style="padding:8px; text-align:right; border-bottom: 1px solid var(--border);">${item.total.toLocaleString()}</td>
                     <td style="padding:8px; text-align:center; border-bottom: 1px solid var(--border);">
                         <button onclick="removePurchaseDraft(${index})" style="color:var(--danger); background:none; border:none; cursor:pointer;" title="Remove">✖</button>
                     </td>
@@ -3721,7 +3558,31 @@
         }, 500);
     }
 
-    
+    window.saveSystemSettings = async function() {
+        const btn = document.querySelector('button[onclick="saveSystemSettings()"]');
+        if(btn) { btn.disabled = true; btn.textContent = 'Saving...'; }
+
+        try {
+            const weekStartDay = parseInt(document.getElementById('setting-week-start').value);
+            const hideFinancials = document.getElementById('setting-hide-financials').checked;
+            
+            window.systemConfig = {
+                ...window.systemConfig,
+                weekStartDay,
+                hideFinancials
+            };
+
+            await db.collection('config').doc('system').set(window.systemConfig, { merge: true });
+            notify("System settings saved successfully!");
+            applyPermissions(); 
+            loadAllData();
+        } catch (e) {
+            console.error("Error saving settings", e);
+            notify("Failed to save settings", true);
+        } finally {
+            if(btn) { btn.disabled = false; btn.textContent = 'Save Settings'; }
+        }
+    }
     // --- EXPORTS ---
     window.exportToCSV = async function() {
         let csvContent = "data:text/csv;charset=utf-8,";
@@ -3833,307 +3694,9 @@
         } catch(e) { console.error("Auto Week Error:", e); }
     }
 
-    // --- PHASE 2: BULK COURIER API INTEGRATION ---
-    // --- PHASE 3: ULTRA-FAST BARCODE & LOCAL DB SYNC ---
-    
-    // 1. Handle Scanner Input
-    window.handleBarcodeScan = async function(waybill) {
-        if(!waybill || waybill.trim() === '') return;
-        if(!navigator.onLine) return notify("No internet connection! Please check your network.", true);
 
-        const btn = document.getElementById('scan-waybill').nextElementSibling;
-        if(btn.disabled) return;
-        btn.disabled = true;
-        btn.textContent = 'Scanning...';
 
-        try {
-            const trimmedWaybill = waybill.trim();
-            const existSnap = await db.collection('orders').where('waybill', '==', trimmedWaybill).get();
-            if(!existSnap.empty) {
-                document.getElementById('scan-success-msg').innerHTML = `<span style="color:var(--danger);">⚠️ Duplicate! <b>${trimmedWaybill}</b> was already scanned.</span>`;
-                document.getElementById('scan-waybill').value = '';
-                setTimeout(() => { document.getElementById('scan-success-msg').textContent = ''; }, 3000);
-                return;
-            }
 
-            const product = document.getElementById('scan-product').value;
-            const scanDate = new Date().toISOString();
-
-            await db.collection('orders').add({
-                waybill: trimmedWaybill,
-                product: product,
-                status: 'Confirmed',
-                date: scanDate
-            });
-
-            document.getElementById('scan-waybill').value = '';
-            document.getElementById('scan-success-msg').textContent = `✅ Saved ${trimmedWaybill}! Ready for next.`;
-            setTimeout(() => { document.getElementById('scan-success-msg').textContent = ''; }, 2000);
-            
-            loadScannedOrders();
-            loadDashboardStats(); // Refresh dashboard counts
-        } catch(e) {
-            console.error("Scan error:", e);
-            notify("Failed to save scanned barcode!", true);
-        } finally {
-            btn.disabled = false;
-            btn.textContent = 'Scan & Save (Enter)';
-        }
-    };
-
-    window.filterScannedOrders = function() {
-        const q = document.getElementById('search-scanned').value.toLowerCase();
-        const rows = document.querySelectorAll('#tbl-scanned-orders tr');
-        rows.forEach(r => {
-            const waybill = r.children[1].textContent.toLowerCase();
-            r.style.display = waybill.includes(q) ? '' : 'none';
-        });
-    };
-
-    // 2. Load Scanned Orders Table
-    window.loadScannedOrders = async function() {
-        const tbody = document.getElementById('tbl-scanned-orders');
-        if(!tbody) return;
-        
-        try {
-            const snap = await db.collection('orders').get();
-            let allOrders = [];
-            snap.forEach(doc => {
-                allOrders.push({ id: doc.id, ...doc.data() });
-            });
-            
-            // Sort by date descending
-            allOrders.sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
-            
-            // Limit to 300
-            allOrders = allOrders.slice(0, 300);
-
-            tbody.innerHTML = '';
-            allOrders.forEach(data => {
-                const dateObj = new Date(data.date);
-                const dateStr = dateObj.toLocaleDateString();
-                const timeStr = dateObj.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-                
-                tbody.innerHTML += `
-                    <tr>
-                        <td style="color:var(--text-muted); font-size: 12px;">${dateStr}<br/><strong>${timeStr}</strong></td>
-                        <td style="font-weight:bold;">${data.waybill}</td>
-                        <td>${data.product || '-'}</td>
-                        <td><span class="badge ${data.status === 'Delivered' ? 'bg-success' : (data.status === 'Returned' ? 'bg-danger' : (data.status === 'ASSIGNED TO RIDER' ? 'bg-warning' : 'bg-primary'))}">${data.status}</span></td>
-                        <td>
-                            <button onclick="deleteScannedOrder('${data.id}')" style="background:none; border:none; cursor:pointer; color:var(--danger);" title="Delete Order">🗑️</button>
-                        </td>
-                    </tr>
-                `;
-            });
-        } catch(e) { 
-            console.error("Load scanned orders err:", e); 
-        }
-    };
-
-    window.deleteScannedOrder = async function(docId) {
-        if(confirm("Are you sure you want to delete this scanned order?")) {
-            try {
-                await db.collection('orders').doc(docId).delete();
-                notify("Order deleted successfully!");
-                loadScannedOrders();
-                loadDashboardStats();
-            } catch(e) {
-                notify("Failed to delete order", true);
-                console.error(e);
-            }
-        }
-    };
-
-    window.clearAllOrders = async function() {
-        if(confirm("DANGER: Are you SURE you want to DELETE ALL scanned orders from the entire database? This will reset your dashboard numbers to 0. This cannot be undone!")) {
-            try {
-                const snap = await db.collection('orders').get();
-                const batch = db.batch();
-                snap.forEach(doc => {
-                    batch.delete(doc.ref);
-                });
-                await batch.commit();
-                notify("All orders wiped successfully!");
-                loadScannedOrders();
-                loadDashboardStats();
-            } catch(e) {
-                notify("Failed to wipe database", true);
-                console.error(e);
-            }
-        }
-    };
-
-    // 3. Test Waybill API Data
-    window.testWaybillAPI = async function() {
-        const snap = await db.collection('orders').orderBy('date', 'desc').limit(1).get();
-        if(snap.empty) return notify("No scanned waybills found to test!", true);
-        
-        const waybill = snap.docs[0].data().waybill;
-        document.getElementById('scan-success-msg').textContent = `Testing API for ${waybill}... Please wait.`;
-        
-        try {
-            // Login
-            const loginRes = await fetch("https://v1.api.curfox.com/api/public/merchant/login", {
-                method: "POST", headers: { "Accept": "application/json", "Content-Type": "application/json", "X-tenant": "royalexpress" },
-                body: JSON.stringify({ email: "2005vgls@gmail.com", password: "HC123" })
-            });
-            const loginData = await loginRes.json();
-            const token = loginData.token || loginData.access_token || loginData.data?.token;
-            if(!token) return notify("API Login failed", true);
-            
-            // Track via GET first
-            let trackRes = await fetch(`https://v1.api.curfox.com/api/public/merchant/order/tracking-info?tracking_number=${waybill}`, {
-                method: "GET", headers: { "Accept": "application/json", "Content-Type": "application/json", "Authorization": "Bearer " + token, "X-tenant": "royalexpress" }
-            });
-            
-            if(!trackRes.ok) {
-                // Try POST if GET fails
-                trackRes = await fetch("https://v1.api.curfox.com/api/public/merchant/order/tracking-info", {
-                    method: "POST", headers: { "Accept": "application/json", "Content-Type": "application/json", "Authorization": "Bearer " + token, "X-tenant": "royalexpress" },
-                    body: JSON.stringify({ tracking_number: waybill })
-                });
-            }
-
-            const trackData = await trackRes.json();
-            
-            // Dump to UI
-            const dumpStr = JSON.stringify(trackData, null, 2);
-            document.getElementById('scan-success-msg').innerHTML = `<textarea style="width:100%; height:200px; font-size:12px;" readonly>${dumpStr}</textarea>`;
-            console.log("Raw Curfox Tracking API Response:", trackData);
-        } catch(e) {
-            console.error("Test API error:", e);
-            document.getElementById('scan-success-msg').textContent = "Error: " + e.message;
-        }
-    };
-
-    // 4. Sync All Confirmed to Curfox
-    window.fetchBulkCourierStats = async function() {
-        document.getElementById('curfox-confirmed-count').textContent = '...';
-        document.getElementById('curfox-delivered-count').textContent = '...';
-        document.getElementById('curfox-returned-count').textContent = '...';
-        
-        try {
-            // Get all orders that are currently 'Confirmed' or 'ASSIGNED TO RIDER'
-            const snap = await db.collection('orders').where('status', 'in', ['Confirmed', 'ASSIGNED TO RIDER']).get();
-            let confirmedDocs = snap.docs;
-            
-            // If none, just update dashboard counts from DB
-            if(confirmedDocs.length === 0) {
-                notify("No new Confirmed orders to sync.", false, 2000);
-                return loadDashboardStats();
-            }
-            
-            notify(`Syncing ${confirmedDocs.length} Confirmed orders with Royal Express...`, false, 5000);
-
-            const loginRes = await fetch("https://v1.api.curfox.com/api/public/merchant/login", {
-                method: "POST", headers: { "Accept": "application/json", "Content-Type": "application/json", "X-tenant": "royalexpress" },
-                body: JSON.stringify({ email: "2005vgls@gmail.com", password: "HC123" })
-            });
-            const loginData = await loginRes.json();
-            const token = loginData.token || loginData.access_token || loginData.data?.token;
-            if(!token) return notify("Sync Login failed", true);
-
-            let newlyDelivered = 0;
-            let newlyReturned = 0;
-            let newlyDispatched = 0;
-
-            for(let doc of confirmedDocs) {
-                let d = doc.data();
-                try {
-                    let trackRes = await fetch(`https://v1.api.curfox.com/api/public/merchant/order/tracking-info?waybill_number=${d.waybill}`, {
-                        method: "GET", headers: { "Accept": "application/json", "Content-Type": "application/json", "Authorization": "Bearer " + token, "X-tenant": "royalexpress" }
-                    });
-                    
-                    if(!trackRes.ok) {
-                        trackRes = await fetch("https://v1.api.curfox.com/api/public/merchant/order/tracking-info", {
-                            method: "POST", headers: { "Accept": "application/json", "Content-Type": "application/json", "Authorization": "Bearer " + token, "X-tenant": "royalexpress" },
-                            body: JSON.stringify({ tracking_number: d.waybill })
-                        });
-                    }
-
-                    const trackData = await trackRes.json();
-                    
-                    // Robust status matching based on exact Curfox array structure
-                    let s = "";
-                    if(Array.isArray(trackData.data) && trackData.data.length > 0 && trackData.data[0].status) {
-                         s = (trackData.data[0].status.name || trackData.data[0].status).toString().toLowerCase();
-                    } else if(trackData.data && trackData.data.status) {
-                         s = (trackData.data.status.name || trackData.data.status).toString().toLowerCase();
-                    } else if(trackData.status) {
-                         s = (trackData.status.name || trackData.status).toString().toLowerCase();
-                    } else if(trackData.data && trackData.data.status_name) {
-                         s = trackData.data.status_name.toString().toLowerCase();
-                    } else if(trackData.status_name) {
-                         s = trackData.status_name.toString().toLowerCase();
-                    } else if(trackData.data && trackData.data.order_status) {
-                         s = trackData.data.order_status.toString().toLowerCase();
-                    }
-
-                    // Royal Express Logic
-                    // Deliver: DELIVERED, PARTIALLY DELIVERED
-                    // Return: FAILED TO DELIVER, RETURNED TO SORTING WAREHOUSE, RECEIVED FAILED ORDER, RETURNED TO MERCHANT, etc.
-                    // Dispatched: ASSIGNED TO DESTINATION RIDER
-                    
-                    if(s.includes('delivered') || s.includes('partially delivered')) {
-                        if(d.status !== 'Delivered') {
-                            await db.collection('orders').doc(doc.id).update({status: 'Delivered'});
-                            newlyDelivered++;
-                        }
-                    } else if(s.includes('failed') || s.includes('returned') || s.includes('invalid destination')) {
-                        if(d.status !== 'Returned') {
-                            await db.collection('orders').doc(doc.id).update({status: 'Returned'});
-                            newlyReturned++;
-                        }
-                    } else if(s.includes('assigned to destination rider')) {
-                        if(d.status !== 'ASSIGNED TO RIDER') {
-                            await db.collection('orders').doc(doc.id).update({status: 'ASSIGNED TO RIDER'});
-                            newlyDispatched++;
-                        }
-                    }
-                } catch(err) {
-                    console.log(`Failed tracking for ${d.waybill}`, err);
-                }
-            }
-
-            notify(`Sync Complete! ${newlyDelivered} Delivered, ${newlyReturned} Returned, ${newlyDispatched} Assigned To Rider.`, false, 5000);
-            loadDashboardStats();
-            if(document.getElementById('page-orders').classList.contains('active')) loadScannedOrders();
-            
-        } catch (error) {
-            console.error("Sync Error:", error);
-            notify("Sync Error: " + error.message, true);
-            loadDashboardStats();
-        }
-    };
-
-    // Helper: Load Dashboard Local Stats
-    window.loadDashboardStats = async function() {
-        if(!document.getElementById('curfox-confirmed-count')) return;
-        
-        try {
-            // Count from local DB
-            const snap = await db.collection('orders').get();
-            let c=0, d=0, r=0, disp=0;
-            snap.forEach(doc => {
-                let s = doc.data().status;
-                if(s === 'Confirmed') c++;
-                if(s === 'ASSIGNED TO RIDER') disp++;
-                if(s === 'Delivered') d++;
-                if(s === 'Returned') r++;
-            });
-            document.getElementById('curfox-confirmed-count').textContent = c;
-            if(document.getElementById('curfox-dispatched-count')) document.getElementById('curfox-dispatched-count').textContent = disp;
-            document.getElementById('curfox-delivered-count').textContent = d;
-            document.getElementById('curfox-returned-count').textContent = r;
-        } catch(e) {}
-    };
-
-    // Load initial counts and tables
-    setTimeout(() => {
-        loadScannedOrders();
-        loadDashboardStats();
-    }, 1500);
 
     document.getElementById('global-date').valueAsDate = new Date();
 
@@ -4271,407 +3834,144 @@
         }
     };
     // ==========================================
-    // ORDER MANAGEMENT SYSTEM (OMS) LOGIC
+    // TRACKING / COURIER SYNC LOGIC
     // ==========================================
-
-    window.filterViewLeads = function() {
-        if(!window.allOMSOrders) return;
+    window.quickAddWaybill = async function() {
+        const waybillInput = document.getElementById('quick-waybill-input');
+        const productSelect = document.getElementById('quick-waybill-product');
+        const msg = document.getElementById('quick-waybill-msg');
         
-        const statusFilter = document.getElementById('search-status') ? document.getElementById('search-status').value : 'Any';
-        const nameFilter = document.getElementById('search-customer') ? document.getElementById('search-customer').value.toLowerCase() : '';
-        const startFilter = document.getElementById('search-start') ? document.getElementById('search-start').value : '';
-        const endFilter = document.getElementById('search-end') ? document.getElementById('search-end').value : '';
-
-        let filtered = window.allOMSOrders.filter(o => {
-            if(statusFilter !== 'Any' && o.status !== statusFilter) return false;
-            if(nameFilter && (!o.customerName || !o.customerName.toLowerCase().includes(nameFilter))) return false;
-            
-            if(startFilter || endFilter) {
-                if(!o.createdAt) return false;
-                const oDate = new Date(o.createdAt);
-                oDate.setHours(0,0,0,0);
-                if(startFilter) {
-                    const s = new Date(startFilter);
-                    s.setHours(0,0,0,0);
-                    if(oDate < s) return false;
-                }
-                if(endFilter) {
-                    const e = new Date(endFilter);
-                    e.setHours(0,0,0,0);
-                    if(oDate > e) return false;
-                }
-            }
-            return true;
-        });
-
-        const pending = filtered.filter(o => o.status === 'pending');
-        const confirmedList = filtered.filter(o => o.status === 'confirmed');
-        const rejected = filtered.filter(o => o.status === 'rejected');
-        const fakeList = filtered.filter(o => o.status === 'fake');
-        const cancelledList = filtered.filter(o => o.status === 'cancelled');
-        const noAnswer = filtered.filter(o => o.status === 'no-answer');
-
-        const eAll = document.getElementById('lbl-all-count');
-        const ePen = document.getElementById('lbl-pending-count');
-        const eCon = document.getElementById('lbl-confirmed-count');
-        const eNo = document.getElementById('lbl-noanswer-count');
-        const eRej = document.getElementById('lbl-rejected-count');
-        const eFake = document.getElementById('lbl-fake-count');
-        const eCan = document.getElementById('lbl-cancelled-count');
-
-        if(eAll) eAll.textContent = filtered.length;
-        if(ePen) ePen.textContent = pending.length;
-        if(eCon) eCon.textContent = confirmedList.length;
-        if(eNo) eNo.textContent = noAnswer.length;
-        if(eRej) eRej.textContent = rejected.length;
-        if(eFake) eFake.textContent = fakeList.length;
-        if(eCan) eCan.textContent = cancelledList.length;
+        const waybill = waybillInput.value.trim();
+        const product = productSelect.value;
         
-        const tblViewOrders = document.getElementById('tbl-view-orders');
-        if(tblViewOrders) {
-            tblViewOrders.innerHTML = filtered.map(o => {
-                let rowColor = '';
-                if(o.status === 'confirmed') rowColor = 'background-color: #dcfce7;'; // green
-                else if(o.status === 'rejected') rowColor = 'background-color: #fee2e2;'; // red
-                else if(o.status === 'fake') rowColor = 'background-color: #ffedd5;'; // orange
-                else if(o.status === 'cancelled') rowColor = 'background-color: #e2e8f0;'; // slate
-                else if(o.status === 'no-answer') rowColor = 'background-color: #fef08a;'; // yellow
-                else if(o.status === 'shipped') rowColor = 'background-color: #e0f2fe;'; // blue
-                else if(o.status === 'delivered') rowColor = 'background-color: #dcfce7;'; // Delivered requested as GREEN
-                else if(o.status === 'returned') rowColor = 'background-color: #f3f4f6;'; // gray
-
-                return `
-                <tr style="${rowColor}">
-                    <td><span style="background:#ef4444; color:white; padding:2px 4px; border-radius:2px; font-weight:bold;">${o.id.substring(0,6).toUpperCase()}</span></td>
-                    <td>${o.createdAt ? new Date(o.createdAt).toLocaleDateString() : '-'}</td>
-                    <td><strong>${o.customerName}</strong></td>
-                    <td><small>${o.address}, ${o.city}</small></td>
-                    <td style="white-space:nowrap;"><a href="tel:${o.phone}" style="color:var(--success); text-decoration:none; font-weight:500;">📞 ${o.phone}</a></td>
-                    <td style="white-space:nowrap;">${o.phone2 ? `<a href="tel:${o.phone2}" style="color:var(--success); text-decoration:none; font-weight:500;">📞 ${o.phone2}</a>` : '-'}</td>
-                    <td>${o.product} <span style="color:var(--text-muted)">x${o.qty}</span></td>
-                    <td style="font-weight:bold; color:var(--primary)">${formatRs(o.grandTotal)}</td>
-                    <td style="white-space:nowrap;">
-                        <div style="display:flex; gap:6px; font-size:16px; cursor:pointer;">
-                            <span title="Pending" onclick="updateOrderStatus('${o.id}', 'pending')">🛒</span>
-                            <span title="No Answer" onclick="updateOrderStatus('${o.id}', 'no-answer')">📵</span>
-                            <span title="Confirm" onclick="updateOrderStatus('${o.id}', 'confirmed')">✅</span>
-                            <span title="Reject" onclick="updateOrderStatus('${o.id}', 'rejected')">🚫</span>
-                            <span title="Fake" onclick="updateOrderStatus('${o.id}', 'fake')">⚠️</span>
-                            <span title="Cancel" onclick="updateOrderStatus('${o.id}', 'cancelled')">❌</span>
-                            <span title="Print Label" onclick="printShippingLabel('${o.id}')">🖨️</span>
-                        </div>
-                    </td>
-                </tr>
-                `;
-            }).join('');
+        if(!waybill) {
+            msg.style.color = "var(--danger)";
+            msg.textContent = "Please enter a waybill number!";
+            return;
         }
-    }
-
-    async function loadOMSData() {
-        const oSnap = await db.collection('orders').orderBy('createdAt', 'desc').get();
-        let allOrders = oSnap.docs.map(d => ({id: d.id, ...d.data()}));
-
-        initAddOrderForm();
-
-        // Store globally for filtering
-        window.allOMSOrders = allOrders;
-        window.filterViewLeads();
         
-        // To Ship (Confirmed)
-        const confirmed = allOrders.filter(o => o.status === 'confirmed');
-        const tblToShip = document.getElementById('tbl-to-ship');
-        if(tblToShip) {
-            tblToShip.innerHTML = confirmed.map(o => `
-                <tr>
-                    <td>${o.createdAt ? new Date(o.createdAt).toLocaleDateString() : '-'}</td>
-                    <td><strong>${o.customerName}</strong></td>
-                    <td>${o.city}</td>
-                    <td>${o.product} x${o.qty}</td>
-                    <td>
-                        <select id="courier-${o.id}" style="padding:4px; margin-bottom:4px; width:100%;">
-                            <option value="">Select Courier</option>
-                            <option value="Koombiyo">Koombiyo</option>
-                            <option value="Prompt">Prompt Express</option>
-                            <option value="Domex">Domex</option>
-                            <option value="Royal">Royal Express</option>
-                            <option value="Fardar">Fardar</option>
-                            <option value="Certis">Certis</option>
-                        </select>
-                        <input type="text" id="track-${o.id}" placeholder="Tracking Number" style="padding:4px; width:100%;">
-                    </td>
-                    <td>
-                        <button class="action-btn" style="padding:6px 10px; font-size:12px; background:var(--primary);" onclick="shipOrder('${o.id}')">📦 Ship Now</button>
-                    </td>
-                </tr>
-            `).join('');
-        }
-
-        // Ship List (Shipped)
-        const shipped = allOrders.filter(o => o.status === 'shipped');
-        const tblShipList = document.getElementById('tbl-ship-list');
-        if(tblShipList) {
-            tblShipList.innerHTML = shipped.map(o => `
-                <tr>
-                    <td>${o.shippedAt ? new Date(o.shippedAt).toLocaleDateString() : '-'}</td>
-                    <td><strong>${o.customerName}</strong><br><small>${o.phone}</small></td>
-                    <td><span class="badge" style="background:#eef2ff; color:#4f46e5">${o.courier}</span></td>
-                    <td style="font-family:monospace; font-weight:bold;">${o.trackingId}</td>
-                    <td style="font-weight:bold;">Rs ${o.grandTotal.toLocaleString()}</td>
-                    <td>
-                        <button class="action-btn" style="padding:6px 10px; font-size:12px; background:var(--accent); margin-bottom: 5px;" onclick="printShippingLabel('${o.id}')">🖨️ Print Label</button><br>
-                        <select onchange="updateDeliveryStatus('${o.id}', this.value, ${o.grandTotal})" style="padding:4px; margin-top:4px; width:100%;">
-                            <option value="">Update Delivery...</option>
-                            <option value="delivered">✅ Delivered (Cash Collected)</option>
-                            <option value="returned">🔙 Returned to Sender</option>
-                        </select>
-                    </td>
-                </tr>
-            `).join('');
-        }
-    }
-
-    async function initAddOrderForm() {
-        const sel = document.getElementById('order-product');
-        if(!sel) return;
-        const cSnap = await db.collection('product_catalog').get();
-        sel.innerHTML = '<option value="">Select a product...</option>';
-        cSnap.forEach(d => {
-            const sp = d.data().sellingPrice || 0;
-            sel.innerHTML += `<option value="${d.id}" data-price="${sp}" data-name="${d.data().name}">${d.data().name}</option>`;
-        });
-    }
-
-    window.updateOrderPrice = function() {
-        const sel = document.getElementById('order-product');
-        const opt = sel.options[sel.selectedIndex];
-        if(opt && opt.value) {
-            document.getElementById('order-price').value = opt.dataset.price;
-        } else {
-            document.getElementById('order-price').value = '';
-        }
-        calculateOrderTotal();
-    }
-
-    window.calculateOrderTotal = function() {
-        const price = parseFloat(document.getElementById('order-price').value) || 0;
-        const qty = parseInt(document.getElementById('order-qty').value) || 1;
-        const delivery = parseFloat(document.getElementById('order-delivery').value) || 0;
-        const discount = parseFloat(document.getElementById('order-discount').value) || 0;
-        
-        const total = (price * qty) + delivery - discount;
-        document.getElementById('order-total').value = total > 0 ? total : 0;
-    }
-
-    window.saveNewOrder = async function() {
-        const customer = document.getElementById('order-customer').value;
-        const phone = document.getElementById('order-phone').value;
-        const phone2 = document.getElementById('order-phone2').value || '';
-        const city = document.getElementById('order-city').value;
-        const address = document.getElementById('order-address').value;
-        const sel = document.getElementById('order-product');
-        const opt = sel.options[sel.selectedIndex];
-        const qty = parseInt(document.getElementById('order-qty').value) || 1;
-        const delivery = parseFloat(document.getElementById('order-delivery').value) || 0;
-        const discount = parseFloat(document.getElementById('order-discount').value) || 0;
-        const total = parseFloat(document.getElementById('order-total').value) || 0;
-
-        if(!customer || !phone || !address || !opt || !opt.value) {
-            return notify("Please fill all required fields!", true);
-        }
-
         try {
             await db.collection('orders').add({
-                customerName: customer,
-                phone: phone,
-                phone2: phone2,
-                city: city,
-                address: address,
-                productId: opt.value,
-                product: opt.dataset.name,
-                price: parseFloat(opt.dataset.price),
-                qty: qty,
-                deliveryCharge: delivery,
-                discount: discount,
-                grandTotal: total,
-                status: 'pending',
-                createdAt: Date.now()
+                waybill: waybill,
+                product: product,
+                status: 'Confirmed',
+                date: new Date().toISOString()
             });
-            notify("New order saved to Pending!");
+            waybillInput.value = '';
+            productSelect.value = '';
+            msg.style.color = "var(--success)";
+            msg.textContent = `✅ Saved ${waybill}!`;
+            setTimeout(() => { msg.textContent = ''; }, 3000);
             
-            // Clear form
-            document.getElementById('order-customer').value = '';
-            document.getElementById('order-phone').value = '';
-            document.getElementById('order-city').value = '';
-            document.getElementById('order-address').value = '';
-            sel.value = '';
-            document.getElementById('order-price').value = '';
-            document.getElementById('order-qty').value = '1';
-            document.getElementById('order-delivery').value = '350';
-            document.getElementById('order-discount').value = '0';
-            document.getElementById('order-total').value = '';
-
-            loadOMSData();
-        } catch(e) {
-            notify("Error saving order", true);
-        }
-    }
-
-    window.updateOrderStatus = async function(id, status) {
-        if(status === 'pending') return;
-        try {
-            await db.collection('orders').doc(id).update({ status: status });
-            notify(`Order marked as ${status.toUpperCase()}`);
-            loadOMSData();
-        } catch(e) { notify("Error updating status", true); }
-    }
-
-    window.shipOrder = async function(id) {
-        const courier = document.getElementById(`courier-${id}`).value;
-        const track = document.getElementById(`track-${id}`).value;
-        if(!courier) return notify("Please select a courier", true);
-        
-        try {
-            await db.collection('orders').doc(id).update({ 
-                status: 'shipped',
-                courier: courier,
-                trackingId: track,
-                shippedAt: Date.now()
-            });
-            notify("Order moved to Shipping List!");
-            loadOMSData();
-        } catch(e) { notify("Error shipping order", true); }
-    }
-
-    window.updateDeliveryStatus = async function(id, status, grandTotal) {
-        if(!status) return;
-        if(!confirm(`Mark this order as ${status.toUpperCase()}?`)) return;
-        
-        try {
-            await db.collection('orders').doc(id).update({ status: status });
-            
-            if(status === 'delivered') {
-                const date = new Date().toISOString().split('T')[0];
-                const week = document.getElementById('active-week').value !== 'Month Overview' ? document.getElementById('active-week').value : 'Week 1';
-                
-                await db.collection('expenses').add({
-                    week: week,
-                    date: date,
-                    desc: 'COD Order Revenue',
-                    amount: grandTotal,
-                    type: 'Income'
-                });
-                notify("Order Delivered & Revenue Added to Profit!", false);
-            } else {
-                notify(`Order marked as ${status}`);
-            }
+            // Refresh counts if needed
             loadAllData();
-        } catch(e) { notify("Error updating delivery", true); }
-    }
-
-    window.printShippingLabel = async function(id) {
-        const doc = await db.collection('orders').doc(id).get();
-        if(!doc.exists) return;
-        const o = doc.data();
-        o.id = doc.id; // Assign ID to object to prevent undefined errors in substring or template literal
-
-        const printArea = document.getElementById('invoice-print-area');
-        const trackingId = o.trackingId || 'RA' + Math.floor(Math.random() * 100000000);
-
-        printArea.innerHTML = `
-            <div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto; border: 3px solid #000; box-sizing: border-box; background: #fff;">
-                
-                <!-- HEADER -->
-                <div style="display: flex; justify-content: space-between; border-bottom: 2px solid #000; padding: 10px;">
-                    <div>
-                        <h2 style="margin: 0 0 5px 0; font-size: 18px;">Herbal Crown Pvt Ltd</h2>
-                        <div style="font-size: 14px; font-weight: bold;">TP: 0766066789</div>
-                    </div>
-                    <div style="text-align: right; font-size: 14px;">
-                        <div style="margin-bottom: 5px;">Date : ${o.createdAt ? new Date(o.createdAt).toLocaleDateString('en-GB', {year:'numeric', month:'short', day:'numeric'}) : '-'}</div>
-                        <div style="font-weight: bold;">ID : ${o.id.substring(0,8).toUpperCase()}</div>
-                    </div>
-                </div>
-
-                <!-- BARCODE AND QTY -->
-                <div style="display: flex; border-bottom: 2px solid #000;">
-                    <div style="flex: 1; text-align: center; padding: 15px; border-right: 2px solid #000;">
-                        <svg id="barcode-${o.id}"></svg>
-                    </div>
-                    <div style="width: 100px; padding: 10px; display: flex; flex-direction: column; align-items: center; justify-content: center;">
-                        <div style="font-size: 14px; font-weight: bold;">Total Qty</div>
-                        <div style="font-size: 36px; font-weight: bold; margin-top: 5px;">${o.qty}</div>
-                    </div>
-                </div>
-
-                <!-- ITEM -->
-                <div style="padding: 15px; border-bottom: 2px solid #000; font-size: 18px;">
-                    ${o.product} <span style="margin-left: 10px;">x ${o.qty}</span>
-                </div>
-
-                <!-- CUSTOMER DETAILS & TOTALS -->
-                <div style="display: flex;">
-                    <!-- LEFT SIDE: CUSTOMER -->
-                    <div style="flex: 1; border-right: 2px solid #000;">
-                        <div style="padding: 10px; border-bottom: 2px solid #000; font-weight: bold; font-size: 14px;">
-                            Customer Details
-                        </div>
-                        <div style="padding: 10px; font-size: 14px; line-height: 1.4;">
-                            <strong>Name</strong><br>
-                            ${o.customerName}<br>
-                            <strong>Address</strong><br>
-                            ${o.address}<br>
-                            ${o.city}<br>
-                            <strong>Contacts</strong><br>
-                            ${o.phone} | ${o.phone2 || ''}
-                        </div>
-                    </div>
-
-                    <!-- RIGHT SIDE: TOTALS -->
-                    <div style="width: 200px;">
-                        <div style="display: flex; justify-content: space-between; padding: 10px; border-bottom: 2px solid #000; font-size: 14px;">
-                            <strong>Order Total</strong>
-                            <strong>${(o.price * o.qty).toLocaleString('en-US', {minimumFractionDigits: 2})}</strong>
-                        </div>
-                        <div style="padding: 10px; font-size: 14px; line-height: 1.8; border-bottom: 2px solid #000;">
-                            <div style="display: flex; justify-content: space-between;">
-                                <span>Delivery Cost</span>
-                                <span>${(o.deliveryCharge || 0).toLocaleString('en-US', {minimumFractionDigits: 2})}</span>
-                            </div>
-                            <div style="display: flex; justify-content: space-between;">
-                                <span>Discount (-)</span>
-                                <span>${(o.discount || 0).toLocaleString('en-US', {minimumFractionDigits: 2})}</span>
-                            </div>
-                            <div style="display: flex; justify-content: space-between;">
-                                <span>Paid (-)</span>
-                                <span>0.00</span>
-                            </div>
-                        </div>
-                        <div style="display: flex; justify-content: space-between; padding: 10px; font-size: 14px; font-weight: bold;">
-                            <span>Grand Total</span>
-                            <span>${o.grandTotal.toLocaleString('en-US', {minimumFractionDigits: 2})}</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        `;
-
-        try {
-            if (window.JsBarcode) {
-                JsBarcode("#barcode-" + o.id, trackingId, {
-                    format: "CODE128",
-                    width: 2,
-                    height: 60,
-                    displayValue: true,
-                    fontSize: 16,
-                    margin: 0
-                });
-            }
         } catch(e) {
-            console.error("Barcode error:", e);
+            console.error(e);
+            msg.style.color = "var(--danger)";
+            msg.textContent = "Error saving waybill!";
+        }
+    };
+
+    window.fetchBulkCourierStats = async function() {
+        const btn = document.querySelector('button[onclick="fetchBulkCourierStats()"]');
+        if(btn) btn.innerHTML = "Syncing...⏳";
+        
+        try {
+            // Find orders that are currently Confirmed or Assigned
+            const snap = await db.collection('orders').where('status', 'in', ['Confirmed', 'ASSIGNED TO RIDER', 'PICKED UP']).get();
+            
+            if(snap.empty) {
+                notify("No active orders to sync.", false, 2000);
+                if(btn) btn.innerHTML = "Sync Now";
+                return loadDashboardStats();
+            }
+            
+            notify(`Checking status for ${snap.docs.length} active waybills...`, false, 3000);
+
+            // Login to Curfox
+            const loginRes = await fetch("https://v1.api.curfox.com/api/public/merchant/login", {
+                method: "POST", headers: { "Accept": "application/json", "Content-Type": "application/json", "X-tenant": "royalexpress" },
+                body: JSON.stringify({ email: "2005vgls@gmail.com", password: "HC123" })
+            });
+            const loginData = await loginRes.json();
+            const token = loginData.token || loginData.access_token || loginData.data?.token;
+            
+            if(!token) {
+                if(btn) btn.innerHTML = "Sync Now";
+                return notify("Courier API Login failed!", true);
+            }
+
+            let updatedCount = 0;
+
+            for(let doc of snap.docs) {
+                const data = doc.data();
+                const trackRes = await fetch("https://v1.api.curfox.com/api/public/merchant/order/tracking-info", {
+                    method: "POST", headers: { "Accept": "application/json", "Content-Type": "application/json", "Authorization": "Bearer " + token, "X-tenant": "royalexpress" },
+                    body: JSON.stringify({ tracking_number: data.waybill })
+                });
+                
+                if(trackRes.ok) {
+                    const trackData = await trackRes.json();
+                    let newStatus = null;
+                    if(trackData && trackData.data && trackData.data.length > 0) {
+                        const latest = trackData.data[0];
+                        const s = (latest.status || latest.state || latest.order_status || "").toUpperCase();
+                        
+                        if(s.includes("DELIVERED") || s.includes("COMPLETED")) newStatus = "Delivered";
+                        else if(s.includes("RETURN") || s.includes("REJECT") || s.includes("CANCEL")) newStatus = "Returned";
+                        else if(s.includes("ASSIGN") || s.includes("DISPATCH") || s.includes("RIDER")) newStatus = "ASSIGNED TO RIDER";
+                    }
+                    
+                    if(newStatus && newStatus !== data.status) {
+                        await db.collection('orders').doc(doc.id).update({ status: newStatus });
+                        updatedCount++;
+                    }
+                }
+            }
+            
+            if(updatedCount > 0) notify(`Updated ${updatedCount} orders from Courier API!`, false, 4000);
+            else notify("All statuses are up to date.", false, 2000);
+            
+            loadDashboardStats();
+            
+        } catch(e) {
+            console.error(e);
+            notify("Courier Sync Error!", true);
         }
         
-        setTimeout(() => { window.print(); }, 500);
+        if(btn) btn.innerHTML = "Sync Now";
+    };
+
+    async function loadDashboardStats() {
+        try {
+            // Count from last 7 days
+            const startOf7Days = new Date();
+            startOf7Days.setDate(startOf7Days.getDate() - 7);
+            const startISO = startOf7Days.toISOString();
+            
+            const snap = await db.collection('orders').where('date', '>=', startISO).get();
+            let confirmed = 0, assigned = 0, delivered = 0, returned = 0;
+            
+            snap.forEach(doc => {
+                const s = doc.data().status;
+                if(s === 'Confirmed') confirmed++;
+                else if(s === 'ASSIGNED TO RIDER') assigned++;
+                else if(s === 'Delivered') delivered++;
+                else if(s === 'Returned') returned++;
+            });
+            
+            document.getElementById('curfox-confirmed-count').textContent = confirmed;
+            document.getElementById('curfox-dispatched-count').textContent = assigned;
+            document.getElementById('curfox-delivered-count').textContent = delivered;
+            document.getElementById('curfox-returned-count').textContent = returned;
+            
+        } catch(e) {
+            console.error("Dashboard Stats Error:", e);
+        }
     }
+    
+    // Auto-load stats on boot
+    setTimeout(loadDashboardStats, 1000);
 </script>
 </body>
 </html>
