@@ -2589,9 +2589,9 @@
 
             eBodyDash += `<tr>${weekTd}<td style="color:var(--success); font-weight:bold;">${dRec}</td><td style="font-weight:600;">${dAds}</td><td style="font-weight:600;">${dProd}</td><td style="font-weight:600;">${dOth}</td><td style="color:var(--danger); font-weight:600;">${dSal}</td><td style="color:var(--primary); font-weight:bold;">${dProf}</td></tr>`;
             
-            const editBtn = e.isDummy ? '' : `<button class="btn-edit" style="margin-right:4px;" onclick="editExpenses('${e.week}')">Edit</button>`;
-            const delBtn = e.isDummy ? '' : `<button class="btn-delete" onclick="deleteRecord('expenses', '${e.id}')">Del</button>`;
-            const actionContent = e.isDummy ? '' : `<div style="display:flex; gap:6px;">${editBtn}${delBtn}</div>`;
+            const editBtn = `<button class="btn-edit" style="margin-right:4px;" onclick="editExpenses('${e.week}')">Edit</button>`;
+            const delBtn = `<button class="btn-delete" onclick="deleteExpenses('${e.week}', '${e.id || ''}')">Del</button>`;
+            const actionContent = `<div style="display:flex; gap:6px;">${editBtn}${delBtn}</div>`;
             eBodyManage += `<tr><td><strong style="color:var(--text-muted);">${e.week || 'Week 1'}</strong></td><td style="color:var(--success); font-weight:bold;">${dRec}</td><td style="font-weight:600;">${dAds}</td><td style="font-weight:600;">${dProd}</td><td style="font-weight:600;">${dOth}</td><td style="color:var(--danger); font-weight:600;">${dSal}</td><td style="color:var(--primary); font-weight:bold;">${dProf}</td><td>${actionContent}</td></tr>`;
         });
         document.getElementById('tbl-dash-expenses').innerHTML = eBodyDash;
@@ -3395,6 +3395,24 @@
         }
     };
 
+    window.deleteExpenses = async function(weekName, id) {
+        if (!id || id === 'undefined' || id === '') {
+            alert(`ℹ️ මෙම සතිය (${weekName}) සඳහා ලාභ වාර්තාවක් (Received Payment) සුරැකී නැත.\n\nමෙම පේළිය වගුවේ පෙන්වන්නේ එම සතියේ වැටුප් (Staff Salaries) හෝ ඇසුරුම් වියදම් (Packaging) පවතින බැවිනි. මෙය සම්පූර්ණයෙන්ම ඉවත් කිරීමට අදාළ පිටු වලින් එම දත්ත මකා දමන්න.`);
+            return;
+        }
+        
+        if(!confirm(`⚠️ Are you sure you want to permanently delete the profit record for ${weekName}?`)) return;
+        
+        try {
+            await db.collection('expenses').doc(id).delete();
+            notify('Profit record deleted successfully');
+            loadAllData();
+        } catch(e) {
+            console.error("Delete error", e);
+            notify("Error deleting record", true);
+        }
+    };
+
     window.saveExpenses = async function() {
         if(!navigator.onLine) return notify("No internet connection!", true);
         const btn = document.querySelector('button[onclick="saveExpenses()"]');
@@ -3464,9 +3482,6 @@
         const btn = document.getElementById('btn-save-salary');
         if(btn && btn.disabled) return;
 
-        const week = document.getElementById('active-week').value;
-        if(week === 'Month Overview') return notify("Cannot add data in Month Overview!", true);
-
         const emp = document.getElementById('sal-employee').value;
         const date = document.getElementById('sal-date').value;
         
@@ -3483,6 +3498,28 @@
         if(!emp) return notify("Please select an Employee!", true);
         if(!date) return notify("Please select a Payment Date!", true);
         if(!standardBasicStr) return notify("Please enter the Standard Basic Salary!", true);
+
+        // Auto-calculate the week based on Payment Date (date)
+        let week = "Week 1";
+        try {
+            let d = new Date(date);
+            let monthStart = new Date(d.getFullYear(), d.getMonth(), 1);
+            let dayOfWeek = monthStart.getDay();
+            let S = window.systemConfig ? window.systemConfig.weekStartDay : 3; // Wednesday default
+            let daysToStartDay = (S - dayOfWeek + 7) % 7;
+            let baseWed = new Date(monthStart);
+            baseWed.setDate(1 + daysToStartDay);
+            
+            let diffTime = Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) - Date.UTC(baseWed.getFullYear(), baseWed.getMonth(), baseWed.getDate());
+            let diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+            
+            let weekNum = Math.floor(diffDays / 7) + 1;
+            if(weekNum < 1) weekNum = 4;
+            if(weekNum > 4) weekNum = 4;
+            week = "Week " + weekNum;
+        } catch(e) {
+            console.error("Salary Week Calculation Error:", e);
+        }
 
         if(btn) { btn.disabled = true; btn.textContent = 'Saving...'; }
 
