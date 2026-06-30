@@ -761,8 +761,8 @@
                 <div style="position: absolute; left: -50px; top: -50px; width: 150px; height: 150px; background: var(--primary); filter: blur(50px); opacity: 0.15; border-radius: 50%; pointer-events: none;"></div>
                 
                 <div style="position: relative; z-index: 1;">
-                    <h3 style="margin:0; font-size:18px; color:var(--courier-title); font-weight:800; letter-spacing: 0.5px; text-shadow: 0 2px 10px rgba(0,0,0,0.05);">Courier Status (Last 7 Days)</h3>
-                    <p style="margin:5px 0 0 0; font-size:13px; color:var(--courier-sub);">Royal Express auto-sync summary.</p>
+                    <h3 style="margin:0; font-size:18px; color:var(--courier-title); font-weight:800; letter-spacing: 0.5px; text-shadow: 0 2px 10px rgba(0,0,0,0.05);">Courier Status</h3>
+                    <p style="margin:5px 0 0 0; font-size:13px; color:var(--courier-sub);">Filtered by active week / date range.</p>
                 </div>
                 <div style="display:flex; gap:15px; align-items:center; position: relative; z-index: 1; overflow-x: auto; overflow-y: hidden; max-width: 100%; padding-bottom: 5px; flex-wrap: nowrap; -webkit-overflow-scrolling: touch; scrollbar-width: thin; scrollbar-color: var(--primary) transparent;">
                     <div style="background:var(--card-bg); border: 1px solid rgba(166, 0, 255, 0.2); padding:10px 20px; border-radius:12px; box-shadow:0 5px 15px rgba(0,0,0,0.1); text-align:center; min-width: 100px; transition: all 0.3s ease; flex-shrink: 0;" onmouseover="this.style.transform='translateY(-3px)'; this.style.borderColor='rgba(166, 0, 255, 0.5)';" onmouseout="this.style.transform='translateY(0)'; this.style.borderColor='rgba(166, 0, 255, 0.2)';">
@@ -1716,7 +1716,8 @@
         orderViews: null,
         packaging: null,
         salaries: null,
-        expenses: null
+        expenses: null,
+        orders: null
     };
 
     window.invalidateCache = function(col) {
@@ -2663,6 +2664,10 @@
         let ovBodyManage = '';
         let totalSum = 0, confirmSum = 0, noanswerSum = 0, rejectSum = 0, fakeSum = 0, cancelSum = 0, holdSum = 0, chatOrderSum = 0;
         
+        // Sort by date descending to ensure correct grouping
+        orderViews.sort((a, b) => b.date.localeCompare(a.date));
+
+        let lastDate = null;
         orderViews.forEach(o => {
             totalSum += parseInt(o.total) || 0;
             confirmSum += parseInt(o.confirm) || 0;
@@ -2673,10 +2678,19 @@
             holdSum += parseInt(o.hold) || 0;
             chatOrderSum += parseInt(o.chatOrder || o.deleted) || 0;
             
+            if (o.date !== lastDate) {
+                lastDate = o.date;
+                ovBodyManage += `<tr style="background: rgba(166, 0, 255, 0.05); font-weight: bold; border-top: 1.5px solid rgba(166, 0, 255, 0.15);">
+                    <td colspan="11" style="color: var(--primary); font-size: 13px; text-align: left; padding: 8px 12px; letter-spacing: 0.5px;">
+                        📅 <strong>${o.date}</strong>
+                    </td>
+                </tr>`;
+            }
+
             const isSelectedClass = isDateFilterApplied && filterByDate(o.date) ? 'row-highlight' : '';
             const pName = o.productName || 'N/A';
             ovBodyManage += `<tr class="${isSelectedClass}">
-                <td style="white-space:nowrap;"><strong>${o.date}</strong></td>
+                <td style="color: var(--text-muted); font-size: 11px; padding-left: 20px; white-space: nowrap;">↳ ${o.date}</td>
                 <td style="font-weight:600; color:var(--text-main);">${pName}</td>
                 <td>${o.total}</td>
                 <td style="color:var(--success); font-weight:bold;">${o.confirm}</td>
@@ -3486,7 +3500,9 @@
         
         const week = document.getElementById('active-week').value;
         if(week === 'Month Overview') return notify("Cannot add data in Month Overview!", true);
-        const date = document.getElementById('global-date').value;
+        
+        // Use the date of the first item in the draft (which is the entered Purchase Date)
+        const date = purchaseDrafts[0] ? purchaseDrafts[0].date : document.getElementById('global-date').value;
         if(!date) return notify("Please select a Date!", true);
         
         if(btn) { btn.disabled = true; btn.textContent = 'Saving...'; }
@@ -3526,7 +3542,7 @@
             for(let item of purchaseDrafts) {
                 await db.collection('products').add({
                     week: week,
-                    date: date,
+                    date: item.date || date,
                     productName: item.name,
                     price: item.price,
                     qty: item.qty,
@@ -3751,7 +3767,9 @@
             purchaseDrafts = items.map(item => ({
                 name: item.name,
                 price: item.price,
-                qty: item.qty
+                qty: item.qty,
+                total: item.price * item.qty,
+                date: date
             }));
             
             // Populate paid amount input
@@ -4761,27 +4779,82 @@
 
     async function loadDashboardStats() {
         try {
-            // Count from last 7 days
-            const startOf7Days = new Date();
-            startOf7Days.setDate(startOf7Days.getDate() - 7);
-            const startISO = startOf7Days.toISOString();
-            
-            const snap = await db.collection('orders').where('date', '>=', startISO).get();
+            const week = document.getElementById('active-week').value;
+            const isMonth = week === 'Month Overview';
+            const selectedDate = document.getElementById('global-date').value;
+            const selectedEndDate = document.getElementById('global-date-end').value;
+            const isDateFilterApplied = document.getElementById('global-date').dataset.filtered === "true";
+
+            const getWeekForDate = (dateStr) => {
+                try {
+                    let d = new Date(dateStr);
+                    let monthStart = new Date(d.getFullYear(), d.getMonth(), 1);
+                    let dayOfWeek = monthStart.getDay();
+                    let S = window.systemConfig ? window.systemConfig.weekStartDay : 3;
+                    let daysToStartDay = (S - dayOfWeek + 7) % 7;
+                    let baseWed = new Date(monthStart);
+                    baseWed.setDate(1 + daysToStartDay);
+                    
+                    let diffTime = Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) - Date.UTC(baseWed.getFullYear(), baseWed.getMonth(), baseWed.getDate());
+                    let diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+                    
+                    let weekNum = Math.floor(diffDays / 7) + 1;
+                    if(weekNum < 1) weekNum = 4;
+                    if(weekNum > 4) weekNum = 4;
+                    return "Week " + weekNum;
+                } catch(e) {
+                    return "Week 1";
+                }
+            };
+
+            const filterByDate = (itemDate) => {
+                if (!isDateFilterApplied || !itemDate) return true;
+                if (selectedDate && selectedEndDate) {
+                    return itemDate >= selectedDate && itemDate <= selectedEndDate;
+                } else if (selectedDate) {
+                    return itemDate === selectedDate;
+                } else if (selectedEndDate) {
+                    return itemDate === selectedEndDate;
+                }
+                return true;
+            };
+
+            let allOrders;
+            if (dataCache.orders) {
+                allOrders = dataCache.orders;
+            } else {
+                const snap = await db.collection('orders').orderBy('date', 'desc').get();
+                allOrders = snap.docs.map(d => ({id: d.id, ...d.data()}));
+                dataCache.orders = allOrders;
+            }
+
+            let orders = allOrders;
+            if (isDateFilterApplied) {
+                orders = allOrders.filter(o => {
+                    const oDate = o.date ? o.date.split('T')[0] : '';
+                    return filterByDate(oDate);
+                });
+            } else if (!isMonth) {
+                orders = allOrders.filter(o => {
+                    const oDate = o.date ? o.date.split('T')[0] : '';
+                    return getWeekForDate(oDate) === week;
+                });
+            }
+
             let confirmed = 0, assigned = 0, delivered = 0, returned = 0;
-            
-            snap.forEach(doc => {
-                const s = doc.data().status;
+            orders.forEach(o => {
+                const s = o.status;
                 if(s === 'Confirmed') confirmed++;
                 else if(s === 'ASSIGNED TO RIDER') assigned++;
                 else if(s === 'Delivered') delivered++;
                 else if(s === 'Returned' || s === 'Return Received') returned++;
             });
-            
+
             document.getElementById('curfox-confirmed-count').textContent = confirmed;
             document.getElementById('curfox-dispatched-count').textContent = assigned;
             document.getElementById('curfox-delivered-count').textContent = delivered;
             document.getElementById('curfox-returned-count').textContent = returned;
-            
+
         } catch(e) {
             console.error("Dashboard Stats Error:", e);
         }
