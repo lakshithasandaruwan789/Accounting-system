@@ -728,9 +728,11 @@
                         </select>
                     </div>
                     <div class="control-group" id="date-picker-group">
-                        <label>Date:</label>
-                        <div class="date-inputs" style="display:flex; gap:5px;">
-                            <input type="date" id="global-date" onchange="handleDateChange()" style="flex:1; min-width:120px;">
+                        <label>Date Range:</label>
+                        <div class="date-inputs" style="display:flex; gap:5px; align-items:center;">
+                            <input type="date" id="global-date" onchange="handleDateChange()" style="flex:1; min-width:115px;" placeholder="Start">
+                            <span style="color:var(--text-muted); font-size:11px; font-weight:bold;">to</span>
+                            <input type="date" id="global-date-end" style="flex:1; min-width:115px;" placeholder="End">
                             <div class="btn-stack" style="display:flex; gap:5px;">
                                 <button class="btn-export" style="background:var(--success); color:white; padding:6px 12px; border:none; margin:0; flex:1;" onclick="applyDateFilter()">Apply</button>
                                 <button class="btn-export" style="padding:6px 12px; margin:0; flex:1;" onclick="clearDateFilter()">Clear</button>
@@ -804,7 +806,7 @@
             </div>
 
             <!-- CHARTS SECTION -->
-            <div class="table-card" style="margin-bottom: 35px;">
+            <div class="table-card financial-data" style="margin-bottom: 35px;">
                 <h2>Profit & Expenses Trend</h2>
                 <div style="height:300px;">
                     <canvas id="profitChart"></canvas>
@@ -916,8 +918,8 @@
                             <input type="number" id="ov-hold" placeholder="0">
                         </div>
                         <div class="form-group">
-                            <label>Deleted</label>
-                            <input type="number" id="ov-deleted" placeholder="0">
+                            <label>Chat Order</label>
+                            <input type="number" id="ov-chat-order" placeholder="0">
                         </div>
                     </div>
                     <button class="action-btn" id="btn-save-ov" onclick="saveOrderViewData()">Save Order View</button>
@@ -943,7 +945,7 @@
                                     <th>Fake</th>
                                     <th>Cancel</th>
                                     <th>Hold</th>
-                                    <th>Del</th>
+                                    <th>Chat Order</th>
                                     <th>Action</th>
                                 </tr>
                             </thead>
@@ -1013,7 +1015,7 @@
         <div id="page-purchases" class="page">
             <div class="two-col-layout">
                 <div class="form-card">
-                    <h2>Factory Purchases</h2>
+                    <h2>Factory Purchases <span id="purchase-status-badge" class="badge" style="display:none; background:var(--warning); color:white; font-size:11px; padding:3px 8px; border-radius:12px; margin-left:10px;">Editing GRN <span id="lbl-editing-inv-id"></span></span></h2>
                     <div class="form-group">
                         <label>Product Name</label>
                         <select id="prod-name" onchange="updateProductPrice()">
@@ -1063,7 +1065,10 @@
                             <strong style="color:var(--danger); font-size: 14px;">Rs <span id="lbl-draft-balance">0.00</span></strong>
                         </div>
 
-                        <button id="btn-save-drafts" class="action-btn" style="background:var(--success); color:#fff;" onclick="savePurchaseDrafts()">🖨️ Save All & Print GRN</button>
+                        <div style="display: flex; gap: 10px; margin-top: 10px;">
+                            <button id="btn-save-drafts" class="action-btn" style="background:var(--success); color:#fff; flex: 1; margin: 0;" onclick="savePurchaseDrafts()">🖨️ Save All & Print GRN</button>
+                            <button id="btn-cancel-purchase-edit" class="action-btn" style="background:var(--danger); color:#fff; flex: 1; display: none; margin: 0;" onclick="clearPurchaseEdit()">Cancel Edit</button>
+                        </div>
                     </div>
                 </div>
 
@@ -1080,6 +1085,7 @@
                             </tr>
                         </thead>
                         <tbody id="tbl-manage-products"></tbody>
+                        <tfoot id="tbl-foot-products" style="position: sticky; bottom: 0; background: var(--bg-card); z-index: 5; box-shadow: 0 -2px 5px rgba(0,0,0,0.05);"></tfoot>
                     </table>
                 </div>
             </div>
@@ -1511,44 +1517,69 @@
                 </div>
             </div>
 
-            <div style="background:var(--card-bg); border:1px solid var(--border); padding:30px; border-radius:15px; box-shadow: var(--card-shadow); max-width:600px; margin: 0 auto; text-align:center;">
-                <div style="margin-bottom: 25px;">
-                    <input type="text" id="quick-waybill-input" placeholder="Scan or Type Waybill Number..." style="width:100%; box-sizing:border-box; padding:15px; border-radius:10px; border:2px solid var(--primary); background:var(--bg-color); color:var(--text-main); font-size:18px; text-align:center; margin-bottom:15px; outline:none; transition:box-shadow 0.3s;" onfocus="this.style.boxShadow='0 0 15px rgba(166, 0, 255, 0.3)'" onblur="this.style.boxShadow='none'">
+            <div class="two-col-layout">
+                <div style="display:flex; flex-direction:column; gap:20px;">
+                    <div class="form-card">
+                        <h2>Add Waybill</h2>
+                        <p style="font-size:13px; color:var(--text-muted); margin-top:-15px; margin-bottom:20px;">Scan or manually enter waybill numbers to track.</p>
+                        
+                        <div class="form-group">
+                            <label>Waybill Number</label>
+                            <input type="text" id="quick-waybill-input" placeholder="Scan or Type Waybill..." style="font-size:16px; font-weight:600; text-align:center; border:2px solid var(--primary); outline:none; transition:box-shadow 0.3s;" onfocus="this.style.boxShadow='0 0 15px rgba(166, 0, 255, 0.3)'" onblur="this.style.boxShadow='none'" onkeydown="if(event.key === 'Enter') quickAddWaybill()">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Select Product</label>
+                            <select id="quick-waybill-product">
+                                <option value="">-- No Product (Track Only) --</option>
+                            </select>
+                        </div>
+                        
+                        <button class="action-btn" style="width:100%; margin:15px 0 0 0; padding:12px; font-weight:bold; background:linear-gradient(135deg, var(--primary), var(--primary-light));" onclick="quickAddWaybill()">➕ Save Waybill</button>
+                        <p id="quick-waybill-msg" style="margin:15px 0 0 0; font-size:13px; font-weight:bold; text-align:center;"></p>
+                        
+                        <div style="margin-top:25px; background:rgba(166, 0, 255, 0.05); padding:15px; border-radius:10px; border:1px dashed var(--primary-light);">
+                            <h4 style="margin:0 0 8px 0; color:var(--primary); font-size:13px;">💡 How it works:</h4>
+                            <ul style="margin:0; padding-left:18px; color:var(--text-muted); font-size:12px; line-height:1.6;">
+                                <li>Waybills entered here will be saved as <strong>"Confirmed"</strong>.</li>
+                                <li>Click the <strong>Sync Now</strong> button on the Dashboard to auto-sync status.</li>
+                            </ul>
+                        </div>
+                    </div>
                     
-                    <select id="quick-waybill-product" style="width:100%; box-sizing:border-box; padding:12px; border-radius:8px; border:1px solid var(--border); background:var(--bg-color); color:var(--text-main); font-size:15px; margin-bottom:20px; outline:none;">
-                        <option value="" style="background:var(--bg-color); color:var(--text-main);">-- No Product (Track Only) --</option>
-                    </select>
-                    
-                    <button class="action-btn" style="width:100%; margin:0; padding:15px; font-size:16px; font-weight:bold; background:linear-gradient(135deg, var(--primary), var(--primary-light));" onclick="quickAddWaybill()">➕ Save Waybill</button>
-                    <p id="quick-waybill-msg" style="margin:15px 0 0 0; font-size:14px; font-weight:bold;"></p>
+                    <div class="form-card" style="border: 1px solid rgba(239, 68, 68, 0.2); background: linear-gradient(135deg, rgba(239, 68, 68, 0.03), rgba(239, 68, 68, 0.01));">
+                        <h2>Receive Returned Waybill</h2>
+                        <p style="font-size:13px; color:var(--text-muted); margin-top:-15px; margin-bottom:20px;">Scan returned waybill packages back to warehouse stock.</p>
+                        
+                        <div class="form-group">
+                            <label>Returned Waybill Number</label>
+                            <input type="text" id="return-waybill-input" placeholder="Scan Return Waybill..." style="font-size:16px; font-weight:600; text-align:center; border:2px solid #ef4444; outline:none; transition:box-shadow 0.3s;" onfocus="this.style.boxShadow='0 0 15px rgba(239, 68, 68, 0.3)'" onblur="this.style.boxShadow='none'" onkeydown="if(event.key === 'Enter') quickReceiveReturn()">
+                        </div>
+                        
+                        <button class="action-btn" style="width:100%; margin:15px 0 0 0; padding:12px; font-weight:bold; background:linear-gradient(135deg, #ef4444, #f87171); border:1px solid #f87171; box-shadow: 0 5px 15px rgba(239, 68, 68, 0.3);" onclick="quickReceiveReturn()">📦 Receive Return to Stock</button>
+                        <p id="return-waybill-msg" style="margin:15px 0 0 0; font-size:13px; font-weight:bold; text-align:center;"></p>
+                    </div>
                 </div>
-                
-                <div style="background:rgba(166, 0, 255, 0.05); padding:15px; border-radius:8px; border:1px dashed var(--primary-light); text-align:left;">
-                    <h4 style="margin:0 0 10px 0; color:var(--primary); font-size:14px;">How it works:</h4>
-                    <ul style="margin:0; padding-left:20px; color:var(--text-muted); font-size:13px; line-height:1.6;">
-                        <li>Waybills entered here will be saved as <strong>"Confirmed"</strong> in the database.</li>
-                        <li>Click the <strong>Sync Now</strong> button on the Dashboard to automatically fetch their latest status from the Courier.</li>
-                    </ul>
-                </div>
-            </div>
 
-            <!-- Recent Waybills List -->
-            <div style="background:var(--card-bg); border:1px solid var(--border); padding:20px; border-radius:15px; box-shadow: var(--card-shadow); max-width:800px; margin: 30px auto; overflow-x:auto;">
-                <h3 style="margin-top:0; color:var(--text-main); font-size:16px;">🕰️ Recent Waybills</h3>
-                <table class="data-table" style="width:100%; min-width:500px;">
-                    <thead>
-                        <tr>
-                            <th>Date Added</th>
-                            <th>Waybill Number</th>
-                            <th>Product</th>
-                            <th>Status</th>
-                            <th>Action</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tbl-recent-waybills">
-                        <tr><td colspan="5" style="text-align:center;">Loading...</td></tr>
-                    </tbody>
-                </table>
+                <div class="table-card">
+                    <h2>🕰️ Recent Waybills</h2>
+                    <div style="overflow-x: auto;">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Date Added</th>
+                                    <th>Waybill Number</th>
+                                    <th>Product</th>
+                                    <th>Status</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tbl-recent-waybills">
+                                <tr><td colspan="5" style="text-align:center;">Loading...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -1668,6 +1699,34 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
+    // Enable Firestore Offline Persistence
+    firebase.firestore().enablePersistence()
+      .catch(function(err) {
+          if (err.code == 'failed-precondition') {
+              console.warn("Firestore persistence failed-precondition: Multiple tabs open.");
+          } else if (err.code == 'unimplemented') {
+              console.warn("Firestore persistence unimplemented.");
+          }
+      });
+
+    // In-Memory cache for dashboard query optimization
+    const dataCache = {
+        products: null,
+        leads: null,
+        orderViews: null,
+        packaging: null,
+        salaries: null,
+        expenses: null
+    };
+
+    window.invalidateCache = function(col) {
+        if (col) {
+            dataCache[col] = null;
+        } else {
+            Object.keys(dataCache).forEach(k => dataCache[k] = null);
+        }
+    };
+
     // Listen for global theme changes
     db.collection('config').doc('theme').onSnapshot(doc => {
         if (doc.exists) {
@@ -1734,10 +1793,15 @@
     let currentStaffId = null;
     let isDateFilterApplied = false;
     let currentUser = null; 
+    let currentEditingInvoiceId = null;
+    let currentEditingInvoiceProducts = null;
 
     function applyDateFilter() {
-        const date = document.getElementById('global-date').value;
-        if(!date) return notify("Please select a date first!", true);
+        const dateStart = document.getElementById('global-date').value;
+        const dateEnd = document.getElementById('global-date-end').value;
+        if(!dateStart && !dateEnd) return notify("Please select a date first!", true);
+        
+        document.getElementById('global-date').dataset.filtered = "true";
         isDateFilterApplied = true;
         loadAllData();
         notify("Date filter applied!");
@@ -1749,10 +1813,13 @@
         const month = String(now.getMonth() + 1).padStart(2, '0');
         const day = String(now.getDate()).padStart(2, '0');
         document.getElementById('global-date').value = `${year}-${month}-${day}`;
+        document.getElementById('global-date-end').value = '';
+        
+        document.getElementById('global-date').dataset.filtered = "false";
         isDateFilterApplied = false;
         await handleDateChange();
         loadAllData();
-        notify("Date filter cleared to Today!");
+        notify("Date filter cleared!");
     }
 
     function toggleSidebar() {
@@ -1843,6 +1910,7 @@
         document.getElementById('login-screen').style.display = 'none';
         document.getElementById('lbl-current-user').textContent = currentUser.username;
         initTheme();
+        loadCatalogToDropdown();
         applyPermissions();
         if(typeof autoSelectWeek === 'function') autoSelectWeek();
     }
@@ -1915,8 +1983,14 @@
         if(!perms.includes(pageId)) return notify("Access Denied! You don't have permission.", true);
 
         currentPage = pageId;
+        if(pageId === 'catalog' && typeof loadCatalogToDropdown === 'function') {
+            loadCatalogToDropdown();
+        }
         if(pageId === 'waybills' && typeof loadRecentWaybills === 'function') {
             loadRecentWaybills();
+        }
+        if(pageId === 'leads' && typeof handleDateChange === 'function') {
+            handleDateChange(true);
         }
         
         document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
@@ -1944,6 +2018,9 @@
     window.handleContextChange = async function() {
         const week = document.getElementById('active-week').value;
         const isMonth = week === 'Month Overview';
+
+        document.getElementById('global-date').dataset.filtered = "false";
+        isDateFilterApplied = false;
 
         document.getElementById('date-picker-group').style.display = isMonth ? 'none' : 'flex';
         document.getElementById('dash-title').textContent = isMonth ? "All-Time Month Summary" : `${week} Overview`;
@@ -1975,6 +2052,7 @@
             let targetDateStr = yyyy + '-' + mm + '-' + dd;
             
             document.getElementById('global-date').value = targetDateStr;
+            document.getElementById('global-date-end').value = '';
         }
 
         await handleDateChange(true); 
@@ -2108,6 +2186,13 @@
         try {
             const snap = await db.collection('product_catalog').get();
             const catalog = snap.docs.map(d => ({id: d.id, ...d.data()}));
+            
+            // Populate catalogPriceMap in window to hide prices in DOM while allowing computations
+            window.catalogPriceMap = {};
+            catalog.forEach(p => {
+                window.catalogPriceMap[p.name] = p.price || 0;
+            });
+
             const select = document.getElementById('prod-name');
             const selectOrder = document.getElementById('scan-product');
             const quickWaybillProduct = document.getElementById('quick-waybill-product');
@@ -2122,7 +2207,6 @@
                 if(select) {
                     let opt = document.createElement('option');
                     opt.value = p.name || '';
-                    opt.setAttribute('data-price', p.price || 0);
                     opt.textContent = p.name || 'Unnamed Product';
                     opt.style.background = 'var(--bg-color)';
                     opt.style.color = 'var(--text-main)';
@@ -2155,17 +2239,23 @@
             });
             
             const tbody = document.getElementById('tbl-manage-catalog');
-            if(tbody) {
+            if(tbody && currentUser) {
                 tbody.innerHTML = '';
+                const isAdmin = currentUser.username === 'admin' || currentUser.username === 'admin@company.com' || (currentUser.permissions && currentUser.permissions.includes('staff'));
+                const showFinancials = isAdmin || !window.systemConfig.hideFinancials;
+                
                 catalog.forEach(p => {
+                    const priceDisplay = showFinancials ? formatRs(p.price) : '***';
+                    const editPrice = showFinancials ? p.price : 0;
+                    
                     tbody.innerHTML += `
                     <tr>
                         <td style="font-weight:bold; color:var(--text-main);">${p.name}</td>
-                        <td class="financial-data" style="color:var(--success); font-weight:bold;">${formatRs(p.price)}</td>
+                        <td class="financial-data" style="color:var(--success); font-weight:bold;">${priceDisplay}</td>
                         <td style="color:var(--primary); font-weight:bold;">${formatRs(p.sellingPrice || 0)}</td>
                         <td style="white-space: nowrap;">
                             <div style="display:flex; gap:6px; align-items:center;">
-                                <button class="btn-edit" style="margin:0; padding:4px 8px; font-size:11px;" onclick="editCatalog('${p.id}', '${p.name}', ${p.price}, ${p.sellingPrice || 0})">Edit</button>
+                                <button class="btn-edit" style="margin:0; padding:4px 8px; font-size:11px;" onclick="editCatalog('${p.id}', '${p.name}', ${editPrice}, ${p.sellingPrice || 0})">Edit</button>
                                 <button class="btn-delete" style="margin:0; padding:4px 8px; font-size:11px;" onclick="deleteRecord('product_catalog', '${p.id}')">Del</button>
                             </div>
                         </td>
@@ -2178,11 +2268,18 @@
 
     function updateProductPrice() {
         const select = document.getElementById('prod-name');
+        const priceInput = document.getElementById('prod-price');
+        if(!priceInput) return;
+
+        const isAdmin = currentUser.username === 'admin' || currentUser.username === 'admin@company.com' || (currentUser.permissions && currentUser.permissions.includes('staff'));
+        const showFinancials = isAdmin || !window.systemConfig.hideFinancials;
+
         if(select.selectedIndex > 0) {
-            const option = select.options[select.selectedIndex];
-            document.getElementById('prod-price').value = option.dataset.price || 0;
+            const name = select.value;
+            const price = window.catalogPriceMap[name] || 0;
+            priceInput.value = showFinancials ? price : 0;
         } else {
-            document.getElementById('prod-price').value = 0;
+            priceInput.value = 0;
         }
     }
 
@@ -2218,7 +2315,12 @@
         const price = document.getElementById('cat-price').value;
         const sellingPrice = document.getElementById('cat-selling-price').value;
 
-        if(!name || !price || !sellingPrice) return notify("Please fill Name, Factory Price and Selling Price!", true);
+        const isAdmin = currentUser.username === 'admin' || currentUser.username === 'admin@company.com' || (currentUser.permissions && currentUser.permissions.includes('staff'));
+        const showFinancials = isAdmin || !window.systemConfig.hideFinancials;
+
+        if(!name || (showFinancials && !price) || !sellingPrice) {
+            return notify(showFinancials ? "Please fill Name, Factory Price and Selling Price!" : "Please fill Name and Selling Price!", true);
+        }
 
         btn.disabled = true;
         const originalText = btn.textContent;
@@ -2239,12 +2341,18 @@
                 return;
             }
 
-            const payload = { name: name, price: parseFloat(price), sellingPrice: parseFloat(sellingPrice) };
+            const payload = { name: name, sellingPrice: parseFloat(sellingPrice) };
+            if (showFinancials) {
+                payload.price = parseFloat(price) || 0;
+            }
 
             if(currentCatalogId) {
                 await db.collection('product_catalog').doc(currentCatalogId).update(payload);
                 notify("Product updated in catalog!");
             } else {
+                if (!showFinancials) {
+                    payload.price = 0; // Default for new products added by staff
+                }
                 await db.collection('product_catalog').add(payload);
                 notify("New Product added to catalog!");
             }
@@ -2333,20 +2441,70 @@
         const week = document.getElementById('active-week').value;
         const isMonth = week === 'Month Overview';
         const selectedDate = document.getElementById('global-date').value;
+        const selectedEndDate = document.getElementById('global-date-end').value;
         const isDateFilterApplied = document.getElementById('global-date').dataset.filtered === "true";
         const isAdmin = currentUser.username === 'admin' || currentUser.username === 'admin@company.com' || (currentUser.permissions && currentUser.permissions.includes('staff'));
         const showFinancials = isAdmin || !window.systemConfig.hideFinancials;
 
+        const getWeekForDate = (dateStr) => {
+            try {
+                let d = new Date(dateStr);
+                let monthStart = new Date(d.getFullYear(), d.getMonth(), 1);
+                let dayOfWeek = monthStart.getDay();
+                let S = window.systemConfig ? window.systemConfig.weekStartDay : 3;
+                let daysToStartDay = (S - dayOfWeek + 7) % 7;
+                let baseWed = new Date(monthStart);
+                baseWed.setDate(1 + daysToStartDay);
+                
+                let diffTime = Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) - Date.UTC(baseWed.getFullYear(), baseWed.getMonth(), baseWed.getDate());
+                let diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+                
+                let weekNum = Math.floor(diffDays / 7) + 1;
+                if(weekNum < 1) weekNum = 4;
+                if(weekNum > 4) weekNum = 4;
+                return "Week " + weekNum;
+            } catch(e) {
+                console.error("getWeekForDate Error:", e);
+                return "Week 1";
+            }
+        };
+
+        const filterByDate = (itemDate) => {
+            if (!isDateFilterApplied || !itemDate) return true;
+            if (selectedDate && selectedEndDate) {
+                return itemDate >= selectedDate && itemDate <= selectedEndDate;
+            } else if (selectedDate) {
+                return itemDate === selectedDate;
+            } else if (selectedEndDate) {
+                return itemDate === selectedEndDate;
+            }
+            return true;
+        };
+
         // --- 1. PRODUCTS ---
-        const pSnap = await db.collection('products').orderBy('date', 'desc').get();
-        let allProducts = pSnap.docs.map(d => ({id: d.id, ...d.data()}));
-        if(!isMonth) allProducts = allProducts.filter(p => p.week === week);
+        let allProducts;
+        if (dataCache.products) {
+            allProducts = dataCache.products;
+        } else {
+            const pSnap = await db.collection('products').orderBy('date', 'desc').get();
+            allProducts = pSnap.docs.map(d => ({id: d.id, ...d.data()}));
+            dataCache.products = allProducts;
+        }
         
-        let weeklyProductTotal = allProducts.reduce((sum, p) => sum + (p.price * p.qty), 0);
+        let weeklyProductTotal;
+        if (isDateFilterApplied) {
+            weeklyProductTotal = allProducts.filter(p => filterByDate(p.date)).reduce((sum, p) => sum + (p.price * p.qty), 0);
+        } else if (!isMonth) {
+            weeklyProductTotal = allProducts.filter(p => p.week === week).reduce((sum, p) => sum + (p.price * p.qty), 0);
+        } else {
+            weeklyProductTotal = allProducts.reduce((sum, p) => sum + (p.price * p.qty), 0);
+        }
 
         let products = allProducts;
-        if(isDateFilterApplied && selectedDate && !isMonth) {
-            products = products.filter(p => p.date === selectedDate);
+        if (isDateFilterApplied) {
+            products = allProducts.filter(p => filterByDate(p.date));
+        } else if (!isMonth) {
+            products = allProducts.filter(p => p.week === week);
         }
         
         let totalProductCostAmount = 0;
@@ -2358,7 +2516,7 @@
             const total = p.price * p.qty;
             totalProductCostAmount += total;
             
-            const isSelectedClass = p.date === selectedDate && !isMonth ? 'row-highlight' : '';
+            const isSelectedClass = isDateFilterApplied && filterByDate(p.date) ? 'row-highlight' : '';
             const weekTd = isMonth ? `<td style="color:var(--text-muted); font-weight:600;">${p.week || 'Week 1'}</td>` : '';
             const displayTotal = showFinancials ? formatRs(total) : '***';
             
@@ -2378,21 +2536,28 @@
             }
             groupedPurchases[invId].items.push({ name: p.productName, price: p.price, qty: p.qty, total: total, date: p.date });
             groupedPurchases[invId].totalCost += total;
-            groupedPurchases[invId].ids.push(p.id);
-            if(p.isSettled === false) groupedPurchases[invId].isSettled = false;
+            if (p.id) groupedPurchases[invId].ids.push(p.id);
+            if (p.isSettled === false) groupedPurchases[invId].isSettled = false;
         });
 
         // Render Grouped Purchases for Manage Table
         const sortedGroups = Object.values(groupedPurchases).sort((a,b) => new Date(b.date) - new Date(a.date));
         
+        let totalPurchaseQty = 0;
+        let totalPurchaseCost = 0;
+
         sortedGroups.forEach(grp => {
-            const isSelectedClass = grp.date === selectedDate && !isMonth ? 'row-highlight' : '';
+            const total = grp.totalCost;
+            const grpQty = grp.items.reduce((s,i)=>s+i.qty, 0);
+            totalPurchaseQty += grpQty;
+            totalPurchaseCost += total;
+
+            const isSelectedClass = isDateFilterApplied && filterByDate(grp.date) ? 'row-highlight' : '';
             const displayTotal = showFinancials ? formatRs(grp.totalCost) : '***';
             
             let itemSummary = grp.items.length === 1 ? grp.items[0].name : `<span title="${grp.items.map(i=>i.name).join(', ')}">${grp.items[0].name} <span style="color:var(--primary); font-size:10px;">(+${grp.items.length - 1})</span></span>`;
-            let qtySummary = grp.items.length === 1 ? grp.items[0].qty : `<span style="color:var(--text-muted);">${grp.items.reduce((s,i)=>s+i.qty, 0)}</span>`;
+            let qtySummary = grp.items.length === 1 ? grp.items[0].qty : `<span style="color:var(--text-muted);">${grpQty}</span>`;
 
-            // Note: toggleSettleInvoice and deleteInvoiceGroup are called with invId
             const settleBtnHtml = grp.isSettled 
                 ? `<button class="action-btn" style="background:#10b981; color:white; padding:4px 8px; font-size:11px; margin:0; border:none;" onclick="toggleSettleInvoice('${grp.invoiceId}', false)">✅ Settled</button>`
                 : `<button class="action-btn" style="background:#f59e0b; color:white; padding:4px 8px; font-size:11px; margin:0; border:none;" onclick="toggleSettleInvoice('${grp.invoiceId}', true)">⏳ Pay</button>`;
@@ -2406,6 +2571,7 @@
                     <div style="display:flex; gap:6px; align-items:center;">
                         ${settleBtnHtml}
                         <button class="action-btn" style="background:var(--primary); padding:4px 8px; font-size:11px; margin:0;" onclick="reprintInvoice('${grp.invoiceId}', '${grp.date}')">📄 Bill</button>
+                        <button class="btn-edit" style="margin:0; padding:4px 8px; font-size:11px;" onclick="editInvoiceGroup('${grp.invoiceId}', '${grp.ids.join(',')}')">Edit</button>
                         <button class="btn-delete" style="margin:0; padding:4px 8px; font-size:11px;" onclick="deleteInvoiceGroup('${grp.invoiceId}', '${grp.ids.join(',')}')">Del</button>
                     </div>
                 </td>
@@ -2415,29 +2581,56 @@
         document.getElementById('tbl-dash-products').innerHTML = pBodyDash;
         document.getElementById('tbl-manage-products').innerHTML = pBodyManage;
 
+        let pFootManage = '';
+        if (sortedGroups.length > 0) {
+            const displayGrandTotal = showFinancials ? formatRs(totalPurchaseCost) : '***';
+            pFootManage = `<tr style="background: rgba(166, 0, 255, 0.08); font-weight: 800; font-size: 13px; border-top: 2.5px solid var(--primary); border-bottom: 2.5px solid var(--primary);">
+                <td style="color: var(--primary);"><strong>TOTAL</strong></td>
+                <td style="color: var(--text-muted); font-weight: normal;">-</td>
+                <td style="font-size: 13.5px; color: var(--text-main); font-weight: bold;">${totalPurchaseQty}</td>
+                <td class="financial-data" style="font-size: 13.5px; color: var(--warning); font-weight: bold;">${displayGrandTotal}</td>
+                <td style="color: var(--text-muted); font-weight: normal;">-</td>
+            </tr>`;
+        }
+        document.getElementById('tbl-foot-products').innerHTML = pFootManage;
+
         // --- 2. LEADS ---
-        const lSnap = await db.collection('leads').orderBy('date', 'desc').get();
-        let allLeads = lSnap.docs.map(d => ({id: d.id, ...d.data()}));
-        if(!isMonth) allLeads = allLeads.filter(l => l.week === week);
+        let allLeads;
+        if (dataCache.leads) {
+            allLeads = dataCache.leads;
+        } else {
+            const lSnap = await db.collection('leads').orderBy('date', 'desc').get();
+            allLeads = lSnap.docs.map(d => ({id: d.id, ...d.data()}));
+            dataCache.leads = allLeads;
+        }
         
-        let weeklyAdsTotal = allLeads.reduce((sum, l) => sum + l.dailyBudget, 0);
+        let weeklyAdsTotal;
+        if (isDateFilterApplied) {
+            weeklyAdsTotal = allLeads.filter(l => filterByDate(l.date)).reduce((sum, l) => sum + (parseFloat(l.dailyBudget) || 0), 0);
+        } else if (!isMonth) {
+            weeklyAdsTotal = allLeads.filter(l => l.week === week).reduce((sum, l) => sum + (parseFloat(l.dailyBudget) || 0), 0);
+        } else {
+            weeklyAdsTotal = allLeads.reduce((sum, l) => sum + (parseFloat(l.dailyBudget) || 0), 0);
+        }
 
         let leads = allLeads;
-        if(isDateFilterApplied && selectedDate && !isMonth) {
-            leads = leads.filter(l => l.date === selectedDate);
+        if (isDateFilterApplied) {
+            leads = allLeads.filter(l => filterByDate(l.date));
+        } else if (!isMonth) {
+            leads = allLeads.filter(l => l.week === week);
         }
         
         let totalLeadsCount = 0, totalConfirmedCount = 0, totalAdsSpentAmount = 0;
         let lBodyDash = '', lBodyManage = '';
 
         leads.forEach(l => {
-            totalLeadsCount += l.totalLeads;
-            totalConfirmedCount += l.confirmedLeads;
-            totalAdsSpentAmount += l.dailyBudget;
+            totalLeadsCount += parseInt(l.totalLeads) || 0;
+            totalConfirmedCount += parseInt(l.confirmedLeads) || 0;
+            totalAdsSpentAmount += parseFloat(l.dailyBudget) || 0;
             
             const costPerLead = l.totalLeads > 0 ? (l.dailyBudget / l.totalLeads) : 0;
             const costPerConfirmed = l.confirmedLeads > 0 ? (l.dailyBudget / l.confirmedLeads) : 0;
-            const isSelectedClass = l.date === selectedDate && !isMonth ? 'row-highlight' : '';
+            const isSelectedClass = isDateFilterApplied && filterByDate(l.date) ? 'row-highlight' : '';
             const weekTd = isMonth ? `<td style="color:var(--text-muted); font-weight:600;">${l.week || 'Week 1'}</td>` : '';
 
             const dBudget = showFinancials ? formatRs(l.dailyBudget) : '***';
@@ -2451,17 +2644,24 @@
         document.getElementById('tbl-manage-leads').innerHTML = lBodyManage;
 
         // --- 2.5 ORDER VIEWS ---
-        const ovSnap = await db.collection('order_views').orderBy('date', 'desc').get();
-        let allOrderViews = ovSnap.docs.map(d => ({id: d.id, ...d.data()}));
-        if(!isMonth) allOrderViews = allOrderViews.filter(o => o.week === week);
+        let allOrderViews;
+        if (dataCache.orderViews) {
+            allOrderViews = dataCache.orderViews;
+        } else {
+            const ovSnap = await db.collection('order_views').orderBy('date', 'desc').get();
+            allOrderViews = ovSnap.docs.map(d => ({id: d.id, ...d.data()}));
+            dataCache.orderViews = allOrderViews;
+        }
         
         let orderViews = allOrderViews;
-        if(isDateFilterApplied && selectedDate && !isMonth) {
-            orderViews = orderViews.filter(o => o.date === selectedDate);
+        if (isDateFilterApplied) {
+            orderViews = allOrderViews.filter(o => filterByDate(o.date));
+        } else if (!isMonth) {
+            orderViews = allOrderViews.filter(o => o.week === week);
         }
         
         let ovBodyManage = '';
-        let totalSum = 0, confirmSum = 0, noanswerSum = 0, rejectSum = 0, fakeSum = 0, cancelSum = 0, holdSum = 0, deletedSum = 0;
+        let totalSum = 0, confirmSum = 0, noanswerSum = 0, rejectSum = 0, fakeSum = 0, cancelSum = 0, holdSum = 0, chatOrderSum = 0;
         
         orderViews.forEach(o => {
             totalSum += parseInt(o.total) || 0;
@@ -2471,9 +2671,9 @@
             fakeSum += parseInt(o.fake) || 0;
             cancelSum += parseInt(o.cancel) || 0;
             holdSum += parseInt(o.hold) || 0;
-            deletedSum += parseInt(o.deleted) || 0;
+            chatOrderSum += parseInt(o.chatOrder || o.deleted) || 0;
             
-            const isSelectedClass = o.date === selectedDate && !isMonth ? 'row-highlight' : '';
+            const isSelectedClass = isDateFilterApplied && filterByDate(o.date) ? 'row-highlight' : '';
             const pName = o.productName || 'N/A';
             ovBodyManage += `<tr class="${isSelectedClass}">
                 <td style="white-space:nowrap;"><strong>${o.date}</strong></td>
@@ -2485,9 +2685,9 @@
                 <td>${o.fake}</td>
                 <td style="color:var(--warning);">${o.cancel}</td>
                 <td>${o.hold}</td>
-                <td>${o.deleted}</td>
+                <td>${o.chatOrder || o.deleted || 0}</td>
                 <td style="white-space: nowrap;">
-                    <button class="btn-edit" onclick="editOrderView('${o.id}', '${o.productName || ''}', ${o.total}, ${o.confirm}, ${o.noanswer}, ${o.reject}, ${o.fake}, ${o.cancel}, ${o.hold}, ${o.deleted})">Edit</button>
+                    <button class="btn-edit" onclick="editOrderView('${o.id}', '${o.productName || ''}', ${o.total}, ${o.confirm}, ${o.noanswer}, ${o.reject}, ${o.fake}, ${o.cancel}, ${o.hold}, ${o.chatOrder || o.deleted || 0})">Edit</button>
                     <button class="btn-delete" onclick="deleteRecord('order_views', '${o.id}')">Del</button>
                 </td>
             </tr>`;
@@ -2507,27 +2707,41 @@
                 <td style="font-size: 13.5px; color: var(--text-main);">${fakeSum}</td>
                 <td style="font-size: 13.5px; color: var(--warning); font-weight: 800;">${cancelSum}</td>
                 <td style="font-size: 13.5px; color: var(--text-main);">${holdSum}</td>
-                <td style="font-size: 13.5px; color: var(--text-main);">${deletedSum}</td>
+                <td style="font-size: 13.5px; color: var(--text-main);">${chatOrderSum}</td>
                 <td style="color: var(--text-muted); font-weight: normal;">-</td>
             </tr>`;
         }
         document.getElementById('tbl-foot-order-view').innerHTML = ovFootManage;
 
         // --- 3. PACKAGING COSTS ---
-        const pkSnap = await db.collection('packaging').orderBy('date', 'desc').get();
-        let allPackaging = pkSnap.docs.map(d => ({id: d.id, ...d.data()}));
-        if(!isMonth) allPackaging = allPackaging.filter(pk => pk.week === week);
+        let allPackaging;
+        if (dataCache.packaging) {
+            allPackaging = dataCache.packaging;
+        } else {
+            const pkSnap = await db.collection('packaging').orderBy('date', 'desc').get();
+            allPackaging = pkSnap.docs.map(d => ({id: d.id, ...d.data()}));
+            dataCache.packaging = allPackaging;
+        }
         
-        let weeklyPackagingTotal = allPackaging.reduce((sum, pk) => sum + (parseFloat(pk.cost) || 0), 0);
+        let weeklyPackagingTotal;
+        if (isDateFilterApplied) {
+            weeklyPackagingTotal = allPackaging.filter(pk => filterByDate(pk.date)).reduce((sum, pk) => sum + (parseFloat(pk.cost) || 0), 0);
+        } else if (!isMonth) {
+            weeklyPackagingTotal = allPackaging.filter(pk => pk.week === week).reduce((sum, pk) => sum + (parseFloat(pk.cost) || 0), 0);
+        } else {
+            weeklyPackagingTotal = allPackaging.reduce((sum, pk) => sum + (parseFloat(pk.cost) || 0), 0);
+        }
         
         let packaging = allPackaging;
-        if(isDateFilterApplied && selectedDate && !isMonth) {
-            packaging = packaging.filter(pk => pk.date === selectedDate);
+        if (isDateFilterApplied) {
+            packaging = allPackaging.filter(pk => filterByDate(pk.date));
+        } else if (!isMonth) {
+            packaging = allPackaging.filter(pk => pk.week === week);
         }
 
         let packBodyManage = '';
         packaging.forEach(pk => {
-            const isSelectedClass = pk.date === selectedDate && !isMonth ? 'row-highlight' : '';
+            const isSelectedClass = isDateFilterApplied && filterByDate(pk.date) ? 'row-highlight' : '';
             const pkQty = pk.qty || 1;
             const totalCost = parseFloat(pk.cost) || 0;
             const dCost = showFinancials ? formatRs(totalCost) : '***';
@@ -2536,17 +2750,32 @@
         document.getElementById('tbl-manage-packaging').innerHTML = packBodyManage;
 
         // --- 4. EXPENSES & PROFIT ---
-        const sSnap_pre = await db.collection('salaries').get();
+        let allSalaries;
+        if (dataCache.salaries) {
+            allSalaries = dataCache.salaries;
+        } else {
+            const sSnap = await db.collection('salaries').orderBy('date', 'desc').get();
+            allSalaries = sSnap.docs.map(d => ({id: d.id, ...d.data()}));
+            dataCache.salaries = allSalaries;
+        }
+
         let salaryByWeek = {};
-        sSnap_pre.docs.forEach(d => {
-            const data = d.data();
+        allSalaries.forEach(data => {
             if(!salaryByWeek[data.week]) salaryByWeek[data.week] = 0;
             salaryByWeek[data.week] += (data.netSalary || 0);
         });
 
-        const eSnap = await db.collection('expenses').get();
-        let expenses = eSnap.docs.map(d => ({id: d.id, ...d.data()}));
-        if(!isMonth) expenses = expenses.filter(e => e.week === week);
+        let allExpenses;
+        if (dataCache.expenses) {
+            allExpenses = dataCache.expenses;
+        } else {
+            const eSnap = await db.collection('expenses').get();
+            allExpenses = eSnap.docs.map(d => ({id: d.id, ...d.data()}));
+            dataCache.expenses = allExpenses;
+        }
+        
+        let expenses = allExpenses;
+        if(!isMonth) expenses = allExpenses.filter(e => e.week === week);
 
         // Include weeks that might only have salaries and no expenses yet
         let combinedWeeks = {};
@@ -2568,18 +2797,92 @@
         combinedArray.sort((a, b) => (a.week || '').localeCompare(b.week || ''));
         
         let totalExpensesProfit = 0;
+        let totalSalaries = 0;
         let eBodyDash = '', eBodyManage = '';
 
+        // Calculate days overlapping with weeks for pro-ration if date range is applied
+        let daysByWeek = {};
+        let totalRangeDays = 0;
+        
+        if (isDateFilterApplied && selectedDate && selectedEndDate) {
+            let start = new Date(selectedDate);
+            let end = new Date(selectedEndDate);
+            let curr = new Date(start);
+            while (curr <= end) {
+                let dateStr = curr.toISOString().split('T')[0];
+                let w = getWeekForDate(dateStr);
+                daysByWeek[w] = (daysByWeek[w] || 0) + 1;
+                totalRangeDays++;
+                curr.setDate(curr.getDate() + 1);
+            }
+        } else if (isDateFilterApplied && selectedDate) {
+            let w = getWeekForDate(selectedDate);
+            daysByWeek[w] = 1;
+            totalRangeDays = 1;
+        }
+
+        if (isDateFilterApplied) {
+            let proRatedReceived = 0;
+            let proRatedSalaries = 0;
+
+            Object.keys(daysByWeek).forEach(w => {
+                const exp = allExpenses.find(e => e.week === w) || { received: 0 };
+                const rec = exp.received || 0;
+                proRatedReceived += rec * (daysByWeek[w] / 7);
+                
+                const sal = salaryByWeek[w] || 0;
+                proRatedSalaries += sal * (daysByWeek[w] / 7);
+            });
+
+            totalSalaries = proRatedSalaries;
+            totalExpensesProfit = proRatedReceived - (totalAdsSpentAmount + totalProductCostAmount + weeklyPackagingTotal);
+
+            // Render a single Custom Range row in the dashboard expenses table
+            const weekTd = `<td><strong style="color:var(--text-muted);">Custom Range</strong></td>`;
+            const dRec = showFinancials ? formatRs(proRatedReceived) : '***';
+            const dAds = showFinancials ? formatRs(totalAdsSpentAmount) : '***';
+            const dProd = showFinancials ? formatRs(totalProductCostAmount) : '***';
+            const dOth = showFinancials ? formatRs(weeklyPackagingTotal) : '***';
+            const dSal = showFinancials ? formatRs(proRatedSalaries) : '***';
+            const dProf = showFinancials ? formatRs(totalExpensesProfit - proRatedSalaries) : '***';
+
+            eBodyDash = `<tr class="row-highlight">${weekTd}<td style="color:var(--success); font-weight:bold;">${dRec}</td><td style="font-weight:600;">${dAds}</td><td style="font-weight:600;">${dProd}</td><td style="font-weight:600;">${dOth}</td><td style="color:var(--danger); font-weight:600;">${dSal}</td><td style="color:var(--primary); font-weight:bold;">${dProf}</td></tr>`;
+        } else {
+            if(isMonth) {
+                Object.values(salaryByWeek).forEach(val => { totalSalaries += val; });
+            } else {
+                totalSalaries = salaryByWeek[week] || 0;
+            }
+
+            combinedArray.forEach(e => {
+                const received = e.received || 0;
+                const weekSalaries = salaryByWeek[e.week] || 0;
+                const totalSpentBase = (e.adsSpent || 0) + (e.productCost || 0) + (e.otherCosts || 0); 
+                const baseProfit = received - totalSpentBase;
+                totalExpensesProfit += baseProfit;
+                
+                const rowProfit = baseProfit - weekSalaries;
+
+                const weekTd = isMonth ? `<td><strong style="color:var(--text-muted);">${e.week || 'Week 1'}</strong></td>` : '';
+                const dRec = showFinancials ? formatRs(received) : '***';
+                const dAds = showFinancials ? formatRs(e.adsSpent || 0) : '***';
+                const dProd = showFinancials ? formatRs(e.productCost || 0) : '***';
+                const dOth = showFinancials ? formatRs(e.otherCosts || 0) : '***';
+                const dSal = showFinancials ? formatRs(weekSalaries) : '***';
+                const dProf = showFinancials ? formatRs(rowProfit) : '***';
+
+                eBodyDash += `<tr>${weekTd}<td style="color:var(--success); font-weight:bold;">${dRec}</td><td style="font-weight:600;">${dAds}</td><td style="font-weight:600;">${dProd}</td><td style="font-weight:600;">${dOth}</td><td style="color:var(--danger); font-weight:600;">${dSal}</td><td style="color:var(--primary); font-weight:bold;">${dProf}</td></tr>`;
+            });
+        }
+
+        // Manage Expenses always shows the raw weekly records for editing
         combinedArray.forEach(e => {
             const received = e.received || 0;
             const weekSalaries = salaryByWeek[e.week] || 0;
             const totalSpentBase = (e.adsSpent || 0) + (e.productCost || 0) + (e.otherCosts || 0); 
             const baseProfit = received - totalSpentBase;
-            totalExpensesProfit += baseProfit; // salaries deducted later globally
-            
             const rowProfit = baseProfit - weekSalaries;
 
-            const weekTd = isMonth ? `<td><strong style="color:var(--text-muted);">${e.week || 'Week 1'}</strong></td>` : '';
             const dRec = showFinancials ? formatRs(received) : '***';
             const dAds = showFinancials ? formatRs(e.adsSpent || 0) : '***';
             const dProd = showFinancials ? formatRs(e.productCost || 0) : '***';
@@ -2587,31 +2890,37 @@
             const dSal = showFinancials ? formatRs(weekSalaries) : '***';
             const dProf = showFinancials ? formatRs(rowProfit) : '***';
 
-            eBodyDash += `<tr>${weekTd}<td style="color:var(--success); font-weight:bold;">${dRec}</td><td style="font-weight:600;">${dAds}</td><td style="font-weight:600;">${dProd}</td><td style="font-weight:600;">${dOth}</td><td style="color:var(--danger); font-weight:600;">${dSal}</td><td style="color:var(--primary); font-weight:bold;">${dProf}</td></tr>`;
-            
             const editBtn = `<button class="btn-edit" style="margin-right:4px;" onclick="editExpenses('${e.week}')">Edit</button>`;
             const delBtn = `<button class="btn-delete" onclick="deleteExpenses('${e.week}', '${e.id || ''}')">Del</button>`;
             const actionContent = `<div style="display:flex; gap:6px;">${editBtn}${delBtn}</div>`;
             eBodyManage += `<tr><td><strong style="color:var(--text-muted);">${e.week || 'Week 1'}</strong></td><td style="color:var(--success); font-weight:bold;">${dRec}</td><td style="font-weight:600;">${dAds}</td><td style="font-weight:600;">${dProd}</td><td style="font-weight:600;">${dOth}</td><td style="color:var(--danger); font-weight:600;">${dSal}</td><td style="color:var(--primary); font-weight:bold;">${dProf}</td><td>${actionContent}</td></tr>`;
         });
+
         document.getElementById('tbl-dash-expenses').innerHTML = eBodyDash;
         document.getElementById('tbl-manage-expenses').innerHTML = eBodyManage;
         
         // Auto-load forms
         if (!isMonth) {
-            const exp = expenses.find(e => e.week === week);
+            const exp = allExpenses.find(e => e.week === week);
             if(exp) {
                 document.getElementById('exp-received').value = exp.received || '';
             } else {
                 document.getElementById('exp-received').value = '';
             }
             
-            // AUTO-FILL
-            document.getElementById('exp-prod').value = weeklyProductTotal;
-            document.getElementById('exp-ads').value = weeklyAdsTotal;
-            document.getElementById('exp-other').value = weeklyPackagingTotal;
+            // AUTO-FILL (using the weekly values corresponding to active week)
+            const weeklyP = allProducts.filter(p => p.week === week).reduce((sum, p) => sum + (p.price * p.qty), 0);
+            const weeklyL = allLeads.filter(l => l.week === week).reduce((sum, l) => sum + (parseFloat(l.dailyBudget) || 0), 0);
+            const weeklyPk = allPackaging.filter(pk => pk.week === week).reduce((sum, pk) => sum + (parseFloat(pk.cost) || 0), 0);
+
+            document.getElementById('exp-prod').value = weeklyP;
+            document.getElementById('exp-ads').value = weeklyL;
+            document.getElementById('exp-other').value = weeklyPk;
             document.getElementById('exp-salaries').value = salaryByWeek[week] || 0;
         }
+
+        // Deduct salaries from profit calculation globally
+        totalExpensesProfit -= totalSalaries;
 
         // --- 5. UPDATE DASHBOARD SUMMARIES ---
         document.getElementById('lbl-sum-leads').textContent = totalLeadsCount;
@@ -2619,9 +2928,24 @@
         document.getElementById('lbl-sum-cost').textContent = showFinancials ? formatRs(totalProductCostAmount) : '***';
         document.getElementById('lbl-sum-profit').textContent = showFinancials ? formatRs(totalExpensesProfit) : '***';
 
+        // --- 5.5 UPDATE DASHBOARD TITLE ---
+        if (isDateFilterApplied) {
+            let rangeText = "";
+            if (selectedDate && selectedEndDate) {
+                rangeText = `${selectedDate} to ${selectedEndDate}`;
+            } else if (selectedDate) {
+                rangeText = `${selectedDate}`;
+            } else if (selectedEndDate) {
+                rangeText = `${selectedEndDate}`;
+            }
+            document.getElementById('dash-title').textContent = `Filtered Overview (${rangeText})`;
+        } else {
+            document.getElementById('dash-title').textContent = isMonth ? "All-Time Month Summary" : `${week} Overview`;
+        }
+
         // --- 6. RENDER CHARTS ---
         if(currentUser.permissions.includes('dashboard')) {
-            renderCharts(isMonth, leads, products, expenses, week);
+            renderCharts(isMonth, leads, products, allExpenses, week);
         }
 
         // --- 7. LOAD STAFF TABLE ---
@@ -2631,29 +2955,27 @@
 
         // --- 8. LOAD SALARIES ---
         if(currentUser.permissions.includes('salaries')) {
-            const sSnap = await db.collection('salaries').orderBy('date', 'desc').get();
-            let allSalaries = sSnap.docs.map(d => ({id: d.id, ...d.data()}));
-            
-            // If staff, only show their own
+            let filteredSalaries = allSalaries;
             if(!isAdmin) {
-                allSalaries = allSalaries.filter(s => s.employee === currentUser.username);
+                filteredSalaries = allSalaries.filter(s => s.employee === currentUser.username);
             }
 
             let sBody = '';
-            let totalSalaries = 0;
             let sumBasic = 0, sumExtras = 0, sumDeduct = 0, sumNet = 0;
             
-            allSalaries.forEach(s => {
-                // If we are looking at a specific week/month, we might want to filter.
-                // However, salaries are usually independent of the exact weekly cycle (often monthly).
-                // We will deduct them from the monthly profit if we are in 'Month Overview', or deduct the specific week's salaries if in a week view.
-                if(isMonth || s.week === week) {
-                    totalSalaries += s.netSalary;
+            filteredSalaries.forEach(s => {
+                let match = false;
+                if (isDateFilterApplied) {
+                    match = filterByDate(s.date);
+                } else if (isMonth) {
+                    match = true;
+                } else {
+                    match = s.week === week;
                 }
 
-                // Table rendering (always show all for context unless filtered heavily)
-                if(isMonth || s.week === week || !isDateFilterApplied) {
-                    const isSelectedClass = s.date === selectedDate && !isMonth ? 'row-highlight' : '';
+                const shouldRender = isDateFilterApplied ? filterByDate(s.date) : true;
+                if (shouldRender) {
+                    const isSelectedClass = isDateFilterApplied && filterByDate(s.date) ? 'row-highlight' : '';
                     const actionBtns = isAdmin 
                         ? `<button class="action-btn" style="background:var(--primary); padding:4px 8px; font-size:11px; margin:0;" onclick="printPayslip('${s.id}')">📄 Print</button><button class="btn-delete" style="margin:0; padding:4px 8px; font-size:11px;" onclick="deleteRecord('salaries', '${s.id}')">Del</button>`
                         : `<button class="action-btn" style="background:var(--primary); padding:4px 8px; font-size:11px; margin:0;" onclick="printPayslip('${s.id}')">📄 Print</button>`;
@@ -2684,13 +3006,12 @@
                 `;
             }
 
-            // Load employee dropdown (Admin only needs this)
             if(isAdmin) {
                 document.getElementById('page-salaries').querySelector('.form-card').style.display = 'block';
                 const uSnap = await db.collection('users').get();
                 const users = uSnap.docs.map(d => d.data().username);
                 const empList = document.getElementById('sal-employee-list');
-                if(empList.children.length === 0) { // Only populate if empty
+                if(empList.children.length === 0) {
                     users.forEach(u => {
                         if(u !== 'admin' && u !== 'admin@company.com') {
                             empList.innerHTML += `<option value="${u}">`;
@@ -2701,13 +3022,7 @@
                 document.getElementById('page-salaries').querySelector('.form-card').style.display = 'none';
                 document.getElementById('page-salaries').querySelector('.two-col-layout').style.gridTemplateColumns = '1fr';
             }
-            
-            // Deduct salaries from profit calculation
-            totalExpensesProfit -= totalSalaries;
-            document.getElementById('lbl-sum-profit').textContent = showFinancials ? formatRs(totalExpensesProfit) : '***';
         }
-
-        // Orders are now loaded via loadScannedOrders() independently
 
         loadInventory();
         checkSmartAlerts(totalExpensesProfit);
@@ -2732,7 +3047,9 @@
             
             oSnap.forEach(d => {
                 const prod = d.data().product;
-                if(prod && catMap[prod] && d.data().status !== 'Returned') {
+                const status = (d.data().status || '').trim().toLowerCase();
+                const isExcluded = ['cancel', 'fake', 'reject', 'no ans', 'return received'].some(s => status.includes(s));
+                if(prod && catMap[prod] && !isExcluded) {
                     catMap[prod].dispatched += (d.data().qty || 1);
                 }
             });
@@ -2775,7 +3092,12 @@
             let catMap = {};
             cSnap.forEach(d => { catMap[d.data().name] = {purchased:0, dispatched:0}; });
             pSnap.forEach(d => { const n = d.data().productName; if(catMap[n]) catMap[n].purchased += (d.data().qty||0); });
-            oSnap.forEach(d => { const n = d.data().product; if(n && catMap[n] && d.data().status !== 'Returned') catMap[n].dispatched += (d.data().qty || 1); });
+            oSnap.forEach(d => {
+                const n = d.data().product;
+                const status = (d.data().status || '').trim().toLowerCase();
+                const isExcluded = ['cancel', 'fake', 'reject', 'no ans', 'return received'].some(s => status.includes(s));
+                if(n && catMap[n] && !isExcluded) catMap[n].dispatched += (d.data().qty || 1);
+            });
             
             let lowStockItems = [];
             for(const [name, stats] of Object.entries(catMap)) {
@@ -2821,6 +3143,7 @@
             for(let id of expenses.filter(x => x.week === week).map(x => x.id)) await db.collection('expenses').doc(id).delete();
             
             notify(`${week} data cleared successfully!`);
+            invalidateCache();
             loadAllData();
         }
     }
@@ -2846,6 +3169,7 @@
                 notify(`All monthly data has been wiped! Fresh start ready.`);
                 
                 document.getElementById('active-week').value = 'Week 1';
+                invalidateCache();
                 handleContextChange();
             }
         }
@@ -2903,6 +3227,7 @@
                 await syncDailyLeads(ovDate, ovWeek);
             }
 
+            invalidateCache();
             if(table === 'leads') {
                 handleDateChange();
                 loadAllData();
@@ -2924,6 +3249,7 @@
     window.toggleSettlePurchase = async function(id, state) {
         await db.collection('products').doc(id).update({ isSettled: state });
         notify(state ? "Purchase marked as Settled!" : "Purchase marked as Unsettled!");
+        invalidateCache();
         loadAllData();
     }
 
@@ -2954,7 +3280,8 @@
             fake: parseInt(document.getElementById('ov-fake').value) || 0,
             cancel: parseInt(document.getElementById('ov-cancel').value) || 0,
             hold: parseInt(document.getElementById('ov-hold').value) || 0,
-            deleted: parseInt(document.getElementById('ov-deleted').value) || 0
+            chatOrder: parseInt(document.getElementById('ov-chat-order').value) || 0,
+            deleted: parseInt(document.getElementById('ov-chat-order').value) || 0
         };
 
         btn.textContent = 'Saving...';
@@ -2972,6 +3299,7 @@
 
             notify("Order View Saved!");
             clearOrderViewForm();
+            invalidateCache();
             loadAllData();
             if(window.handleDateChange) handleDateChange(true);
         } catch(e) {
@@ -2984,7 +3312,7 @@
     };
 
     window.clearOrderViewForm = function() {
-        ['ov-total','ov-confirm','ov-noanswer','ov-reject','ov-fake','ov-cancel','ov-hold','ov-deleted'].forEach(id => {
+        ['ov-total','ov-confirm','ov-noanswer','ov-reject','ov-fake','ov-cancel','ov-hold','ov-chat-order'].forEach(id => {
             const el = document.getElementById(id);
             if(el) el.value = '';
         });
@@ -2995,7 +3323,7 @@
         document.getElementById('ov-status-badge').style.display = 'none';
     };
 
-    window.editOrderView = function(id, productName, total, confirm, noanswer, reject, fake, cancel, hold, deleted) {
+    window.editOrderView = function(id, productName, total, confirm, noanswer, reject, fake, cancel, hold, chatOrder) {
         const prodEl = document.getElementById('ov-product');
         if(prodEl) prodEl.value = productName || '';
         document.getElementById('ov-total').value = total || '';
@@ -3005,7 +3333,7 @@
         document.getElementById('ov-fake').value = fake || '';
         document.getElementById('ov-cancel').value = cancel || '';
         document.getElementById('ov-hold').value = hold || '';
-        document.getElementById('ov-deleted').value = deleted || '';
+        document.getElementById('ov-chat-order').value = chatOrder || '';
         
         currentOrderViewId = id;
         document.getElementById('btn-save-ov').textContent = 'Update Order View';
@@ -3067,6 +3395,7 @@
             // Explicitly clear the date to force a fresh UI state
             document.getElementById('global-date').valueAsDate = new Date();
             
+            invalidateCache();
             loadAllData();
             if(typeof autoSelectWeek === 'function') autoSelectWeek();
         } finally {
@@ -3080,7 +3409,6 @@
 
     window.addToPurchaseDraft = function() {
         const name = document.getElementById('prod-name').value;
-        const price = parseFloat(document.getElementById('prod-price').value) || 0;
         const qty = parseInt(document.getElementById('prod-qty').value) || 0;
         let itemDate = document.getElementById('prod-item-date').value;
         
@@ -3090,11 +3418,15 @@
 
         if(!name || qty <= 0) return notify("Please select a product and valid quantity!", true);
 
+        // Fetch price directly from secure catalogPriceMap
+        const price = window.catalogPriceMap[name] || 0;
         const total = price * qty;
         purchaseDrafts.push({ name, price, qty, total, date: itemDate });
         
         document.getElementById('prod-name').value = '';
-        document.getElementById('prod-price').value = '0';
+        if (document.getElementById('prod-price')) {
+            document.getElementById('prod-price').value = '0';
+        }
         document.getElementById('prod-qty').value = '';
         document.getElementById('prod-item-date').value = '';
         
@@ -3160,18 +3492,35 @@
         if(btn) { btn.disabled = true; btn.textContent = 'Saving...'; }
         
         try {
-            let newInvNumber = 1;
-            try {
-                const numSnap = await db.collection('config').doc('invoiceCounter').get();
-                if(numSnap.exists) {
-                    newInvNumber = (numSnap.data().lastNumber || 0) + 1;
+            // If editing, delete old items first
+            if (currentEditingInvoiceId) {
+                let batchDel = db.batch();
+                if (currentEditingInvoiceProducts) {
+                    const ids = currentEditingInvoiceProducts.split(',');
+                    ids.forEach(id => {
+                        if(id) batchDel.delete(db.collection('products').doc(id));
+                    });
                 }
-                await db.collection('config').doc('invoiceCounter').set({lastNumber: newInvNumber});
-            } catch(e) {
-                console.error("Counter error:", e);
-                newInvNumber = Math.floor(Math.random() * 10000);
+                const outSnap = await db.collection('outstandings').where('invoiceId', '==', currentEditingInvoiceId).get();
+                outSnap.docs.forEach(d => batchDel.delete(d.ref));
+                await batchDel.commit();
             }
-            const invoiceId = newInvNumber.toString().padStart(4, '0');
+
+            let invoiceId = currentEditingInvoiceId;
+            if (!invoiceId) {
+                let newInvNumber = 1;
+                try {
+                    const numSnap = await db.collection('config').doc('invoiceCounter').get();
+                    if(numSnap.exists) {
+                        newInvNumber = (numSnap.data().lastNumber || 0) + 1;
+                    }
+                    await db.collection('config').doc('invoiceCounter').set({lastNumber: newInvNumber});
+                } catch(e) {
+                    console.error("Counter error:", e);
+                    newInvNumber = Math.floor(Math.random() * 10000);
+                }
+                invoiceId = newInvNumber.toString().padStart(4, '0');
+            }
             
             // Save each product
             for(let item of purchaseDrafts) {
@@ -3204,7 +3553,19 @@
                 });
             }
             
-            notify(`Saved ${purchaseDrafts.length} products to GRN!`);
+            notify(currentEditingInvoiceId ? `GRN ${invoiceId} updated successfully!` : `Saved ${purchaseDrafts.length} products to GRN!`);
+            
+            // Reset editing state
+            currentEditingInvoiceId = null;
+            currentEditingInvoiceProducts = null;
+            document.getElementById('purchase-status-badge').style.display = 'none';
+            document.getElementById('btn-cancel-purchase-edit').style.display = 'none';
+            if(btn) {
+                btn.textContent = '🖨️ Save All & Print GRN';
+                btn.style.background = 'var(--success)';
+            }
+            
+            invalidateCache();
             loadAllData();
             
             // Print
@@ -3216,7 +3577,7 @@
             renderPurchaseDrafts();
             
         } finally {
-            if(btn) { btn.disabled = false; btn.textContent = '🖨️ Save All & Print GRN'; }
+            if(btn) { btn.disabled = false; }
         }
     };
 
@@ -3261,22 +3622,35 @@
         snap2.docs.forEach(d => batch.update(d.ref, {isSettled: status}));
         
         const outSnap = await db.collection('outstandings').where('invoiceId', '==', invId).get();
-        if(!outSnap.empty && status === true) {
-            // If marked as paid, update outstanding to 0 balance
-            outSnap.docs.forEach(d => {
-                let currentTotal = d.data().grandTotal || 0;
-                batch.update(d.ref, { amountPaid: currentTotal, balance: 0, status: 'Settled' });
-            });
+        if(!outSnap.empty) {
+            if(status === true) {
+                // If marked as paid, update outstanding to 0 balance
+                outSnap.docs.forEach(d => {
+                    let currentTotal = d.data().grandTotal || 0;
+                    batch.update(d.ref, { amountPaid: currentTotal, balance: 0, status: 'Settled' });
+                });
+            } else {
+                // If marked as unpaid, revert outstanding record to pending/unpaid
+                outSnap.docs.forEach(d => {
+                    let currentTotal = d.data().grandTotal || 0;
+                    batch.update(d.ref, { amountPaid: 0, balance: currentTotal, status: 'Pending' });
+                });
+            }
         }
 
         await batch.commit();
         notify("Payment status updated!");
+        invalidateCache();
         loadAllData();
     };
 
     window.deleteInvoiceGroup = async function(invId, productIdsStr) {
         if(!navigator.onLine) return notify("No internet connection!", true);
         if(!confirm("Are you sure you want to delete this ENTIRE purchase record and all its items?")) return;
+        
+        if (invId === currentEditingInvoiceId) {
+            clearPurchaseEdit();
+        }
         
         try {
             let batch = db.batch();
@@ -3300,10 +3674,110 @@
             
             await batch.commit();
             notify("Purchase record deleted!");
+            invalidateCache();
             loadAllData();
         } catch(e) {
             console.error("Delete Error:", e);
             notify("Failed to delete record", true);
+        }
+    };
+
+    window.clearPurchaseEdit = function() {
+        currentEditingInvoiceId = null;
+        currentEditingInvoiceProducts = null;
+        purchaseDrafts = [];
+        document.getElementById('draft-paid').value = '';
+        document.getElementById('purchase-status-badge').style.display = 'none';
+        document.getElementById('btn-cancel-purchase-edit').style.display = 'none';
+        
+        const btn = document.getElementById('btn-save-drafts');
+        if (btn) {
+            btn.textContent = '🖨️ Save All & Print GRN';
+            btn.style.background = 'var(--success)';
+        }
+        
+        renderPurchaseDrafts();
+    };
+
+    window.editInvoiceGroup = async function(invId, productIdsStr) {
+        if(!navigator.onLine) return notify("No internet connection!", true);
+        
+        try {
+            // Fetch products
+            const snap1 = await db.collection('products').where('invoiceId', '==', invId).get();
+            const snap2 = await db.collection('products').where(firebase.firestore.FieldPath.documentId(), '==', invId).get();
+            
+            let items = [];
+            let date = '';
+            let week = '';
+            
+            snap1.docs.forEach(d => {
+                let data = d.data();
+                items.push({name: data.productName, price: data.price, qty: data.qty, total: data.price * data.qty});
+                date = data.date;
+                week = data.week;
+            });
+            
+            snap2.docs.forEach(d => {
+                let data = d.data();
+                items.push({name: data.productName, price: data.price, qty: data.qty, total: data.price * data.qty});
+                date = data.date;
+                week = data.week;
+            });
+            
+            if(items.length === 0) return notify("No items found for this invoice!", true);
+            
+            // Set date and week
+            if (date) document.getElementById('global-date').value = date;
+            if (week) {
+                document.getElementById('active-week').value = week;
+                handleContextChange();
+            }
+            
+            // Fetch outstanding paid amount
+            let grandTotal = items.reduce((s, i) => s + i.total, 0);
+            let paid = grandTotal;
+            const outSnap = await db.collection('outstandings').where('invoiceId', '==', invId).get();
+            if(!outSnap.empty) {
+                let outData = outSnap.docs[0].data();
+                paid = outData.amountPaid || 0;
+            }
+            
+            // Set global editing variables
+            currentEditingInvoiceId = invId;
+            currentEditingInvoiceProducts = productIdsStr || snap1.docs.map(d=>d.id).concat(snap2.docs.map(d=>d.id)).join(',');
+            
+            // Map items to purchaseDrafts format
+            purchaseDrafts = items.map(item => ({
+                name: item.name,
+                price: item.price,
+                qty: item.qty
+            }));
+            
+            // Populate paid amount input
+            document.getElementById('draft-paid').value = paid;
+            
+            // Show badge and edit buttons
+            document.getElementById('lbl-editing-inv-id').textContent = invId;
+            document.getElementById('purchase-status-badge').style.display = 'inline-block';
+            document.getElementById('btn-cancel-purchase-edit').style.display = 'block';
+            
+            const btnSave = document.getElementById('btn-save-drafts');
+            if (btnSave) {
+                btnSave.textContent = '🖨️ Update & Print GRN';
+                btnSave.style.background = 'var(--warning)';
+            }
+            
+            // Show container & render
+            document.getElementById('purchase-cart-container').style.display = 'block';
+            renderPurchaseDrafts();
+            
+            notify(`GRN ${invId} loaded for editing!`);
+            window.scrollTo({top: 0, behavior: 'smooth'});
+            
+        } catch (e) {
+            console.error("Error editing invoice group:", e);
+            notify("Error loading GRN details", true);
         }
     };
 
@@ -3378,6 +3852,7 @@
             document.getElementById('pack-cost').value = '';
 
             notify(`Packaging cost added to ${week}!`);
+            invalidateCache();
             loadAllData();
         } finally {
             if(btn) { btn.disabled = false; btn.textContent = 'Save Packaging'; }
@@ -3406,6 +3881,7 @@
         try {
             await db.collection('expenses').doc(id).delete();
             notify('Profit record deleted successfully');
+            invalidateCache();
             loadAllData();
         } catch(e) {
             console.error("Delete error", e);
@@ -3450,6 +3926,7 @@
                 notify(`Profit & Expenses SAVED for ${week}!`);
             }
 
+            invalidateCache();
             loadAllData();
         } finally {
             if(btn) { btn.disabled = false; btn.textContent = 'Save Profit & Expenses'; }
@@ -3559,6 +4036,7 @@
             document.getElementById('sal-date').value = '';
 
             notify(`Salary issued to ${emp} successfully!`);
+            invalidateCache();
             loadAllData();
         } finally {
             if(btn) { btn.disabled = false; btn.textContent = 'Save & Issue Salary'; }
@@ -3753,6 +4231,7 @@
             await db.collection('config').doc('system').set(window.systemConfig, { merge: true });
             notify("System settings saved successfully!");
             applyPermissions(); 
+            invalidateCache();
             loadAllData();
         } catch (e) {
             console.error("Error saving settings", e);
@@ -3932,7 +4411,7 @@
                 db.collection('products').where('date', '>=', start).where('date', '<=', end).get(),
                 db.collection('orders').where('date', '>=', start).where('date', '<=', end).get(),
                 db.collection('expenses').where('date', '>=', start).where('date', '<=', end).get(),
-                db.collection('catalog').get()
+                db.collection('product_catalog').get()
             ]);
             
             // Calculate Leads
@@ -3946,7 +4425,7 @@
             
             // Product Pricing Map
             const priceMap = {};
-            cSnap.forEach(doc => { priceMap[doc.data().name] = doc.data().retailPrice || 0; });
+            cSnap.forEach(doc => { priceMap[doc.data().name] = doc.data().sellingPrice || 0; });
             
             // Calculate Orders (Income)
             let totalIncome = 0;
@@ -3986,23 +4465,30 @@
             });
             
             // Update UI
+            const isAdmin = currentUser.username === 'admin' || currentUser.username === 'admin@company.com' || (currentUser.permissions && currentUser.permissions.includes('staff'));
+            const showFinancials = isAdmin || !window.systemConfig.hideFinancials;
+
             const netProfit = totalIncome - totalExpensesAmount;
-            document.getElementById('rep-val-profit').textContent = formatRs(netProfit);
-            document.getElementById('rep-val-income').textContent = formatRs(totalIncome);
-            document.getElementById('rep-val-expenses').textContent = formatRs(totalExpensesAmount);
+            document.getElementById('rep-val-profit').textContent = showFinancials ? formatRs(netProfit) : '***';
+            document.getElementById('rep-val-income').textContent = showFinancials ? formatRs(totalIncome) : '***';
+            document.getElementById('rep-val-expenses').textContent = showFinancials ? formatRs(totalExpensesAmount) : '***';
             document.getElementById('rep-val-leads').textContent = `${totalLeads} / ${totalOrders}`;
             
             // Expenses Table
             let expHtml = '';
             for(const [cat, amt] of Object.entries(expensesByCategory)) {
-                if(amt > 0) expHtml += `<tr><td>${cat}</td><td style="color:var(--danger);">${formatRs(amt)}</td></tr>`;
+                if(amt > 0) {
+                    const amtStr = showFinancials ? formatRs(amt) : '***';
+                    expHtml += `<tr><td>${cat}</td><td style="color:var(--danger);">${amtStr}</td></tr>`;
+                }
             }
             document.getElementById('tbl-rep-expenses').innerHTML = expHtml;
             
             // Sales Table
             let salesHtml = '';
             for(const [prod, data] of Object.entries(salesByProduct)) {
-                salesHtml += `<tr><td>${prod}</td><td>${data.qty}</td><td style="color:var(--success);">${formatRs(data.income)}</td></tr>`;
+                const incStr = showFinancials ? formatRs(data.income) : '***';
+                salesHtml += `<tr><td>${prod}</td><td>${data.qty}</td><td style="color:var(--success);">${incStr}</td></tr>`;
             }
             document.getElementById('tbl-rep-sales').innerHTML = salesHtml;
             
@@ -4027,8 +4513,31 @@
             msg.textContent = "Please enter a waybill number!";
             return;
         }
+
+        // Audio helper functions
+        const playBeep = (freq, type, duration) => {
+            try {
+                let ctx = new (window.AudioContext || window.webkitAudioContext)();
+                let osc = ctx.createOscillator();
+                osc.type = type;
+                osc.frequency.value = freq;
+                osc.connect(ctx.destination);
+                osc.start();
+                setTimeout(() => osc.stop(), duration);
+            } catch(e) {}
+        };
         
         try {
+            // Check if waybill already exists in the database
+            const dupSnap = await db.collection('orders').where('waybill', '==', waybill).get();
+            if(!dupSnap.empty) {
+                msg.style.color = "var(--danger)";
+                msg.textContent = `❌ Error: Waybill ${waybill} already exists!`;
+                playBeep(150, "sawtooth", 300); // Low warning buzz
+                waybillInput.value = '';
+                return;
+            }
+
             await db.collection('orders').add({
                 waybill: waybill,
                 product: product,
@@ -4036,18 +4545,82 @@
                 date: new Date().toISOString()
             });
             waybillInput.value = '';
-            productSelect.value = '';
+            // Do NOT clear productSelect value to retain product for next scan!
             msg.style.color = "var(--success)";
             msg.textContent = `✅ Saved ${waybill}!`;
-            setTimeout(() => { msg.textContent = ''; }, 3000);
+            playBeep(880, "sine", 150); // Success high beep
+            setTimeout(() => { if(msg.textContent.includes(waybill)) msg.textContent = ''; }, 3000);
             
             // Refresh counts if needed
+            invalidateCache();
             loadAllData();
             if(typeof loadRecentWaybills === 'function') loadRecentWaybills();
         } catch(e) {
             console.error(e);
             msg.style.color = "var(--danger)";
             msg.textContent = "Error saving waybill!";
+            playBeep(150, "sawtooth", 300); // Warning buzz
+        }
+    };
+
+    window.quickReceiveReturn = async function() {
+        const waybillInput = document.getElementById('return-waybill-input');
+        const msg = document.getElementById('return-waybill-msg');
+        
+        const waybill = waybillInput.value.trim();
+        if(!waybill) {
+            msg.style.color = "var(--danger)";
+            msg.textContent = "Please enter a waybill number!";
+            return;
+        }
+
+        // Audio beep function
+        const playBeep = (freq, type, duration) => {
+            try {
+                let ctx = new (window.AudioContext || window.webkitAudioContext)();
+                let osc = ctx.createOscillator();
+                osc.type = type;
+                osc.frequency.value = freq;
+                osc.connect(ctx.destination);
+                osc.start();
+                setTimeout(() => osc.stop(), duration);
+            } catch(e) {}
+        };
+        
+        try {
+            // Find the waybill in database
+            const snap = await db.collection('orders').where('waybill', '==', waybill).get();
+            if(snap.empty) {
+                msg.style.color = "var(--danger)";
+                msg.textContent = `❌ Waybill ${waybill} not found in database!`;
+                playBeep(150, "sawtooth", 300); // Warning buzz
+                waybillInput.value = '';
+                return;
+            }
+            
+            // Update its status to 'Return Received'
+            let docId = snap.docs[0].id;
+            await db.collection('orders').doc(docId).update({ status: 'Return Received' });
+            
+            waybillInput.value = '';
+            msg.style.color = "var(--success)";
+            msg.textContent = `✅ Received returned waybill ${waybill} to stock!`;
+            
+            // Double beep success audio
+            playBeep(880, "sine", 120);
+            setTimeout(() => playBeep(1000, "sine", 120), 120);
+            
+            setTimeout(() => { if(msg.textContent.includes(waybill)) msg.textContent = ''; }, 4000);
+            
+            // Refresh counts
+            invalidateCache();
+            loadAllData();
+            if(typeof loadRecentWaybills === 'function') loadRecentWaybills();
+        } catch(e) {
+            console.error(e);
+            msg.style.color = "var(--danger)";
+            msg.textContent = "Error receiving returned waybill!";
+            playBeep(150, "sawtooth", 300);
         }
     };
 
@@ -4095,6 +4668,7 @@
                 await db.collection('orders').doc(id).delete();
                 notify("Waybill deleted successfully!");
                 loadRecentWaybills();
+                invalidateCache();
                 loadAllData(); // Refresh dashboard counts
             } catch(e) {
                 console.error(e);
@@ -4103,21 +4677,21 @@
         }
     };
 
-    window.fetchBulkCourierStats = async function() {
+    window.fetchBulkCourierStats = async function(isSilent = false) {
         const btn = document.querySelector('button[onclick="fetchBulkCourierStats()"]');
-        if(btn) btn.innerHTML = "Syncing...⏳";
+        if(!isSilent && btn) btn.innerHTML = "Syncing...⏳";
         
         try {
             // Find orders that are currently Confirmed or Assigned
             const snap = await db.collection('orders').where('status', 'in', ['Confirmed', 'ASSIGNED TO RIDER', 'PICKED UP']).get();
             
             if(snap.empty) {
-                notify("No active orders to sync.", false, 2000);
+                if(!isSilent) notify("No active orders to sync.", false, 2000);
                 if(btn) btn.innerHTML = "Sync Now";
                 return loadDashboardStats();
             }
             
-            notify(`Checking status for ${snap.docs.length} active waybills...`, false, 3000);
+            if(!isSilent) notify(`Checking status for ${snap.docs.length} active waybills...`, false, 3000);
 
             // Login to Curfox
             const loginRes = await fetch("https://v1.api.curfox.com/api/public/merchant/login", {
@@ -4131,16 +4705,18 @@
                 if(btn) btn.innerHTML = "Sync Now";
                 const errorDetail = loginData.message || loginData.error || "Invalid Credentials";
                 console.error("Curfox API Login Failed Details:", loginData);
-                return notify(`Courier API Login failed: ${errorDetail}`, true);
+                if(!isSilent) return notify(`Courier API Login failed: ${errorDetail}`, true);
+                return;
             }
 
             let updatedCount = 0;
 
             for(let doc of snap.docs) {
                 const data = doc.data();
-                const trackRes = await fetch("https://v1.api.curfox.com/api/public/merchant/order/tracking-info", {
-                    method: "POST", headers: { "Accept": "application/json", "Content-Type": "application/json", "Authorization": "Bearer " + token, "X-tenant": "royalexpress" },
-                    body: JSON.stringify({ tracking_number: data.waybill })
+                if(!data.waybill || data.waybill.trim() === '') continue; // Skip empty waybills
+                
+                const trackRes = await fetch(`https://v1.api.curfox.com/api/public/merchant/order/tracking-info?waybill_number=${encodeURIComponent(data.waybill.trim())}`, {
+                    method: "GET", headers: { "Accept": "application/json", "Authorization": "Bearer " + token, "X-tenant": "royalexpress" }
                 });
                 
                 if(trackRes.ok) {
@@ -4148,7 +4724,13 @@
                     let newStatus = null;
                     if(trackData && trackData.data && trackData.data.length > 0) {
                         const latest = trackData.data[0];
-                        const s = (latest.status || latest.state || latest.order_status || "").toUpperCase();
+                        let statusStr = "";
+                        if(latest.status && typeof latest.status === 'object') {
+                            statusStr = latest.status.name || "";
+                        } else {
+                            statusStr = latest.status || latest.state || latest.order_status || "";
+                        }
+                        const s = statusStr.toUpperCase();
                         
                         if(s.includes("DELIVERED") || s.includes("COMPLETED")) newStatus = "Delivered";
                         else if(s.includes("RETURN") || s.includes("REJECT") || s.includes("CANCEL")) newStatus = "Returned";
@@ -4162,14 +4744,16 @@
                 }
             }
             
-            if(updatedCount > 0) notify(`Updated ${updatedCount} orders from Courier API!`, false, 4000);
-            else notify("All statuses are up to date.", false, 2000);
+            if(!isSilent) {
+                if(updatedCount > 0) notify(`Updated ${updatedCount} orders from Courier API!`, false, 4000);
+                else notify("All statuses are up to date.", false, 2000);
+            }
             
             loadDashboardStats();
             
         } catch(e) {
             console.error(e);
-            notify("Courier Sync Error!", true);
+            if(!isSilent) notify("Courier Sync Error!", true);
         }
         
         if(btn) btn.innerHTML = "Sync Now";
@@ -4190,7 +4774,7 @@
                 if(s === 'Confirmed') confirmed++;
                 else if(s === 'ASSIGNED TO RIDER') assigned++;
                 else if(s === 'Delivered') delivered++;
-                else if(s === 'Returned') returned++;
+                else if(s === 'Returned' || s === 'Return Received') returned++;
             });
             
             document.getElementById('curfox-confirmed-count').textContent = confirmed;
@@ -4205,6 +4789,16 @@
     
     // Auto-load stats on boot
     setTimeout(loadDashboardStats, 1000);
+    
+    // Silent background auto-sync 5 seconds after load
+    setTimeout(() => {
+        window.fetchBulkCourierStats(true);
+    }, 5000);
+
+    // Periodically run auto-sync every 30 minutes
+    setInterval(() => {
+        window.fetchBulkCourierStats(true);
+    }, 30 * 60 * 1000);
 </script>
 </body>
 </html>
