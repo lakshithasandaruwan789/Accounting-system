@@ -1581,7 +1581,10 @@
                 </div>
 
                 <div class="table-card">
-                    <h2>🕰️ Recent Waybills</h2>
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; flex-wrap:wrap; gap:10px;">
+                        <h2 style="margin:0;">🕰️ Recent Waybills</h2>
+                        <input type="text" id="search-waybill-input" placeholder="🔍 Search Waybill..." style="padding: 6px 12px; border: 1px solid var(--border); border-radius: 6px; background: var(--bg); color: var(--text-main); font-size: 13px; max-width: 200px;" oninput="filterRecentWaybills()">
+                    </div>
                     <div style="overflow-x: auto;">
                         <table>
                             <thead>
@@ -1598,6 +1601,7 @@
                             </tbody>
                         </table>
                     </div>
+                    <button id="btn-waybills-load-more" class="action-btn" style="display:none; margin:15px auto 0 auto; width:auto; padding:8px 20px; background:var(--bg-light); border:1px solid var(--border); color:var(--text-main);" onclick="loadMoreWaybills()">Load More</button>
                 </div>
             </div>
         </div>
@@ -2574,12 +2578,16 @@
         
         let totalPurchaseQty = 0;
         let totalPurchaseCost = 0;
+        let totalOutstanding = 0;
 
         sortedGroups.forEach(grp => {
             const total = grp.totalCost;
             const grpQty = grp.items.reduce((s,i)=>s+i.qty, 0);
             totalPurchaseQty += grpQty;
             totalPurchaseCost += total;
+            if (!grp.isSettled) {
+                totalOutstanding += total;
+            }
 
             const isSelectedClass = isDateFilterApplied && filterByDate(grp.date) ? 'row-highlight' : '';
             const displayTotal = showFinancials ? formatRs(grp.totalCost) : '***';
@@ -2613,12 +2621,13 @@
         let pFootManage = '';
         if (sortedGroups.length > 0) {
             const displayGrandTotal = showFinancials ? formatRs(totalPurchaseCost) : '***';
+            const displayOutstanding = showFinancials ? formatRs(totalOutstanding) : '***';
             pFootManage = `<tr style="background: rgba(166, 0, 255, 0.08); font-weight: 800; font-size: 13px; border-top: 2.5px solid var(--primary); border-bottom: 2.5px solid var(--primary);">
                 <td style="color: var(--primary);"><strong>TOTAL</strong></td>
                 <td style="color: var(--text-muted); font-weight: normal;">-</td>
                 <td style="font-size: 13.5px; color: var(--text-main); font-weight: bold;">${totalPurchaseQty}</td>
                 <td class="financial-data" style="font-size: 13.5px; color: var(--warning); font-weight: bold;">${displayGrandTotal}</td>
-                <td style="color: var(--text-muted); font-weight: normal;">-</td>
+                <td style="color: var(--danger); font-size: 13px; font-weight: 800; text-align: center; white-space: nowrap;">Outstanding: ${displayOutstanding}</td>
             </tr>`;
         }
         document.getElementById('tbl-foot-products').innerHTML = pFootManage;
@@ -4762,24 +4771,48 @@
         }
     };
 
-    window.loadRecentWaybills = async function() {
+    window.loadRecentWaybills = async function(filterText = '') {
         const tbody = document.getElementById('tbl-recent-waybills');
         if(!tbody) return;
         
         try {
             tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Loading...</td></tr>';
-            const snap = await db.collection('orders').orderBy('date', 'desc').limit(20).get();
             
-            if(snap.empty) {
-                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">No recent waybills tracked.</td></tr>';
+            let allOrders = dataCache.orders;
+            if (!allOrders) {
+                const snap = await db.collection('orders').get();
+                allOrders = snap.docs.map(d => ({id: d.id, ...d.data()}));
+                dataCache.orders = allOrders;
+            }
+            
+            // Sort by date descending
+            let filteredOrders = allOrders.slice().sort((a,b) => new Date(b.date) - new Date(a.date));
+            
+            // Filter by search text if provided
+            if (filterText) {
+                const txt = filterText.trim().toLowerCase();
+                filteredOrders = filteredOrders.filter(o => 
+                    (o.waybill && o.waybill.toLowerCase().includes(txt)) ||
+                    (o.product && o.product.toLowerCase().includes(txt)) ||
+                    (o.status && o.status.toLowerCase().includes(txt))
+                );
+            }
+            
+            if(filteredOrders.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">No waybills found.</td></tr>';
+                const loadMoreBtn = document.getElementById('btn-waybills-load-more');
+                if (loadMoreBtn) loadMoreBtn.style.display = 'none';
                 return;
             }
             
+            if (typeof window.waybillDisplayLimit === 'undefined') window.waybillDisplayLimit = 50;
+            const limit = window.waybillDisplayLimit;
+            const sliced = filteredOrders.slice(0, limit);
+            
             let html = '';
-            snap.forEach(doc => {
-                const data = doc.data();
-                const dDate = new Date(data.date).toLocaleDateString();
-                const dTime = new Date(data.date).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+            sliced.forEach(data => {
+                const dDate = data.date ? new Date(data.date).toLocaleDateString() : 'N/A';
+                const dTime = data.date ? new Date(data.date).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '';
                 html += `
                     <tr>
                         <td>${dDate} <span style="color:var(--text-muted); font-size:11px;">${dTime}</span></td>
@@ -4787,17 +4820,39 @@
                         <td>${data.product || '-'}</td>
                         <td><span class="status-badge status-${(data.status||'').replace(/\s+/g,'-').toLowerCase()}">${data.status}</span></td>
                         <td>
-                            <button class="btn-delete" style="margin:0; padding:4px 8px; font-size:11px;" onclick="deleteWaybill('${doc.id}')">Del</button>
+                            <button class="btn-delete" style="margin:0; padding:4px 8px; font-size:11px;" onclick="deleteWaybill('${data.id}')">Del</button>
                         </td>
                     </tr>
                 `;
             });
             tbody.innerHTML = html;
             
+            // Show/hide "Load More" button
+            const loadMoreBtn = document.getElementById('btn-waybills-load-more');
+            if (loadMoreBtn) {
+                if (filteredOrders.length > limit) {
+                    loadMoreBtn.style.display = 'block';
+                    loadMoreBtn.textContent = `Load More (${filteredOrders.length - limit} remaining)`;
+                } else {
+                    loadMoreBtn.style.display = 'none';
+                }
+            }
+            
         } catch(e) {
             console.error("Error loading recent waybills", e);
             tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:var(--danger);">Error loading waybills</td></tr>';
         }
+    };
+
+    window.filterRecentWaybills = function() {
+        const txt = document.getElementById('search-waybill-input') ? document.getElementById('search-waybill-input').value : '';
+        loadRecentWaybills(txt);
+    };
+
+    window.loadMoreWaybills = function() {
+        window.waybillDisplayLimit = (window.waybillDisplayLimit || 50) + 50;
+        const txt = document.getElementById('search-waybill-input') ? document.getElementById('search-waybill-input').value : '';
+        loadRecentWaybills(txt);
     };
 
     window.deleteWaybill = async function(id) {
