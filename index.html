@@ -2451,6 +2451,7 @@
 
         const week = document.getElementById('active-week').value;
         const isMonth = week === 'Month Overview';
+        const selectedMonth = (document.getElementById('global-date').value || new Date().toISOString().split('T')[0]).substring(0, 7);
         const selectedDate = document.getElementById('global-date').value;
         const selectedEndDate = document.getElementById('global-date-end').value;
         const isDateFilterApplied = document.getElementById('global-date').dataset.filtered === "true";
@@ -2508,7 +2509,7 @@
         } else if (!isMonth) {
             weeklyProductTotal = allProducts.filter(p => p.week === week).reduce((sum, p) => sum + (p.price * p.qty), 0);
         } else {
-            weeklyProductTotal = allProducts.reduce((sum, p) => sum + (p.price * p.qty), 0);
+            weeklyProductTotal = allProducts.filter(p => p.date && p.date.substring(0, 7) === selectedMonth).reduce((sum, p) => sum + (p.price * p.qty), 0);
         }
 
         let products = allProducts;
@@ -2516,6 +2517,8 @@
             products = allProducts.filter(p => filterByDate(p.date));
         } else if (!isMonth) {
             products = allProducts.filter(p => p.week === week);
+        } else {
+            products = allProducts.filter(p => p.date && p.date.substring(0, 7) === selectedMonth);
         }
         
         let totalProductCostAmount = 0;
@@ -2621,7 +2624,7 @@
         } else if (!isMonth) {
             weeklyAdsTotal = allLeads.filter(l => l.week === week).reduce((sum, l) => sum + (parseFloat(l.dailyBudget) || 0), 0);
         } else {
-            weeklyAdsTotal = allLeads.reduce((sum, l) => sum + (parseFloat(l.dailyBudget) || 0), 0);
+            weeklyAdsTotal = allLeads.filter(l => l.date && l.date.substring(0, 7) === selectedMonth).reduce((sum, l) => sum + (parseFloat(l.dailyBudget) || 0), 0);
         }
 
         let leads = allLeads;
@@ -2629,6 +2632,8 @@
             leads = allLeads.filter(l => filterByDate(l.date));
         } else if (!isMonth) {
             leads = allLeads.filter(l => l.week === week);
+        } else {
+            leads = allLeads.filter(l => l.date && l.date.substring(0, 7) === selectedMonth);
         }
         
         let totalLeadsCount = 0, totalConfirmedCount = 0, totalAdsSpentAmount = 0;
@@ -2669,6 +2674,8 @@
             orderViews = allOrderViews.filter(o => filterByDate(o.date));
         } else if (!isMonth) {
             orderViews = allOrderViews.filter(o => o.week === week);
+        } else {
+            orderViews = allOrderViews.filter(o => o.date && o.date.substring(0, 7) === selectedMonth);
         }
         
         let ovBodyManage = '';
@@ -2753,7 +2760,7 @@
         } else if (!isMonth) {
             weeklyPackagingTotal = allPackaging.filter(pk => pk.week === week).reduce((sum, pk) => sum + (parseFloat(pk.cost) || 0), 0);
         } else {
-            weeklyPackagingTotal = allPackaging.reduce((sum, pk) => sum + (parseFloat(pk.cost) || 0), 0);
+            weeklyPackagingTotal = allPackaging.filter(pk => pk.date && pk.date.substring(0, 7) === selectedMonth).reduce((sum, pk) => sum + (parseFloat(pk.cost) || 0), 0);
         }
         
         let packaging = allPackaging;
@@ -2761,6 +2768,8 @@
             packaging = allPackaging.filter(pk => filterByDate(pk.date));
         } else if (!isMonth) {
             packaging = allPackaging.filter(pk => pk.week === week);
+        } else {
+            packaging = allPackaging.filter(pk => pk.date && pk.date.substring(0, 7) === selectedMonth);
         }
 
         let packBodyManage = '';
@@ -2784,7 +2793,7 @@
         }
 
         let salaryByWeek = {};
-        allSalaries.forEach(data => {
+        allSalaries.filter(s => s.date && s.date.substring(0, 7) === selectedMonth).forEach(data => {
             if(!salaryByWeek[data.week]) salaryByWeek[data.week] = 0;
             salaryByWeek[data.week] += (data.netSalary || 0);
         });
@@ -2992,12 +3001,12 @@
                 if (isDateFilterApplied) {
                     match = filterByDate(s.date);
                 } else if (isMonth) {
-                    match = true;
+                    match = s.date && s.date.substring(0, 7) === selectedMonth;
                 } else {
-                    match = s.week === week;
+                    match = s.week === week && s.date && s.date.substring(0, 7) === selectedMonth;
                 }
 
-                const shouldRender = isDateFilterApplied ? filterByDate(s.date) : true;
+                const shouldRender = match;
                 if (shouldRender) {
                     const isSelectedClass = isDateFilterApplied && filterByDate(s.date) ? 'row-highlight' : '';
                     const actionBtns = isAdmin 
@@ -4791,6 +4800,7 @@
         try {
             const week = document.getElementById('active-week').value;
             const isMonth = week === 'Month Overview';
+            const selectedMonth = (document.getElementById('global-date').value || new Date().toISOString().split('T')[0]).substring(0, 7);
             const selectedDate = document.getElementById('global-date').value;
             const selectedEndDate = document.getElementById('global-date-end').value;
             const isDateFilterApplied = document.getElementById('global-date').dataset.filtered === "true";
@@ -4848,6 +4858,11 @@
                 orders = allOrders.filter(o => {
                     const oDate = o.date ? o.date.split('T')[0] : '';
                     return getWeekForDate(oDate) === week;
+                });
+            } else {
+                orders = allOrders.filter(o => {
+                    const oDate = o.date ? o.date.split('T')[0] : '';
+                    return oDate && oDate.substring(0, 7) === selectedMonth;
                 });
             }
 
