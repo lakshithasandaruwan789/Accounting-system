@@ -4461,22 +4461,62 @@
         try {
             document.getElementById('custom-report-results').style.display = 'block';
             
-            // Fetch all data
-            const [lSnap, pSnap, oSnap, eSnap, cSnap] = await Promise.all([
-                db.collection('leads').where('date', '>=', start).where('date', '<=', end).get(),
-                db.collection('products').where('date', '>=', start).where('date', '<=', end).get(),
-                db.collection('orders').where('date', '>=', start).where('date', '<=', end).get(),
-                db.collection('expenses').where('date', '>=', start).where('date', '<=', end).get(),
+            // Fetch missing cache data or catalog
+            const [cSnap] = await Promise.all([
                 db.collection('product_catalog').get()
             ]);
             
+            let allLeads = dataCache.leads;
+            if (!allLeads) {
+                const snap = await db.collection('leads').get();
+                allLeads = snap.docs.map(d => ({id: d.id, ...d.data()}));
+                dataCache.leads = allLeads;
+            }
+
+            let allProducts = dataCache.products;
+            if (!allProducts) {
+                const snap = await db.collection('products').get();
+                allProducts = snap.docs.map(d => ({id: d.id, ...d.data()}));
+                dataCache.products = allProducts;
+            }
+
+            let allOrders = dataCache.orders;
+            if (!allOrders) {
+                const snap = await db.collection('orders').get();
+                allOrders = snap.docs.map(d => ({id: d.id, ...d.data()}));
+                dataCache.orders = allOrders;
+            }
+
+            let allPackaging = dataCache.packaging;
+            if (!allPackaging) {
+                const snap = await db.collection('packaging').get();
+                allPackaging = snap.docs.map(d => ({id: d.id, ...d.data()}));
+                dataCache.packaging = allPackaging;
+            }
+
+            let allSalaries = dataCache.salaries;
+            if (!allSalaries) {
+                const snap = await db.collection('salaries').get();
+                allSalaries = snap.docs.map(d => ({id: d.id, ...d.data()}));
+                dataCache.salaries = allSalaries;
+            }
+
+            // Filter data within custom date range in memory
+            const leads = allLeads.filter(l => l.date && l.date >= start && l.date <= end);
+            const products = allProducts.filter(p => p.date && p.date >= start && p.date <= end);
+            const orders = allOrders.filter(o => {
+                const oDate = o.date ? o.date.split('T')[0] : '';
+                return oDate && oDate >= start && oDate <= end;
+            });
+            const packaging = allPackaging.filter(pk => pk.date && pk.date >= start && pk.date <= end);
+            const salaries = allSalaries.filter(s => s.date && s.date >= start && s.date <= end);
+
             // Calculate Leads
             let totalLeads = 0, totalConfirmed = 0, adsSpend = 0;
-            lSnap.forEach(doc => {
-                const d = doc.data();
-                totalLeads += d.totalLeads || 0;
-                totalConfirmed += d.confirmedLeads || 0;
-                adsSpend += d.dailyBudget || 0;
+            leads.forEach(l => {
+                totalLeads += l.totalLeads || 0;
+                totalConfirmed += l.confirmedLeads || 0;
+                adsSpend += parseFloat(l.dailyBudget) || 0;
             });
             
             // Product Pricing Map
@@ -4486,11 +4526,10 @@
             // Calculate Orders (Income)
             let totalIncome = 0;
             let salesByProduct = {};
-            let totalOrders = oSnap.size;
+            let totalOrders = orders.length;
             
-            oSnap.forEach(doc => {
-                const d = doc.data();
-                const product = d.product || 'Unknown';
+            orders.forEach(o => {
+                const product = o.product || 'Unknown';
                 const price = priceMap[product] || 0;
                 totalIncome += price;
                 
@@ -4500,25 +4539,28 @@
             });
             
             // Calculate Expenses
-            let totalExpensesAmount = adsSpend;
-            let expensesByCategory = {'Facebook Ads': adsSpend};
-            
-            eSnap.forEach(doc => {
-                const d = doc.data();
-                totalExpensesAmount += d.amount || 0;
-                const cat = d.category || 'Other';
-                if(!expensesByCategory[cat]) expensesByCategory[cat] = 0;
-                expensesByCategory[cat] += d.amount || 0;
+            let factoryPurchases = 0;
+            products.forEach(p => {
+                factoryPurchases += (parseFloat(p.price) || 0) * (parseInt(p.qty) || 0);
             });
-            
-            // Add purchases to expenses (Factory purchases)
-            pSnap.forEach(doc => {
-                const d = doc.data();
-                const cost = (d.price || 0) * (d.qty || 0);
-                totalExpensesAmount += cost;
-                if(!expensesByCategory['Factory Purchases']) expensesByCategory['Factory Purchases'] = 0;
-                expensesByCategory['Factory Purchases'] += cost;
+
+            let packagingCosts = 0;
+            packaging.forEach(pk => {
+                packagingCosts += parseFloat(pk.cost) || 0;
             });
+
+            let staffSalaries = 0;
+            salaries.forEach(s => {
+                staffSalaries += parseFloat(s.netSalary) || 0;
+            });
+
+            let totalExpensesAmount = adsSpend + factoryPurchases + packagingCosts + staffSalaries;
+            let expensesByCategory = {
+                'Facebook Ads': adsSpend,
+                'Factory Purchases': factoryPurchases,
+                'Packaging Costs': packagingCosts,
+                'Staff Salaries': staffSalaries
+            };
             
             // Update UI
             const isAdmin = currentUser.username === 'admin' || currentUser.username === 'admin@company.com' || (currentUser.permissions && currentUser.permissions.includes('staff'));
