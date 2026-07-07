@@ -2807,8 +2807,8 @@
             dataCache.expenses = allExpenses;
         }
         
-        let expenses = allExpenses;
-        if(!isMonth) expenses = allExpenses.filter(e => e.week === week);
+        let expenses = allExpenses.filter(e => (e.month || '2026-07') === selectedMonth);
+        if(!isMonth) expenses = expenses.filter(e => e.week === week);
 
         // Include weeks that might only have salaries and no expenses yet
         let combinedWeeks = {};
@@ -2934,7 +2934,7 @@
         
         // Auto-load forms
         if (!isMonth) {
-            const exp = allExpenses.find(e => e.week === week);
+            const exp = allExpenses.find(e => e.week === week && (e.month || '2026-07') === selectedMonth);
             if(exp) {
                 document.getElementById('exp-received').value = exp.received || '';
             } else {
@@ -2978,7 +2978,7 @@
 
         // --- 6. RENDER CHARTS ---
         if(currentUser.permissions.includes('dashboard')) {
-            renderCharts(isMonth, leads, products, allExpenses, week);
+            renderCharts(isMonth, leads, products, expenses, week);
         }
 
         // --- 7. LOAD STAFF TABLE ---
@@ -3946,17 +3946,36 @@
         if(btn) { btn.disabled = true; btn.textContent = 'Saving...'; }
 
         try {
+            const selectedMonth = (document.getElementById('global-date').value || new Date().toISOString().split('T')[0]).substring(0, 7);
             const payload = {
                 week: week,
+                month: selectedMonth,
                 received: parseFloat(received),
                 adsSpent: parseFloat(autoAdsCost) || 0,
                 productCost: parseFloat(autoProdCost) || 0, 
                 otherCosts: parseFloat(autoOtherCost) || 0
             };
 
-            const expSnap = await db.collection('expenses').where('week', '==', week).get();
+            let docIdToUpdate = null;
+            const expSnap = await db.collection('expenses')
+                .where('week', '==', week)
+                .where('month', '==', selectedMonth)
+                .get();
+
             if (!expSnap.empty) {
-                await db.collection('expenses').doc(expSnap.docs[0].id).update(payload);
+                docIdToUpdate = expSnap.docs[0].id;
+            } else {
+                const oldSnap = await db.collection('expenses')
+                    .where('week', '==', week)
+                    .get();
+                const oldDoc = oldSnap.docs.find(d => !d.data().hasOwnProperty('month'));
+                if (oldDoc) {
+                    docIdToUpdate = oldDoc.id;
+                }
+            }
+
+            if (docIdToUpdate) {
+                await db.collection('expenses').doc(docIdToUpdate).update(payload);
                 notify(`Profit & Expenses UPDATED for ${week}!`);
             } else {
                 await db.collection('expenses').add(payload);
