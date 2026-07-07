@@ -380,7 +380,7 @@
         .perm-lbl input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--primary); cursor: pointer;}
 
         /* Dashboard specific layout */
-        .dash-tables { display: grid; grid-template-columns: 1fr 1.8fr; gap: 35px; margin-top: 35px; }
+        .dash-tables { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-top: 35px; max-width: 1200px; }
 
 
         /* Responsive visibility */
@@ -834,36 +834,40 @@
             <div class="dash-tables">
                 <div class="table-card">
                     <h2>Product Purchases</h2>
-                    <table>
-                        <thead>
-                            <tr>
-                                <th class="col-week hidden">Week</th>
-                                <th>Date</th>
-                                <th>Product</th>
-                                <th>Qty</th>
-                                <th>Total Cost</th>
-                            </tr>
-                        </thead>
-                        <tbody id="tbl-dash-products"></tbody>
-                    </table>
+                    <div class="table-scroll-container" style="max-height: 280px; overflow-y: auto; scrollbar-width: thin;">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th class="col-week hidden">Week</th>
+                                    <th>Date</th>
+                                    <th>Product</th>
+                                    <th>Qty</th>
+                                    <th>Total Cost</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tbl-dash-products"></tbody>
+                        </table>
+                    </div>
                 </div>
 
                 <div class="table-card">
                     <h2>Profit History</h2>
-                    <table>
-                        <thead>
-                            <tr>
-                                <th class="col-week hidden">Week</th>
-                                <th style="color:var(--success)">Received</th>
-                                <th>Ads</th>
-                                <th>Prod Cost</th>
-                                <th>Other (Pack)</th>
-                                <th>Salaries</th>
-                                <th style="color:var(--accent)">Profit</th>
-                            </tr>
-                        </thead>
-                        <tbody id="tbl-dash-expenses"></tbody>
-                    </table>
+                    <div class="table-scroll-container" style="max-height: 280px; overflow-y: auto; scrollbar-width: thin;">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th class="col-week hidden">Week</th>
+                                    <th style="color:var(--success)">Received</th>
+                                    <th>Ads</th>
+                                    <th>Prod Cost</th>
+                                    <th>Other (Pack)</th>
+                                    <th>Salaries</th>
+                                    <th style="color:var(--accent)">Profit</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tbl-dash-expenses"></tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1699,15 +1703,21 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
-    // Enable Firestore Offline Persistence
-    firebase.firestore().enablePersistence()
-      .catch(function(err) {
-          if (err.code == 'failed-precondition') {
-              console.warn("Firestore persistence failed-precondition: Multiple tabs open.");
-          } else if (err.code == 'unimplemented') {
-              console.warn("Firestore persistence unimplemented.");
-          }
-      });
+    // Enable Firestore Offline Persistence safely
+    try {
+        firebase.firestore().enablePersistence()
+          .catch(function(err) {
+              if (err.code == 'failed-precondition') {
+                  console.warn("Firestore persistence failed-precondition: Multiple tabs open.");
+              } else if (err.code == 'unimplemented') {
+                  console.warn("Firestore persistence unimplemented.");
+              } else {
+                  console.warn("Firestore persistence error:", err);
+              }
+          });
+    } catch(e) {
+        console.warn("Firestore offline persistence is not supported or was blocked by the browser:", e);
+    }
 
     // In-Memory cache for dashboard query optimization
     const dataCache = {
