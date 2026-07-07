@@ -1455,6 +1455,21 @@
                         </table>
                     </div>
                 </div>
+                
+                <div class="table-card" style="margin-top: 20px;">
+                    <h3>Factory Purchases Breakdown</h3>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Product Name</th>
+                                <th>Quantity Purchased</th>
+                                <th>Cost per Unit</th>
+                                <th>Total Cost</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbl-rep-purchases"></tbody>
+                    </table>
+                </div>
             </div>
         </div>
 
@@ -4562,6 +4577,21 @@
                 'Staff Salaries': staffSalaries
             };
             
+            // Calculate itemized factory purchases
+            let purchasesByProduct = {};
+            products.forEach(p => {
+                const name = p.productName || 'Unknown';
+                const qty = parseInt(p.qty) || 0;
+                const price = parseFloat(p.price) || 0;
+                const cost = qty * price;
+                
+                if (!purchasesByProduct[name]) {
+                    purchasesByProduct[name] = { qty: 0, cost: 0, price: price };
+                }
+                purchasesByProduct[name].qty += qty;
+                purchasesByProduct[name].cost += cost;
+            });
+            
             // Update UI
             const isAdmin = currentUser.username === 'admin' || currentUser.username === 'admin@company.com' || (currentUser.permissions && currentUser.permissions.includes('staff'));
             const showFinancials = isAdmin || !window.systemConfig.hideFinancials;
@@ -4572,13 +4602,11 @@
             document.getElementById('rep-val-expenses').textContent = showFinancials ? formatRs(totalExpensesAmount) : '***';
             document.getElementById('rep-val-leads').textContent = `${totalLeads} / ${totalOrders}`;
             
-            // Expenses Table
+            // Expenses Table (Show all categories even if amount is 0)
             let expHtml = '';
             for(const [cat, amt] of Object.entries(expensesByCategory)) {
-                if(amt > 0) {
-                    const amtStr = showFinancials ? formatRs(amt) : '***';
-                    expHtml += `<tr><td>${cat}</td><td style="color:var(--danger);">${amtStr}</td></tr>`;
-                }
+                const amtStr = showFinancials ? formatRs(amt) : '***';
+                expHtml += `<tr><td>${cat}</td><td style="color:var(--danger); font-weight:600;">${amtStr}</td></tr>`;
             }
             document.getElementById('tbl-rep-expenses').innerHTML = expHtml;
             
@@ -4586,9 +4614,21 @@
             let salesHtml = '';
             for(const [prod, data] of Object.entries(salesByProduct)) {
                 const incStr = showFinancials ? formatRs(data.income) : '***';
-                salesHtml += `<tr><td>${prod}</td><td>${data.qty}</td><td style="color:var(--success);">${incStr}</td></tr>`;
+                salesHtml += `<tr><td>${prod}</td><td>${data.qty}</td><td style="color:var(--success); font-weight:bold;">${incStr}</td></tr>`;
             }
             document.getElementById('tbl-rep-sales').innerHTML = salesHtml;
+
+            // Factory Purchases Table
+            let purchasesHtml = '';
+            for(const [name, data] of Object.entries(purchasesByProduct)) {
+                const unitPriceStr = showFinancials ? formatRs(data.price) : '***';
+                const totalCostStr = showFinancials ? formatRs(data.cost) : '***';
+                purchasesHtml += `<tr><td><strong>${name}</strong></td><td>${data.qty}</td><td>${unitPriceStr}</td><td style="color:var(--danger); font-weight:bold;">${totalCostStr}</td></tr>`;
+            }
+            if (purchasesHtml === '') {
+                purchasesHtml = `<tr><td colspan="4" style="text-align:center; color:var(--text-muted);">No factory purchases in this date range.</td></tr>`;
+            }
+            document.getElementById('tbl-rep-purchases').innerHTML = purchasesHtml;
             
         } catch(e) {
             console.error(e);
