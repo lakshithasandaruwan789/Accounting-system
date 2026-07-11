@@ -1554,6 +1554,11 @@
                             </select>
                         </div>
                         
+                        <div class="form-group">
+                            <label>Quantity</label>
+                            <input type="number" id="quick-waybill-qty" value="1" min="1" style="font-size:15px; font-weight:600; padding:8px;">
+                        </div>
+                        
                         <button class="action-btn" style="width:100%; margin:15px 0 0 0; padding:12px; font-weight:bold; background:linear-gradient(135deg, var(--primary), var(--primary-light));" onclick="quickAddWaybill()">➕ Save Waybill</button>
                         <p id="quick-waybill-msg" style="margin:15px 0 0 0; font-size:13px; font-weight:bold; text-align:center;"></p>
                         
@@ -2526,7 +2531,7 @@
         if (isDateFilterApplied) {
             weeklyProductTotal = allProducts.filter(p => filterByDate(p.date)).reduce((sum, p) => sum + (p.price * p.qty), 0);
         } else if (!isMonth) {
-            weeklyProductTotal = allProducts.filter(p => p.week === week).reduce((sum, p) => sum + (p.price * p.qty), 0);
+            weeklyProductTotal = allProducts.filter(p => p.week === week && p.date && p.date.substring(0, 7) === selectedMonth).reduce((sum, p) => sum + (p.price * p.qty), 0);
         } else {
             weeklyProductTotal = allProducts.filter(p => p.date && p.date.substring(0, 7) === selectedMonth).reduce((sum, p) => sum + (p.price * p.qty), 0);
         }
@@ -2535,7 +2540,7 @@
         if (isDateFilterApplied) {
             products = allProducts.filter(p => filterByDate(p.date));
         } else if (!isMonth) {
-            products = allProducts.filter(p => p.week === week);
+            products = allProducts.filter(p => p.week === week && p.date && p.date.substring(0, 7) === selectedMonth);
         } else {
             products = allProducts.filter(p => p.date && p.date.substring(0, 7) === selectedMonth);
         }
@@ -2646,7 +2651,7 @@
         if (isDateFilterApplied) {
             weeklyAdsTotal = allLeads.filter(l => filterByDate(l.date)).reduce((sum, l) => sum + (parseFloat(l.dailyBudget) || 0), 0);
         } else if (!isMonth) {
-            weeklyAdsTotal = allLeads.filter(l => l.week === week).reduce((sum, l) => sum + (parseFloat(l.dailyBudget) || 0), 0);
+            weeklyAdsTotal = allLeads.filter(l => l.week === week && l.date && l.date.substring(0, 7) === selectedMonth).reduce((sum, l) => sum + (parseFloat(l.dailyBudget) || 0), 0);
         } else {
             weeklyAdsTotal = allLeads.filter(l => l.date && l.date.substring(0, 7) === selectedMonth).reduce((sum, l) => sum + (parseFloat(l.dailyBudget) || 0), 0);
         }
@@ -2655,7 +2660,7 @@
         if (isDateFilterApplied) {
             leads = allLeads.filter(l => filterByDate(l.date));
         } else if (!isMonth) {
-            leads = allLeads.filter(l => l.week === week);
+            leads = allLeads.filter(l => l.week === week && l.date && l.date.substring(0, 7) === selectedMonth);
         } else {
             leads = allLeads.filter(l => l.date && l.date.substring(0, 7) === selectedMonth);
         }
@@ -2697,7 +2702,7 @@
         if (isDateFilterApplied) {
             orderViews = allOrderViews.filter(o => filterByDate(o.date));
         } else if (!isMonth) {
-            orderViews = allOrderViews.filter(o => o.week === week);
+            orderViews = allOrderViews.filter(o => o.week === week && o.date && o.date.substring(0, 7) === selectedMonth);
         } else {
             orderViews = allOrderViews.filter(o => o.date && o.date.substring(0, 7) === selectedMonth);
         }
@@ -2782,7 +2787,7 @@
         if (isDateFilterApplied) {
             weeklyPackagingTotal = allPackaging.filter(pk => filterByDate(pk.date)).reduce((sum, pk) => sum + (parseFloat(pk.cost) || 0), 0);
         } else if (!isMonth) {
-            weeklyPackagingTotal = allPackaging.filter(pk => pk.week === week).reduce((sum, pk) => sum + (parseFloat(pk.cost) || 0), 0);
+            weeklyPackagingTotal = allPackaging.filter(pk => pk.week === week && pk.date && pk.date.substring(0, 7) === selectedMonth).reduce((sum, pk) => sum + (parseFloat(pk.cost) || 0), 0);
         } else {
             weeklyPackagingTotal = allPackaging.filter(pk => pk.date && pk.date.substring(0, 7) === selectedMonth).reduce((sum, pk) => sum + (parseFloat(pk.cost) || 0), 0);
         }
@@ -2791,7 +2796,7 @@
         if (isDateFilterApplied) {
             packaging = allPackaging.filter(pk => filterByDate(pk.date));
         } else if (!isMonth) {
-            packaging = allPackaging.filter(pk => pk.week === week);
+            packaging = allPackaging.filter(pk => pk.week === week && pk.date && pk.date.substring(0, 7) === selectedMonth);
         } else {
             packaging = allPackaging.filter(pk => pk.date && pk.date.substring(0, 7) === selectedMonth);
         }
@@ -2965,10 +2970,10 @@
                 document.getElementById('exp-received').value = '';
             }
             
-            // AUTO-FILL (using the weekly values corresponding to active week)
-            const weeklyP = allProducts.filter(p => p.week === week).reduce((sum, p) => sum + (p.price * p.qty), 0);
-            const weeklyL = allLeads.filter(l => l.week === week).reduce((sum, l) => sum + (parseFloat(l.dailyBudget) || 0), 0);
-            const weeklyPk = allPackaging.filter(pk => pk.week === week).reduce((sum, pk) => sum + (parseFloat(pk.cost) || 0), 0);
+            // AUTO-FILL (using the weekly values corresponding to active week and selected month)
+            const weeklyP = allProducts.filter(p => p.week === week && p.date && p.date.substring(0, 7) === selectedMonth).reduce((sum, p) => sum + (p.price * p.qty), 0);
+            const weeklyL = allLeads.filter(l => l.week === week && l.date && l.date.substring(0, 7) === selectedMonth).reduce((sum, l) => sum + (parseFloat(l.dailyBudget) || 0), 0);
+            const weeklyPk = allPackaging.filter(pk => pk.week === week && pk.date && pk.date.substring(0, 7) === selectedMonth).reduce((sum, pk) => sum + (parseFloat(pk.cost) || 0), 0);
 
             document.getElementById('exp-prod').value = weeklyP;
             document.getElementById('exp-ads').value = weeklyL;
@@ -4550,16 +4555,20 @@
             // Calculate Orders (Income)
             let totalIncome = 0;
             let salesByProduct = {};
-            let totalOrders = orders.length;
+            let totalOrders = 0;
             
             orders.forEach(o => {
                 const product = o.product || 'Unknown';
+                const oQty = parseInt(o.qty) || 1;
                 const price = priceMap[product] || 0;
-                totalIncome += price;
+                const itemIncome = price * oQty;
+                
+                totalIncome += itemIncome;
+                totalOrders += oQty;
                 
                 if(!salesByProduct[product]) salesByProduct[product] = {qty: 0, income: 0};
-                salesByProduct[product].qty += 1;
-                salesByProduct[product].income += price;
+                salesByProduct[product].qty += oQty;
+                salesByProduct[product].income += itemIncome;
             });
             
             // Calculate Expenses
@@ -4675,11 +4684,18 @@
         };
         
         try {
-            // Check if waybill already exists in the database
-            const dupSnap = await db.collection('orders').where('waybill', '==', waybill).get();
+            const qtyInput = document.getElementById('quick-waybill-qty');
+            const qty = parseInt(qtyInput ? qtyInput.value : 1) || 1;
+
+            // Check if this product is already added to this waybill
+            const dupSnap = await db.collection('orders')
+                .where('waybill', '==', waybill)
+                .where('product', '==', product)
+                .get();
+                
             if(!dupSnap.empty) {
                 msg.style.color = "var(--danger)";
-                msg.textContent = `❌ Error: Waybill ${waybill} already exists!`;
+                msg.textContent = `❌ Error: Product "${product}" already added to Waybill ${waybill}!`;
                 playBeep(150, "sawtooth", 300); // Low warning buzz
                 waybillInput.value = '';
                 return;
@@ -4688,10 +4704,12 @@
             await db.collection('orders').add({
                 waybill: waybill,
                 product: product,
+                qty: qty,
                 status: 'Confirmed',
                 date: new Date().toISOString()
             });
             waybillInput.value = '';
+            if (qtyInput) qtyInput.value = 1; // Reset quantity to default 1
             // Do NOT clear productSelect value to retain product for next scan!
             msg.style.color = "var(--success)";
             msg.textContent = `✅ Saved ${waybill}!`;
@@ -4817,7 +4835,7 @@
                     <tr>
                         <td>${dDate} <span style="color:var(--text-muted); font-size:11px;">${dTime}</span></td>
                         <td style="font-weight:bold;">${data.waybill}</td>
-                        <td>${data.product || '-'}</td>
+                        <td>${data.product || '-'} ${data.qty && data.qty > 1 ? `<span style="color:var(--primary); font-weight:bold;">x${data.qty}</span>` : ''}</td>
                         <td><span class="status-badge status-${(data.status||'').replace(/\s+/g,'-').toLowerCase()}">${data.status}</span></td>
                         <td>
                             <button class="btn-delete" style="margin:0; padding:4px 8px; font-size:11px;" onclick="deleteWaybill('${data.id}')">Del</button>
@@ -5013,7 +5031,7 @@
             } else if (!isMonth) {
                 orders = allOrders.filter(o => {
                     const oDate = o.date ? o.date.split('T')[0] : '';
-                    return getWeekForDate(oDate) === week;
+                    return getWeekForDate(oDate) === week && oDate && oDate.substring(0, 7) === selectedMonth;
                 });
             } else {
                 orders = allOrders.filter(o => {
