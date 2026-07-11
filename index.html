@@ -1394,6 +1394,7 @@
                                 <th>Total Purchased</th>
                                 <th>Total Dispatched</th>
                                 <th>Current Stock</th>
+                                <th>Action</th>
                             </tr>
                         </thead>
                         <tbody id="tbl-manage-inventory"></tbody>
@@ -3126,7 +3127,14 @@
             ]);
             
             let catMap = {};
-            cSnap.forEach(d => { catMap[d.data().name] = {purchased:0, dispatched:0}; });
+            cSnap.forEach(d => { 
+                catMap[d.data().name] = {
+                    id: d.id,
+                    purchased: 0,
+                    dispatched: 0,
+                    stockAdjustment: d.data().stockAdjustment || 0
+                }; 
+            });
             
             pSnap.forEach(d => {
                 const prod = d.data().productName;
@@ -3144,18 +3152,49 @@
             
             let invHtml = '';
             for(const [name, stats] of Object.entries(catMap)) {
-                const stock = stats.purchased - stats.dispatched;
+                const baseStock = stats.purchased - stats.dispatched;
+                const stock = baseStock + stats.stockAdjustment;
                 const stockStyle = stock < 10 ? 'color:var(--danger); font-weight:bold;' : 'color:var(--success); font-weight:bold;';
                 invHtml += `<tr>
                     <td><strong>${name}</strong></td>
                     <td>${stats.purchased}</td>
                     <td>${stats.dispatched}</td>
                     <td style="${stockStyle}">${stock}</td>
+                    <td>
+                        <button class="btn-edit" style="margin:0; padding:4px 8px; font-size:11px;" onclick="adjustStock('${stats.id}', '${name}', ${baseStock})">🔧 Adjust</button>
+                    </td>
                 </tr>`;
             }
             document.getElementById('tbl-manage-inventory').innerHTML = invHtml;
         } catch(e) { console.error("Inventory error", e); }
     }
+
+    window.adjustStock = async function(catalogId, productName, baseStock) {
+        if(!catalogId || catalogId === 'undefined') {
+            return notify("Error: Catalog ID not found!", true);
+        }
+        
+        const userInput = prompt(`Enter actual physical stock currently in your warehouse for "${productName}":`);
+        if (userInput === null) return; // User cancelled
+        
+        const enteredStock = parseInt(userInput);
+        if (isNaN(enteredStock) || enteredStock < 0) {
+            return notify("Please enter a valid non-negative number!", true);
+        }
+        
+        const adjustment = enteredStock - baseStock;
+        
+        try {
+            await db.collection('product_catalog').doc(catalogId).update({
+                stockAdjustment: adjustment
+            });
+            notify(`Stock adjusted successfully for ${productName}!`);
+            loadInventory();
+        } catch(e) {
+            console.error("Adjustment error:", e);
+            notify("Error adjusting stock!", true);
+        }
+    };
 
     async function checkSmartAlerts(currentProfit) {
         if(window.hasShownSmartAlerts) return;
