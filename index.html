@@ -1009,6 +1009,7 @@
                             </tr>
                         </thead>
                         <tbody id="tbl-manage-leads"></tbody>
+                        <tfoot id="tbl-foot-leads" style="position: sticky; bottom: 0; background: var(--bg-card); z-index: 5; box-shadow: 0 -2px 5px rgba(0,0,0,0.05);"></tfoot>
                     </table>
                     </div>
                 </div>
@@ -2687,6 +2688,28 @@
         });
         document.getElementById('tbl-dash-leads').innerHTML = lBodyDash;
         document.getElementById('tbl-manage-leads').innerHTML = lBodyManage;
+
+        let lFootManage = '';
+        if (leads.length > 0) {
+            const avgCPL = totalLeadsCount > 0 ? (totalAdsSpentAmount / totalLeadsCount) : 0;
+            const avgCPC = totalConfirmedCount > 0 ? (totalAdsSpentAmount / totalConfirmedCount) : 0;
+            
+            const displayBudgetTotal = showFinancials ? formatRs(totalAdsSpentAmount) : '***';
+            const displayCPL = showFinancials ? formatRs(avgCPL) : '***';
+            const displayCPC = showFinancials ? formatRs(avgCPC) : '***';
+
+            lFootManage = `<tr style="background: rgba(166, 0, 255, 0.08); font-weight: 800; font-size: 12px; border-top: 2.5px solid var(--primary); border-bottom: 2.5px solid var(--primary);">
+                <td style="color: var(--primary);"><strong>TOTAL</strong></td>
+                <td style="font-weight: bold; color: var(--text-main);">${displayBudgetTotal}</td>
+                <td style="font-weight: bold; color: var(--text-main);">${totalLeadsCount}</td>
+                <td style="font-weight: bold; color: var(--success);">${totalConfirmedCount}</td>
+                <td style="font-weight: bold; color: var(--primary);">${displayCPL}</td>
+                <td style="font-weight: bold; color: var(--success);">${displayCPC}</td>
+                <td style="color: var(--text-muted); font-weight: normal; text-align: center;">-</td>
+            </tr>`;
+        }
+        const footLeadsEl = document.getElementById('tbl-foot-leads');
+        if (footLeadsEl) footLeadsEl.innerHTML = lFootManage;
 
         // --- 2.5 ORDER VIEWS ---
         let allOrderViews;
