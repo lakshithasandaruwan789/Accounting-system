@@ -3087,6 +3087,9 @@
         }
 
         loadInventory();
+        if (currentPage === 'waybills' && typeof loadRecentWaybills === 'function') {
+            loadRecentWaybills();
+        }
         checkSmartAlerts(totalExpensesProfit);
     }
 
@@ -4803,8 +4806,29 @@
                 dataCache.orders = allOrders;
             }
             
+            // Filter by active selected date or date range
+            const selectedDate = document.getElementById('global-date').value || new Date().toISOString().split('T')[0];
+            const selectedEndDate = document.getElementById('global-date-end').value;
+            const isDateFilterApplied = document.getElementById('global-date').dataset.filtered === "true";
+
+            let filteredOrders = allOrders.filter(o => {
+                const oDate = o.date ? o.date.split('T')[0] : '';
+                if (isDateFilterApplied) {
+                    if (selectedDate && selectedEndDate) {
+                        return oDate >= selectedDate && oDate <= selectedEndDate;
+                    } else if (selectedDate) {
+                        return oDate === selectedDate;
+                    } else if (selectedEndDate) {
+                        return oDate === selectedEndDate;
+                    }
+                } else {
+                    return oDate === selectedDate;
+                }
+                return true;
+            });
+
             // Sort by date descending
-            let filteredOrders = allOrders.slice().sort((a,b) => new Date(b.date) - new Date(a.date));
+            filteredOrders.sort((a,b) => new Date(b.date) - new Date(a.date));
             
             // Filter by search text if provided
             if (filterText) {
