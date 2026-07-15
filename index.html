@@ -2584,14 +2584,17 @@
         let groupedPurchases = {};
 
         products.forEach(p => {
-            const total = p.price * p.qty;
+            const netQty = p.qty - (p.damagedQty || 0) - (p.shortageQty || 0);
+            const total = p.price * netQty;
             totalProductCostAmount += total;
             
             const isSelectedClass = isDateFilterApplied && filterByDate(p.date) ? 'row-highlight' : '';
             const weekTd = isMonth ? `<td style="color:var(--text-muted); font-weight:600;">${p.week || 'Week 1'}</td>` : '';
             const displayTotal = showFinancials ? formatRs(total) : '***';
             
-            pBodyDash += `<tr class="${isSelectedClass}">${weekTd}<td>${p.date}</td><td style="font-weight:600;">${p.productName}</td><td>${p.qty}</td><td style="font-weight:bold; color:var(--warning);">${displayTotal}</td></tr>`;
+            const lostQty = (p.damagedQty || 0) + (p.shortageQty || 0);
+            const qtyDisplay = lostQty > 0 ? `${p.qty - lostQty} <span style="font-size:10px; color:var(--danger);">(-${lostQty})</span>` : p.qty;
+            pBodyDash += `<tr class="${isSelectedClass}">${weekTd}<td>${p.date}</td><td style="font-weight:600;">${p.productName}</td><td>${qtyDisplay}</td><td style="font-weight:bold; color:var(--warning);">${displayTotal}</td></tr>`;
 
             const invId = p.invoiceId || p.date; // Use date to group old purchases that don't have an invoiceId
             if(!groupedPurchases[invId]) {
@@ -2630,7 +2633,7 @@
 
         sortedGroups.forEach(grp => {
             const total = grp.totalCost;
-            const grpQty = grp.items.reduce((s,i)=>s+i.qty, 0);
+            const grpQty = grp.items.reduce((s,i)=>s + (i.qty - i.damagedQty - i.shortageQty), 0);
             totalPurchaseQty += grpQty;
             totalPurchaseCost += total;
             if (!grp.isSettled) {
@@ -2664,7 +2667,16 @@
                 
                 itemSummary = `<span title="${titleStr}">${grp.items[0].name} <span style="color:var(--primary); font-size:10px;">(+${grp.items.length - 1})</span></span>`;
             }
-            let qtySummary = grp.items.length === 1 ? grp.items[0].qty : `<span style="color:var(--text-muted);">${grpQty}</span>`;
+            let qtySummary = '';
+            if (grp.items.length === 1) {
+                const item = grp.items[0];
+                const lostQty = item.damagedQty + item.shortageQty;
+                qtySummary = lostQty > 0 ? `${item.qty - lostQty} <span style="font-size:10px; color:var(--danger);">(-${lostQty})</span>` : item.qty;
+            } else {
+                const totalGross = grp.items.reduce((s,i)=>s+i.qty, 0);
+                const totalLost = grp.items.reduce((s,i)=>s+i.damagedQty+i.shortageQty, 0);
+                qtySummary = totalLost > 0 ? `${totalGross - totalLost} <span style="font-size:10px; color:var(--danger);">(-${totalLost})</span>` : totalGross;
+            }
 
             const settleBtnHtml = grp.isSettled 
                 ? `<button class="action-btn" style="background:#10b981; color:white; padding:4px 8px; font-size:11px; margin:0; border:none;" onclick="toggleSettleInvoice('${grp.invoiceId}', false)">✅ Settled</button>`
@@ -3622,7 +3634,8 @@
 
         // Fetch price directly from secure catalogPriceMap
         const price = window.catalogPriceMap[name] || 0;
-        const total = price * qty;
+        const netQty = qty - damagedQty - shortageQty;
+        const total = price * netQty;
         purchaseDrafts.push({ name, price, qty, total, date: itemDate, location: location, damagedQty: damagedQty, shortageQty: shortageQty, notes: notes });
         
         document.getElementById('prod-name').value = '';
@@ -3660,10 +3673,15 @@
                 if (item.shortageQty > 0) dText.push(`${item.shortageQty} Short`);
                 locText += `<br><span style="font-size:10px; color:var(--danger); font-weight:bold;">⚠️ ${dText.join(', ')} ${item.notes ? `(${item.notes})` : ''}</span>`;
             }
+            let qtyDisplay = item.qty.toString();
+            const lostQty = (item.damagedQty || 0) + (item.shortageQty || 0);
+            if (lostQty > 0) {
+                qtyDisplay = `<span style="font-size:10px; color:var(--text-muted);">${item.qty} - ${lostQty} =</span> <strong style="color:var(--danger);">${item.qty - lostQty}</strong>`;
+            }
             html += `
                 <tr>
                     <td style="padding:8px; border-bottom: 1px solid var(--border);">${item.name}${locText}</td>
-                    <td style="padding:8px; text-align:right; border-bottom: 1px solid var(--border);">${item.qty}</td>
+                    <td style="padding:8px; text-align:right; border-bottom: 1px solid var(--border);">${qtyDisplay}</td>
                     <td class="financial-data" style="padding:8px; text-align:right; border-bottom: 1px solid var(--border);">${item.total.toLocaleString()}</td>
                     <td style="padding:8px; text-align:center; border-bottom: 1px solid var(--border);">
                         <button onclick="removePurchaseDraft(${index})" style="color:var(--danger); background:none; border:none; cursor:pointer;" title="Remove">✖</button>
@@ -4056,13 +4074,14 @@
             const priceStr = showFinancials ? item.price.toLocaleString('en-US', {minimumFractionDigits: 2}) : '***';
             const totalStr = showFinancials ? item.total.toLocaleString('en-US', {minimumFractionDigits: 2}) : '***';
             
-            let locText = item.location ? `<span style="margin-left: 15px; background: #f1f5f9; padding: 2px 6px; border-radius: 4px; color: #475569;">📍 ${item.location}</span>` : '';
-            if (item.damagedQty > 0 || item.shortageQty > 0) {
-                let dText = [];
-                if (item.damagedQty > 0) dText.push(`${item.damagedQty} Damaged`);
-                if (item.shortageQty > 0) dText.push(`${item.shortageQty} Short`);
-                locText += `<span style="margin-left: 10px; color: var(--danger); font-weight: bold;">⚠️ ${dText.join(', ')} ${item.notes ? `(${item.notes})` : ''}</span>`;
+            const locText = item.location ? `<span style="margin-left: 15px; background: #f1f5f9; padding: 2px 6px; border-radius: 4px; color: #475569;">📍 ${item.location}</span>` : '';
+            
+            let qtyDisplay = item.qty.toString();
+            const lostQty = (item.damagedQty || 0) + (item.shortageQty || 0);
+            if (lostQty > 0) {
+                qtyDisplay = `<span style="font-size:11px; color:#64748b; font-weight:500;">${item.qty} - ${lostQty} =</span> <span style="color:#ef4444; font-weight:800; font-size:14px;">${item.qty - lostQty}</span>`;
             }
+            
             html += `
                 <tr>
                     <td style="padding:15px 16px; border-bottom:1px solid #e2e8f0; font-weight:700; color:#0f172a; font-size:15px;">
@@ -4070,7 +4089,7 @@
                         <div style="font-size: 11px; color: #64748b; font-weight: 500; margin-top: 4px;">Date: ${item.date || date} ${locText}</div>
                     </td>
                     <td style="padding:15px 16px; border-bottom:1px solid #e2e8f0; text-align:right; color:#475569; font-size:14px; font-weight:500;">${priceStr}</td>
-                    <td style="padding:15px 16px; border-bottom:1px solid #e2e8f0; text-align:right; color:#475569; font-size:14px; font-weight:700;">${item.qty}</td>
+                    <td style="padding:15px 16px; border-bottom:1px solid #e2e8f0; text-align:right; color:#475569; font-size:14px; font-weight:700;">${qtyDisplay}</td>
                     <td style="padding:15px 16px; border-bottom:1px solid #e2e8f0; text-align:right; font-weight:800; color:#4f46e5; font-size:16px;">${totalStr}</td>
                 </tr>
             `;
@@ -4822,7 +4841,8 @@
             // Calculate Expenses
             let factoryPurchases = 0;
             products.forEach(p => {
-                factoryPurchases += (parseFloat(p.price) || 0) * (parseInt(p.qty) || 0);
+                const netQty = (parseInt(p.qty) || 0) - (parseInt(p.damagedQty) || 0) - (parseInt(p.shortageQty) || 0);
+                factoryPurchases += (parseFloat(p.price) || 0) * netQty;
             });
 
             let packagingCosts = 0;
@@ -4847,9 +4867,12 @@
             let purchasesByProduct = {};
             products.forEach(p => {
                 const name = p.productName || 'Unknown';
-                const qty = parseInt(p.qty) || 0;
+                const grossQty = parseInt(p.qty) || 0;
+                const damagedQty = parseInt(p.damagedQty) || 0;
+                const shortageQty = parseInt(p.shortageQty) || 0;
+                const netQty = grossQty - damagedQty - shortageQty;
                 const price = parseFloat(p.price) || 0;
-                const cost = qty * price;
+                const cost = netQty * price;
                 
                 if (!purchasesByProduct[name]) {
                     purchasesByProduct[name] = { qty: 0, cost: 0, price: price };
