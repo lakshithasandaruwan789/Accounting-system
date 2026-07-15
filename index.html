@@ -1048,6 +1048,22 @@
                             <option value="Factory">
                         </datalist>
                     </div>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                        <div class="form-group">
+                            <label>Damaged Qty</label>
+                            <input type="number" id="prod-damaged-qty" value="0" min="0">
+                        </div>
+                        <div class="form-group">
+                            <label>Shortage Qty</label>
+                            <input type="number" id="prod-shortage-qty" value="0" min="0">
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Remarks / Notes</label>
+                        <input type="text" id="prod-notes" placeholder="e.g. broken bottles or missing items" style="font-size:13px; padding:8px;">
+                    </div>
                     <button class="action-btn" style="background:var(--secondary); color:#fff; margin-bottom: 20px;" onclick="addToPurchaseDraft()">➕ Add to Cart</button>
 
                     <div id="purchase-cart-container" style="display: none; background: var(--card-bg); padding: 15px; border-radius: 8px; border: 1px solid var(--border);">
@@ -1402,6 +1418,7 @@
                                 <th>Product Name</th>
                                 <th>Total Purchased</th>
                                 <th>Total Dispatched</th>
+                                <th>Damaged/Short</th>
                                 <th>Current Stock</th>
                                 <th>Action</th>
                             </tr>
@@ -2583,7 +2600,17 @@
                     ids: []
                 };
             }
-            groupedPurchases[invId].items.push({ name: p.productName, price: p.price, qty: p.qty, total: total, date: p.date, location: p.location || '' });
+            groupedPurchases[invId].items.push({ 
+                name: p.productName, 
+                price: p.price, 
+                qty: p.qty, 
+                total: total, 
+                date: p.date, 
+                location: p.location || '', 
+                damagedQty: p.damagedQty || 0, 
+                shortageQty: p.shortageQty || 0, 
+                notes: p.notes || '' 
+            });
             groupedPurchases[invId].totalCost += total;
             if (p.id) groupedPurchases[invId].ids.push(p.id);
             if (p.isSettled === false) groupedPurchases[invId].isSettled = false;
@@ -2608,9 +2635,30 @@
             const isSelectedClass = isDateFilterApplied && filterByDate(grp.date) ? 'row-highlight' : '';
             const displayTotal = showFinancials ? formatRs(grp.totalCost) : '***';
             
-            let itemSummary = grp.items.length === 1 
-                ? (grp.items[0].name + (grp.items[0].location ? `<br><span style="font-size:10px; color:var(--text-muted);">📍 ${grp.items[0].location}</span>` : '')) 
-                : `<span title="${grp.items.map(i=>i.name + (i.location ? ` (📍 ${i.location})` : '')).join(', ')}">${grp.items[0].name} <span style="color:var(--primary); font-size:10px;">(+${grp.items.length - 1})</span></span>`;
+            let itemSummary = '';
+            if (grp.items.length === 1) {
+                const item = grp.items[0];
+                itemSummary = `<strong>${item.name}</strong>`;
+                if (item.location) {
+                    itemSummary += `<br><span style="font-size:10px; color:var(--text-muted);">📍 ${item.location}</span>`;
+                }
+                if (item.damagedQty > 0 || item.shortageQty > 0) {
+                    let dText = [];
+                    if (item.damagedQty > 0) dText.push(`${item.damagedQty} Damaged`);
+                    if (item.shortageQty > 0) dText.push(`${item.shortageQty} Short`);
+                    itemSummary += `<br><span style="font-size:10px; color:var(--danger); font-weight:bold;">⚠️ ${dText.join(', ')} ${item.notes ? `(${item.notes})` : ''}</span>`;
+                }
+            } else {
+                const titleStr = grp.items.map(i => {
+                    let details = [];
+                    if (i.location) details.push(`📍 ${i.location}`);
+                    if (i.damagedQty > 0) details.push(`${i.damagedQty} Damaged`);
+                    if (i.shortageQty > 0) details.push(`${i.shortageQty} Short`);
+                    return `${i.name}${details.length > 0 ? ` (${details.join(', ')})` : ''}`;
+                }).join(', ');
+                
+                itemSummary = `<span title="${titleStr}">${grp.items[0].name} <span style="color:var(--primary); font-size:10px;">(+${grp.items.length - 1})</span></span>`;
+            }
             let qtySummary = grp.items.length === 1 ? grp.items[0].qty : `<span style="color:var(--text-muted);">${grpQty}</span>`;
 
             const settleBtnHtml = grp.isSettled 
@@ -3143,13 +3191,19 @@
                     id: d.id,
                     purchased: 0,
                     dispatched: 0,
+                    damaged: 0,
+                    shortage: 0,
                     stockAdjustment: d.data().stockAdjustment || 0
                 }; 
             });
             
             pSnap.forEach(d => {
                 const prod = d.data().productName;
-                if(catMap[prod]) catMap[prod].purchased += (d.data().qty || 0);
+                if(catMap[prod]) {
+                    catMap[prod].purchased += (d.data().qty || 0);
+                    catMap[prod].damaged += (d.data().damagedQty || 0);
+                    catMap[prod].shortage += (d.data().shortageQty || 0);
+                }
             });
             
             oSnap.forEach(d => {
@@ -3163,13 +3217,14 @@
             
             let invHtml = '';
             for(const [name, stats] of Object.entries(catMap)) {
-                const baseStock = stats.purchased - stats.dispatched;
+                const baseStock = stats.purchased - stats.dispatched - stats.damaged - stats.shortage;
                 const stock = baseStock + stats.stockAdjustment;
                 const stockStyle = stock < 10 ? 'color:var(--danger); font-weight:bold;' : 'color:var(--success); font-weight:bold;';
                 invHtml += `<tr>
                     <td><strong>${name}</strong></td>
                     <td>${stats.purchased}</td>
                     <td>${stats.dispatched}</td>
+                    <td style="color:var(--text-muted);">${stats.damaged + stats.shortage}</td>
                     <td style="${stockStyle}">${stock}</td>
                     <td>
                         <button class="btn-edit" style="margin:0; padding:4px 8px; font-size:11px;" onclick="adjustStock('${stats.id}', '${name}', ${baseStock})">🔧 Adjust</button>
@@ -3550,6 +3605,9 @@
         const qty = parseInt(document.getElementById('prod-qty').value) || 0;
         let itemDate = document.getElementById('prod-item-date').value;
         const location = document.getElementById('prod-location') ? document.getElementById('prod-location').value.trim() : '';
+        const damagedQty = parseInt(document.getElementById('prod-damaged-qty').value) || 0;
+        const shortageQty = parseInt(document.getElementById('prod-shortage-qty').value) || 0;
+        const notes = document.getElementById('prod-notes').value.trim();
         
         if(!itemDate) {
             itemDate = document.getElementById('global-date').value; // fallback to global
@@ -3560,7 +3618,7 @@
         // Fetch price directly from secure catalogPriceMap
         const price = window.catalogPriceMap[name] || 0;
         const total = price * qty;
-        purchaseDrafts.push({ name, price, qty, total, date: itemDate, location: location });
+        purchaseDrafts.push({ name, price, qty, total, date: itemDate, location: location, damagedQty: damagedQty, shortageQty: shortageQty, notes: notes });
         
         document.getElementById('prod-name').value = '';
         if (document.getElementById('prod-price')) {
@@ -3571,6 +3629,9 @@
         if (document.getElementById('prod-location')) {
             document.getElementById('prod-location').value = '';
         }
+        document.getElementById('prod-damaged-qty').value = '0';
+        document.getElementById('prod-shortage-qty').value = '0';
+        document.getElementById('prod-notes').value = '';
         
         renderPurchaseDrafts();
     };
@@ -3587,7 +3648,13 @@
         
         purchaseDrafts.forEach((item, index) => {
             grandTotal += item.total;
-            const locText = item.location ? `<br><span style="font-size:10px; color:var(--text-muted);">📍 ${item.location}</span>` : '';
+            let locText = item.location ? `<br><span style="font-size:10px; color:var(--text-muted);">📍 ${item.location}</span>` : '';
+            if (item.damagedQty > 0 || item.shortageQty > 0) {
+                let dText = [];
+                if (item.damagedQty > 0) dText.push(`${item.damagedQty} Damaged`);
+                if (item.shortageQty > 0) dText.push(`${item.shortageQty} Short`);
+                locText += `<br><span style="font-size:10px; color:var(--danger); font-weight:bold;">⚠️ ${dText.join(', ')} ${item.notes ? `(${item.notes})` : ''}</span>`;
+            }
             html += `
                 <tr>
                     <td style="padding:8px; border-bottom: 1px solid var(--border);">${item.name}${locText}</td>
@@ -3676,7 +3743,10 @@
                     price: item.price,
                     qty: item.qty,
                     invoiceId: invoiceId,
-                    location: item.location || ''
+                    location: item.location || '',
+                    damagedQty: item.damagedQty || 0,
+                    shortageQty: item.shortageQty || 0,
+                    notes: item.notes || ''
                 });
             }
             
@@ -3735,11 +3805,31 @@
         let items = [];
         snap1.docs.forEach(d => {
             let data = d.data();
-            items.push({name: data.productName, price: data.price, qty: data.qty, total: data.price * data.qty, date: data.date, location: data.location || ''});
+            items.push({
+                name: data.productName, 
+                price: data.price, 
+                qty: data.qty, 
+                total: data.price * data.qty, 
+                date: data.date, 
+                location: data.location || '',
+                damagedQty: data.damagedQty || 0,
+                shortageQty: data.shortageQty || 0,
+                notes: data.notes || ''
+            });
         });
         snap2.docs.forEach(d => {
             let data = d.data();
-            items.push({name: data.productName, price: data.price, qty: data.qty, total: data.price * data.qty, date: data.date, location: data.location || ''});
+            items.push({
+                name: data.productName, 
+                price: data.price, 
+                qty: data.qty, 
+                total: data.price * data.qty, 
+                date: data.date, 
+                location: data.location || '',
+                damagedQty: data.damagedQty || 0,
+                shortageQty: data.shortageQty || 0,
+                notes: data.notes || ''
+            });
         });
 
         if(items.length === 0) return notify("Invoice not found!", true);
@@ -3859,14 +3949,32 @@
             
             snap1.docs.forEach(d => {
                 let data = d.data();
-                items.push({name: data.productName, price: data.price, qty: data.qty, total: data.price * data.qty, location: data.location || ''});
+                items.push({
+                    name: data.productName, 
+                    price: data.price, 
+                    qty: data.qty, 
+                    total: data.price * data.qty, 
+                    location: data.location || '',
+                    damagedQty: data.damagedQty || 0,
+                    shortageQty: data.shortageQty || 0,
+                    notes: data.notes || ''
+                });
                 date = data.date;
                 week = data.week;
             });
             
             snap2.docs.forEach(d => {
                 let data = d.data();
-                items.push({name: data.productName, price: data.price, qty: data.qty, total: data.price * data.qty, location: data.location || ''});
+                items.push({
+                    name: data.productName, 
+                    price: data.price, 
+                    qty: data.qty, 
+                    total: data.price * data.qty, 
+                    location: data.location || '',
+                    damagedQty: data.damagedQty || 0,
+                    shortageQty: data.shortageQty || 0,
+                    notes: data.notes || ''
+                });
                 date = data.date;
                 week = data.week;
             });
@@ -3943,12 +4051,18 @@
             const priceStr = showFinancials ? item.price.toLocaleString('en-US', {minimumFractionDigits: 2}) : '***';
             const totalStr = showFinancials ? item.total.toLocaleString('en-US', {minimumFractionDigits: 2}) : '***';
             
-            const locText = item.location ? `<span style="margin-left: 15px; background: #f1f5f9; padding: 2px 6px; border-radius: 4px; color: #475569;">📍 ${item.location}</span>` : '';
+            let locText = item.location ? `<span style="margin-left: 15px; background: #f1f5f9; padding: 2px 6px; border-radius: 4px; color: #475569;">📍 ${item.location}</span>` : '';
+            if (item.damagedQty > 0 || item.shortageQty > 0) {
+                let dText = [];
+                if (item.damagedQty > 0) dText.push(`${item.damagedQty} Damaged`);
+                if (item.shortageQty > 0) dText.push(`${item.shortageQty} Short`);
+                locText += `<span style="margin-left: 10px; color: var(--danger); font-weight: bold;">⚠️ ${dText.join(', ')} ${item.notes ? `(${item.notes})` : ''}</span>`;
+            }
             html += `
                 <tr>
                     <td style="padding:15px 16px; border-bottom:1px solid #e2e8f0; font-weight:700; color:#0f172a; font-size:15px;">
                         ${item.name}
-                        <div style="font-size: 11px; color: #64748b; font-weight: 500; margin-top: 4px;">Date: ${item.date || date}${locText}</div>
+                        <div style="font-size: 11px; color: #64748b; font-weight: 500; margin-top: 4px;">Date: ${item.date || date} ${locText}</div>
                     </td>
                     <td style="padding:15px 16px; border-bottom:1px solid #e2e8f0; text-align:right; color:#475569; font-size:14px; font-weight:500;">${priceStr}</td>
                     <td style="padding:15px 16px; border-bottom:1px solid #e2e8f0; text-align:right; color:#475569; font-size:14px; font-weight:700;">${item.qty}</td>
