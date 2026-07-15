@@ -1039,6 +1039,15 @@
                         <label>Quantity Bought</label>
                         <input type="number" id="prod-qty" placeholder="0">
                     </div>
+                    <div class="form-group">
+                        <label>Storage Location</label>
+                        <input type="text" id="prod-location" placeholder="Select or type location..." list="locations-list" style="font-size:14px; padding:8px;">
+                        <datalist id="locations-list">
+                            <option value="Main Warehouse">
+                            <option value="Colombo Store">
+                            <option value="Factory">
+                        </datalist>
+                    </div>
                     <button class="action-btn" style="background:var(--secondary); color:#fff; margin-bottom: 20px;" onclick="addToPurchaseDraft()">➕ Add to Cart</button>
 
                     <div id="purchase-cart-container" style="display: none; background: var(--card-bg); padding: 15px; border-radius: 8px; border: 1px solid var(--border);">
@@ -2574,7 +2583,7 @@
                     ids: []
                 };
             }
-            groupedPurchases[invId].items.push({ name: p.productName, price: p.price, qty: p.qty, total: total, date: p.date });
+            groupedPurchases[invId].items.push({ name: p.productName, price: p.price, qty: p.qty, total: total, date: p.date, location: p.location || '' });
             groupedPurchases[invId].totalCost += total;
             if (p.id) groupedPurchases[invId].ids.push(p.id);
             if (p.isSettled === false) groupedPurchases[invId].isSettled = false;
@@ -2599,7 +2608,9 @@
             const isSelectedClass = isDateFilterApplied && filterByDate(grp.date) ? 'row-highlight' : '';
             const displayTotal = showFinancials ? formatRs(grp.totalCost) : '***';
             
-            let itemSummary = grp.items.length === 1 ? grp.items[0].name : `<span title="${grp.items.map(i=>i.name).join(', ')}">${grp.items[0].name} <span style="color:var(--primary); font-size:10px;">(+${grp.items.length - 1})</span></span>`;
+            let itemSummary = grp.items.length === 1 
+                ? (grp.items[0].name + (grp.items[0].location ? `<br><span style="font-size:10px; color:var(--text-muted);">📍 ${grp.items[0].location}</span>` : '')) 
+                : `<span title="${grp.items.map(i=>i.name + (i.location ? ` (📍 ${i.location})` : '')).join(', ')}">${grp.items[0].name} <span style="color:var(--primary); font-size:10px;">(+${grp.items.length - 1})</span></span>`;
             let qtySummary = grp.items.length === 1 ? grp.items[0].qty : `<span style="color:var(--text-muted);">${grpQty}</span>`;
 
             const settleBtnHtml = grp.isSettled 
@@ -3538,6 +3549,7 @@
         const name = document.getElementById('prod-name').value;
         const qty = parseInt(document.getElementById('prod-qty').value) || 0;
         let itemDate = document.getElementById('prod-item-date').value;
+        const location = document.getElementById('prod-location') ? document.getElementById('prod-location').value.trim() : '';
         
         if(!itemDate) {
             itemDate = document.getElementById('global-date').value; // fallback to global
@@ -3548,7 +3560,7 @@
         // Fetch price directly from secure catalogPriceMap
         const price = window.catalogPriceMap[name] || 0;
         const total = price * qty;
-        purchaseDrafts.push({ name, price, qty, total, date: itemDate });
+        purchaseDrafts.push({ name, price, qty, total, date: itemDate, location: location });
         
         document.getElementById('prod-name').value = '';
         if (document.getElementById('prod-price')) {
@@ -3556,6 +3568,9 @@
         }
         document.getElementById('prod-qty').value = '';
         document.getElementById('prod-item-date').value = '';
+        if (document.getElementById('prod-location')) {
+            document.getElementById('prod-location').value = '';
+        }
         
         renderPurchaseDrafts();
     };
@@ -3572,9 +3587,10 @@
         
         purchaseDrafts.forEach((item, index) => {
             grandTotal += item.total;
+            const locText = item.location ? `<br><span style="font-size:10px; color:var(--text-muted);">📍 ${item.location}</span>` : '';
             html += `
                 <tr>
-                    <td style="padding:8px; border-bottom: 1px solid var(--border);">${item.name}</td>
+                    <td style="padding:8px; border-bottom: 1px solid var(--border);">${item.name}${locText}</td>
                     <td style="padding:8px; text-align:right; border-bottom: 1px solid var(--border);">${item.qty}</td>
                     <td class="financial-data" style="padding:8px; text-align:right; border-bottom: 1px solid var(--border);">${item.total.toLocaleString()}</td>
                     <td style="padding:8px; text-align:center; border-bottom: 1px solid var(--border);">
@@ -3659,7 +3675,8 @@
                     productName: item.name,
                     price: item.price,
                     qty: item.qty,
-                    invoiceId: invoiceId
+                    invoiceId: invoiceId,
+                    location: item.location || ''
                 });
             }
             
@@ -3718,11 +3735,11 @@
         let items = [];
         snap1.docs.forEach(d => {
             let data = d.data();
-            items.push({name: data.productName, price: data.price, qty: data.qty, total: data.price * data.qty, date: data.date});
+            items.push({name: data.productName, price: data.price, qty: data.qty, total: data.price * data.qty, date: data.date, location: data.location || ''});
         });
         snap2.docs.forEach(d => {
             let data = d.data();
-            items.push({name: data.productName, price: data.price, qty: data.qty, total: data.price * data.qty, date: data.date});
+            items.push({name: data.productName, price: data.price, qty: data.qty, total: data.price * data.qty, date: data.date, location: data.location || ''});
         });
 
         if(items.length === 0) return notify("Invoice not found!", true);
@@ -3842,14 +3859,14 @@
             
             snap1.docs.forEach(d => {
                 let data = d.data();
-                items.push({name: data.productName, price: data.price, qty: data.qty, total: data.price * data.qty});
+                items.push({name: data.productName, price: data.price, qty: data.qty, total: data.price * data.qty, location: data.location || ''});
                 date = data.date;
                 week = data.week;
             });
             
             snap2.docs.forEach(d => {
                 let data = d.data();
-                items.push({name: data.productName, price: data.price, qty: data.qty, total: data.price * data.qty});
+                items.push({name: data.productName, price: data.price, qty: data.qty, total: data.price * data.qty, location: data.location || ''});
                 date = data.date;
                 week = data.week;
             });
@@ -3926,11 +3943,12 @@
             const priceStr = showFinancials ? item.price.toLocaleString('en-US', {minimumFractionDigits: 2}) : '***';
             const totalStr = showFinancials ? item.total.toLocaleString('en-US', {minimumFractionDigits: 2}) : '***';
             
+            const locText = item.location ? `<span style="margin-left: 15px; background: #f1f5f9; padding: 2px 6px; border-radius: 4px; color: #475569;">📍 ${item.location}</span>` : '';
             html += `
                 <tr>
                     <td style="padding:15px 16px; border-bottom:1px solid #e2e8f0; font-weight:700; color:#0f172a; font-size:15px;">
                         ${item.name}
-                        <div style="font-size: 11px; color: #64748b; font-weight: 500; margin-top: 4px;">Date: ${item.date || date}</div>
+                        <div style="font-size: 11px; color: #64748b; font-weight: 500; margin-top: 4px;">Date: ${item.date || date}${locText}</div>
                     </td>
                     <td style="padding:15px 16px; border-bottom:1px solid #e2e8f0; text-align:right; color:#475569; font-size:14px; font-weight:500;">${priceStr}</td>
                     <td style="padding:15px 16px; border-bottom:1px solid #e2e8f0; text-align:right; color:#475569; font-size:14px; font-weight:700;">${item.qty}</td>
