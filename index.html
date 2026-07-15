@@ -668,13 +668,21 @@
                 </tbody>
                 <tfoot>
                     <tr>
-                        <td colspan="2" rowspan="3" style="padding:15px; border-top:2px solid #0f172a; text-align:left; vertical-align:top; border-right:1px solid #e2e8f0; background:#f8fafc; border-radius: 8px 0 0 8px;">
+                        <td colspan="2" rowspan="5" style="padding:15px; border-top:2px solid #0f172a; text-align:left; vertical-align:top; border-right:1px solid #e2e8f0; background:#f8fafc; border-radius: 8px 0 0 8px;">
                             <div id="inv-summary-box" style="display:flex; flex-direction:column; gap:8px;">
                                 <!-- Location, Damaged, Shortage, Notes info will be populated here -->
                             </div>
                         </td>
-                        <td style="padding:15px 16px; text-align:right; font-weight:700; color:#475569; font-size:14px; border-top:2px solid #0f172a;">Grand Total</td>
-                        <td id="inv-grand-total" style="padding:15px 16px; text-align:right; font-weight:900; color:#0f172a; font-size:18px; border-top:2px solid #0f172a;"></td>
+                        <td style="padding:10px 16px; text-align:right; font-weight:600; color:#64748b; font-size:13px; border-top:2px solid #0f172a;">Gross Total</td>
+                        <td id="inv-gross-total" style="padding:10px 16px; text-align:right; font-weight:700; color:#475569; font-size:14px; border-top:2px solid #0f172a;"></td>
+                    </tr>
+                    <tr id="inv-deduct-row">
+                        <td style="padding:10px 16px; text-align:right; font-weight:600; color:#ef4444; font-size:13px;">Deductions (Damages/Shorts)</td>
+                        <td id="inv-deduct-total" style="padding:10px 16px; text-align:right; font-weight:700; color:#ef4444; font-size:14px;"></td>
+                    </tr>
+                    <tr>
+                        <td style="padding:15px 16px; text-align:right; font-weight:700; color:#475569; font-size:14px; border-top:1px dashed #cbd5e1;">Grand Total (Net)</td>
+                        <td id="inv-grand-total" style="padding:15px 16px; text-align:right; font-weight:900; color:#0f172a; font-size:18px; border-top:1px dashed #cbd5e1;"></td>
                     </tr>
                     <tr>
                         <td style="padding:10px 16px; text-align:right; font-weight:600; color:#64748b; font-size:13px;">Amount Paid</td>
@@ -4097,6 +4105,22 @@
         
         tbody.innerHTML = html;
         
+        let calculatedGross = 0;
+        let calculatedDeductions = 0;
+        itemsArray.forEach(item => {
+            calculatedGross += (item.qty * item.price);
+            calculatedDeductions += (((item.damagedQty || 0) + (item.shortageQty || 0)) * item.price);
+        });
+
+        document.getElementById('inv-gross-total').textContent = showFinancials ? calculatedGross.toLocaleString('en-US', {minimumFractionDigits: 2}) : '***';
+        document.getElementById('inv-deduct-total').textContent = showFinancials ? `- ${calculatedDeductions.toLocaleString('en-US', {minimumFractionDigits: 2})}` : '***';
+        
+        const deductRow = document.getElementById('inv-deduct-row');
+        if (deductRow) {
+            deductRow.style.color = calculatedDeductions > 0 ? '#ef4444' : '#64748b';
+            deductRow.style.fontWeight = calculatedDeductions > 0 ? '700' : 'normal';
+        }
+
         document.getElementById('inv-grand-total').textContent = showFinancials ? grandTotal.toLocaleString('en-US', {minimumFractionDigits: 2}) : '***';
         document.getElementById('inv-paid').textContent = showFinancials ? paid.toLocaleString('en-US', {minimumFractionDigits: 2}) : '***';
         document.getElementById('inv-balance').textContent = showFinancials ? balance.toLocaleString('en-US', {minimumFractionDigits: 2}) : '***';
