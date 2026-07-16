@@ -3275,7 +3275,7 @@
             oSnap.forEach(d => {
                 const prod = d.data().product;
                 const status = (d.data().status || '').trim().toLowerCase();
-                const isExcluded = ['cancel', 'fake', 'reject', 'no ans', 'return received'].some(s => status.includes(s));
+                const isExcluded = ['cancel', 'fake', 'reject', 'no ans', 'return received', 'returned'].some(s => status.includes(s));
                 if(prod && catMap[prod] && !isExcluded) {
                     catMap[prod].dispatched += (d.data().qty || 1);
                 }
@@ -3879,11 +3879,12 @@
         let items = [];
         snap1.docs.forEach(d => {
             let data = d.data();
+            const netQty = data.qty - (data.damagedQty || 0) - (data.shortageQty || 0);
             items.push({
                 name: data.productName, 
                 price: data.price, 
                 qty: data.qty, 
-                total: data.price * data.qty, 
+                total: data.price * netQty, 
                 date: data.date, 
                 location: data.location || '',
                 damagedQty: data.damagedQty || 0,
@@ -3893,11 +3894,12 @@
         });
         snap2.docs.forEach(d => {
             let data = d.data();
+            const netQty = data.qty - (data.damagedQty || 0) - (data.shortageQty || 0);
             items.push({
                 name: data.productName, 
                 price: data.price, 
                 qty: data.qty, 
-                total: data.price * data.qty, 
+                total: data.price * netQty, 
                 date: data.date, 
                 location: data.location || '',
                 damagedQty: data.damagedQty || 0,
@@ -4023,11 +4025,12 @@
             
             snap1.docs.forEach(d => {
                 let data = d.data();
+                const netQty = data.qty - (data.damagedQty || 0) - (data.shortageQty || 0);
                 items.push({
                     name: data.productName, 
                     price: data.price, 
                     qty: data.qty, 
-                    total: data.price * data.qty, 
+                    total: data.price * netQty, 
                     location: data.location || '',
                     damagedQty: data.damagedQty || 0,
                     shortageQty: data.shortageQty || 0,
@@ -4039,11 +4042,12 @@
             
             snap2.docs.forEach(d => {
                 let data = d.data();
+                const netQty = data.qty - (data.damagedQty || 0) - (data.shortageQty || 0);
                 items.push({
                     name: data.productName, 
                     price: data.price, 
                     qty: data.qty, 
-                    total: data.price * data.qty, 
+                    total: data.price * netQty, 
                     location: data.location || '',
                     damagedQty: data.damagedQty || 0,
                     shortageQty: data.shortageQty || 0,
@@ -4080,8 +4084,12 @@
                 name: item.name,
                 price: item.price,
                 qty: item.qty,
-                total: item.price * item.qty,
-                date: date
+                total: item.total,
+                date: date,
+                location: item.location || '',
+                damagedQty: item.damagedQty || 0,
+                shortageQty: item.shortageQty || 0,
+                notes: item.notes || ''
             }));
             
             // Populate paid amount input
@@ -4666,9 +4674,14 @@
         const leads = (await db.collection('leads').get()).docs.map(d => ({id: d.id, ...d.data()}));
         leads.forEach(l => { csvContent += `${l.week||''},${l.date},${l.dailyBudget},${l.totalLeads},${l.confirmedLeads}\n`; });
         
-        csvContent += "\n--- PRODUCT PURCHASES ---\nWeek,Date,Product Name,Factory Price,Quantity\n";
+        csvContent += "\n--- PRODUCT PURCHASES ---\nWeek,Date,Product Name,Factory Price,Gross Quantity,Damaged,Shortage,Net Quantity,Location,Notes\n";
         const products = (await db.collection('products').get()).docs.map(d => ({id: d.id, ...d.data()}));
-        products.forEach(p => { csvContent += `${p.week||''},${p.date},${p.productName},${p.price},${p.qty}\n`; });
+        products.forEach(p => { 
+            const damaged = p.damagedQty || 0;
+            const shortage = p.shortageQty || 0;
+            const netQty = p.qty - damaged - shortage;
+            csvContent += `${p.week||''},${p.date},${p.productName},${p.price},${p.qty},${damaged},${shortage},${netQty},${p.location || ''},"${(p.notes || '').replace(/"/g, '""')}"\n`; 
+        });
 
         csvContent += "\n--- PACKAGING & OTHER COSTS ---\nWeek,Date,Item Name,Qty,Total Cost\n";
         const packaging = (await db.collection('packaging').get()).docs.map(d => ({id: d.id, ...d.data()}));
@@ -5039,12 +5052,16 @@
                 return;
             }
 
+            const dateStr = document.getElementById('global-date').value || new Date().toLocaleDateString('sv-SE');
+            const timeStr = new Date().toTimeString().split(' ')[0];
+            const finalDate = `${dateStr}T${timeStr}`;
+
             await db.collection('orders').add({
                 waybill: waybill,
                 product: product,
                 qty: qty,
                 status: 'Confirmed',
-                date: new Date().toISOString()
+                date: finalDate
             });
             waybillInput.value = '';
             if (qtyInput) qtyInput.value = 1; // Reset quantity to default 1
@@ -5101,9 +5118,12 @@
                 return;
             }
             
-            // Update its status to 'Return Received'
-            let docId = snap.docs[0].id;
-            await db.collection('orders').doc(docId).update({ status: 'Return Received' });
+            // Update all matching products under this waybill to 'Return Received'
+            let batch = db.batch();
+            snap.docs.forEach(doc => {
+                batch.update(doc.ref, { status: 'Return Received' });
+            });
+            await batch.commit();
             
             waybillInput.value = '';
             msg.style.color = "var(--success)";
@@ -5279,13 +5299,22 @@
                 return;
             }
 
-            let updatedCount = 0;
-
-            for(let doc of snap.docs) {
+            // Group active orders by waybill to avoid redundant API queries
+            let waybillMap = {};
+            snap.docs.forEach(doc => {
                 const data = doc.data();
-                if(!data.waybill || data.waybill.trim() === '') continue; // Skip empty waybills
-                
-                const trackRes = await fetch(`https://v1.api.curfox.com/api/public/merchant/order/tracking-info?waybill_number=${encodeURIComponent(data.waybill.trim())}`, {
+                if (data.waybill && data.waybill.trim() !== '') {
+                    const wb = data.waybill.trim();
+                    if (!waybillMap[wb]) waybillMap[wb] = [];
+                    waybillMap[wb].push({ id: doc.id, ref: doc.ref, currentStatus: data.status });
+                }
+            });
+
+            let updatedCount = 0;
+            const uniqueWaybills = Object.keys(waybillMap);
+            
+            for(let wb of uniqueWaybills) {
+                const trackRes = await fetch(`https://v1.api.curfox.com/api/public/merchant/order/tracking-info?waybill_number=${encodeURIComponent(wb)}`, {
                     method: "GET", headers: { "Accept": "application/json", "Authorization": "Bearer " + token, "X-tenant": "royalexpress" }
                 });
                 
@@ -5307,9 +5336,19 @@
                         else if(s.includes("ASSIGN") || s.includes("DISPATCH") || s.includes("RIDER")) newStatus = "ASSIGNED TO RIDER";
                     }
                     
-                    if(newStatus && newStatus !== data.status) {
-                        await db.collection('orders').doc(doc.id).update({ status: newStatus });
-                        updatedCount++;
+                    if(newStatus) {
+                        let batch = db.batch();
+                        let batchUpdated = false;
+                        waybillMap[wb].forEach(orderItem => {
+                            if (newStatus !== orderItem.currentStatus) {
+                                batch.update(orderItem.ref, { status: newStatus });
+                                batchUpdated = true;
+                                updatedCount++;
+                            }
+                        });
+                        if (batchUpdated) {
+                            await batch.commit();
+                        }
                     }
                 }
             }
