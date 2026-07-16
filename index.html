@@ -1792,7 +1792,8 @@
         packaging: null,
         salaries: null,
         expenses: null,
-        orders: null
+        orders: null,
+        outstandings: null
     };
 
     window.invalidateCache = function(col) {
@@ -2558,6 +2559,27 @@
             return true;
         };
 
+        // --- OUTSTANDINGS ---
+        let allOutstandings;
+        if (dataCache.outstandings) {
+            allOutstandings = dataCache.outstandings;
+        } else {
+            const outSnap = await db.collection('outstandings').get();
+            allOutstandings = outSnap.docs.map(d => ({id: d.id, ...d.data()}));
+            dataCache.outstandings = allOutstandings;
+        }
+
+        let outstandingMap = {};
+        allOutstandings.forEach(item => {
+            if (item.invoiceId) {
+                outstandingMap[item.invoiceId] = {
+                    balance: parseFloat(item.balance) || 0,
+                    amountPaid: parseFloat(item.amountPaid) || 0,
+                    status: item.status || 'Pending'
+                };
+            }
+        });
+
         // --- 1. PRODUCTS ---
         let allProducts;
         if (dataCache.products) {
@@ -2605,6 +2627,18 @@
             pBodyDash += `<tr class="${isSelectedClass}">${weekTd}<td>${p.date}</td><td style="font-weight:600;">${p.productName}</td><td>${qtyDisplay}</td><td style="font-weight:bold; color:var(--warning);">${displayTotal}</td></tr>`;
 
             const invId = p.invoiceId || p.date; // Use date to group old purchases that don't have an invoiceId
+            
+            // Determine if the item is settled
+            let itemIsSettled = true;
+            if (p.isSettled !== undefined) {
+                itemIsSettled = p.isSettled;
+            } else {
+                // For old/legacy purchases, check outstanding record balance
+                if (outstandingMap[invId] && outstandingMap[invId].balance > 0) {
+                    itemIsSettled = false;
+                }
+            }
+
             if(!groupedPurchases[invId]) {
                 groupedPurchases[invId] = {
                     invoiceId: invId,
@@ -2612,7 +2646,7 @@
                     week: p.week,
                     items: [],
                     totalCost: 0,
-                    isSettled: p.isSettled || false,
+                    isSettled: true, // Start as true, set to false if any item is not settled
                     ids: []
                 };
             }
@@ -2629,7 +2663,7 @@
             });
             groupedPurchases[invId].totalCost += total;
             if (p.id) groupedPurchases[invId].ids.push(p.id);
-            if (p.isSettled === false) groupedPurchases[invId].isSettled = false;
+            if (itemIsSettled === false) groupedPurchases[invId].isSettled = false;
         });
 
         // Render Grouped Purchases for Manage Table
@@ -2644,9 +2678,16 @@
             const grpQty = grp.items.reduce((s,i)=>s + (i.qty - i.damagedQty - i.shortageQty), 0);
             totalPurchaseQty += grpQty;
             totalPurchaseCost += total;
+            
+            let grpOutstanding = 0;
             if (!grp.isSettled) {
-                totalOutstanding += total;
+                if (outstandingMap[grp.invoiceId]) {
+                    grpOutstanding = outstandingMap[grp.invoiceId].balance;
+                } else {
+                    grpOutstanding = total; // Fallback to total cost if no outstanding document exists
+                }
             }
+            totalOutstanding += grpOutstanding;
 
             const isSelectedClass = isDateFilterApplied && filterByDate(grp.date) ? 'row-highlight' : '';
             const displayTotal = showFinancials ? formatRs(grp.totalCost) : '***';
@@ -3765,6 +3806,12 @@
                 invoiceId = newInvNumber.toString().padStart(4, '0');
             }
             
+            const grandTotalStr = document.getElementById('lbl-draft-total').textContent.replace(/,/g, '');
+            const grandTotal = parseFloat(grandTotalStr) || 0;
+            const paid = parseFloat(document.getElementById('draft-paid').value) || 0;
+            const balance = grandTotal - paid;
+            const isSettled = (balance <= 0);
+            
             // Save each product
             for(let item of purchaseDrafts) {
                 await db.collection('products').add({
@@ -3777,14 +3824,10 @@
                     location: item.location || '',
                     damagedQty: item.damagedQty || 0,
                     shortageQty: item.shortageQty || 0,
-                    notes: item.notes || ''
+                    notes: item.notes || '',
+                    isSettled: isSettled
                 });
             }
-            
-            const grandTotalStr = document.getElementById('lbl-draft-total').textContent.replace(/,/g, '');
-            const grandTotal = parseFloat(grandTotalStr) || 0;
-            const paid = parseFloat(document.getElementById('draft-paid').value) || 0;
-            const balance = grandTotal - paid;
             
             // Save Outstanding Balance if applicable
             if(balance > 0) {
