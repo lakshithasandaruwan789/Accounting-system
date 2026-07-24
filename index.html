@@ -2675,7 +2675,7 @@
 
         sortedGroups.forEach(grp => {
             const total = grp.totalCost;
-            const grpQty = grp.items.reduce((s,i)=>s + (i.qty - i.damagedQty - i.shortageQty), 0);
+            const grpQty = grp.items.reduce((s,i)=>s + ((parseInt(i.qty) || 0) - (parseInt(i.damagedQty) || 0) - (parseInt(i.shortageQty) || 0)), 0);
             totalPurchaseQty += grpQty;
             totalPurchaseCost += total;
             
@@ -2722,8 +2722,8 @@
                 const lostQty = item.damagedQty + item.shortageQty;
                 qtySummary = lostQty > 0 ? `${item.qty - lostQty} <span style="font-size:10px; color:var(--danger);">(-${lostQty})</span>` : item.qty;
             } else {
-                const totalGross = grp.items.reduce((s,i)=>s+i.qty, 0);
-                const totalLost = grp.items.reduce((s,i)=>s+i.damagedQty+i.shortageQty, 0);
+                const totalGross = grp.items.reduce((s,i)=>s + (parseInt(i.qty) || 0), 0);
+                const totalLost = grp.items.reduce((s,i)=>s + (parseInt(i.damagedQty) || 0) + (parseInt(i.shortageQty) || 0), 0);
                 qtySummary = totalLost > 0 ? `${totalGross - totalLost} <span style="font-size:10px; color:var(--danger);">(-${totalLost})</span>` : totalGross;
             }
 
