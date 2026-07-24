@@ -2592,11 +2592,11 @@
         
         let weeklyProductTotal;
         if (isDateFilterApplied) {
-            weeklyProductTotal = allProducts.filter(p => filterByDate(p.date)).reduce((sum, p) => sum + (p.price * p.qty), 0);
+            weeklyProductTotal = allProducts.filter(p => filterByDate(p.date)).reduce((sum, p) => sum + (p.price * (p.qty - (p.damagedQty || 0) - (p.shortageQty || 0))), 0);
         } else if (!isMonth) {
-            weeklyProductTotal = allProducts.filter(p => p.week === week && p.date && p.date.substring(0, 7) === selectedMonth).reduce((sum, p) => sum + (p.price * p.qty), 0);
+            weeklyProductTotal = allProducts.filter(p => p.week === week && p.date && p.date.substring(0, 7) === selectedMonth).reduce((sum, p) => sum + (p.price * (p.qty - (p.damagedQty || 0) - (p.shortageQty || 0))), 0);
         } else {
-            weeklyProductTotal = allProducts.filter(p => p.date && p.date.substring(0, 7) === selectedMonth).reduce((sum, p) => sum + (p.price * p.qty), 0);
+            weeklyProductTotal = allProducts.filter(p => p.date && p.date.substring(0, 7) === selectedMonth).reduce((sum, p) => sum + (p.price * (p.qty - (p.damagedQty || 0) - (p.shortageQty || 0))), 0);
         }
 
         let products = allProducts;
@@ -3120,7 +3120,7 @@
             }
             
             // AUTO-FILL (using the weekly values corresponding to active week and selected month)
-            const weeklyP = allProducts.filter(p => p.week === week && p.date && p.date.substring(0, 7) === selectedMonth).reduce((sum, p) => sum + (p.price * p.qty), 0);
+            const weeklyP = allProducts.filter(p => p.week === week && p.date && p.date.substring(0, 7) === selectedMonth).reduce((sum, p) => sum + (p.price * (p.qty - (p.damagedQty || 0) - (p.shortageQty || 0))), 0);
             const weeklyL = allLeads.filter(l => l.week === week && l.date && l.date.substring(0, 7) === selectedMonth).reduce((sum, l) => sum + (parseFloat(l.dailyBudget) || 0), 0);
             const weeklyPk = allPackaging.filter(pk => pk.week === week && pk.date && pk.date.substring(0, 7) === selectedMonth).reduce((sum, pk) => sum + (parseFloat(pk.cost) || 0), 0);
 
@@ -4957,7 +4957,7 @@
                 if (!purchasesByProduct[name]) {
                     purchasesByProduct[name] = { qty: 0, cost: 0, price: price };
                 }
-                purchasesByProduct[name].qty += qty;
+                purchasesByProduct[name].qty += netQty;
                 purchasesByProduct[name].cost += cost;
             });
             
