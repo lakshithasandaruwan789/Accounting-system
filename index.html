@@ -1124,6 +1124,7 @@
                                 <th>Product</th>
                                 <th>Qty</th>
                                 <th class="financial-data">Total Cost</th>
+                                <th class="financial-data">Paid / Bal.</th>
                                 <th>Action</th>
                             </tr>
                         </thead>
@@ -2681,11 +2682,18 @@
             totalPurchaseCost += total;
             
             let grpOutstanding = 0;
+            let grpPaid = total;
             if (!grp.isSettled) {
                 if (outstandingMap[grp.invoiceId]) {
                     grpOutstanding = outstandingMap[grp.invoiceId].balance;
+                    grpPaid = outstandingMap[grp.invoiceId].amountPaid || 0;
                 } else {
                     grpOutstanding = total; // Fallback to total cost if no outstanding document exists
+                    grpPaid = 0;
+                }
+            } else {
+                if (outstandingMap[grp.invoiceId]) {
+                    grpPaid = outstandingMap[grp.invoiceId].amountPaid || total;
                 }
             }
             totalOutstanding += grpOutstanding;
@@ -2728,6 +2736,15 @@
                 qtySummary = totalLost > 0 ? `${totalGross - totalLost} <span style="font-size:10px; color:var(--danger);">(-${totalLost})</span>` : totalGross;
             }
 
+            const displayTotal = showFinancials ? formatRs(grp.totalCost) : '***';
+            
+            const displayPaid = showFinancials ? formatRs(grpPaid) : '***';
+            let paidBalHtml = `<span style="color:var(--success); font-size:11.5px; font-weight:700;">Paid: ${displayPaid}</span>`;
+            if (grpOutstanding > 0) {
+                const displayBal = showFinancials ? formatRs(grpOutstanding) : '***';
+                paidBalHtml += `<br><span style="color:var(--danger); font-size:11px; font-weight:600;">Bal: ${displayBal}</span>`;
+            }
+            
             const settleBtnHtml = grp.isSettled 
                 ? `<button class="action-btn" style="background:#10b981; color:white; padding:4px 8px; font-size:11px; margin:0; border:none;" onclick="toggleSettleInvoice('${grp.invoiceId}', false)">✅ Settled</button>`
                 : `<button class="action-btn" style="background:#f59e0b; color:white; padding:4px 8px; font-size:11px; margin:0; border:none;" onclick="toggleSettleInvoice('${grp.invoiceId}', true)">⏳ Pay</button>`;
@@ -2737,6 +2754,7 @@
                 <td style="font-weight:600;">${itemSummary}</td>
                 <td>${qtySummary}</td>
                 <td class="financial-data" style="font-weight:bold; color:var(--warning);">${displayTotal}</td>
+                <td class="financial-data" style="text-align:right; white-space:nowrap; line-height:1.4;">${paidBalHtml}</td>
                 <td style="white-space: nowrap;">
                     <div style="display:flex; gap:6px; align-items:center;">
                         ${settleBtnHtml}
@@ -2760,7 +2778,8 @@
                 <td style="color: var(--text-muted); font-weight: normal;">-</td>
                 <td style="font-size: 13.5px; color: var(--text-main); font-weight: bold;">${totalPurchaseQty}</td>
                 <td class="financial-data" style="font-size: 13.5px; color: var(--warning); font-weight: bold;">${displayGrandTotal}</td>
-                <td style="color: var(--danger); font-size: 13px; font-weight: 800; text-align: center; white-space: nowrap;">Outstanding: ${displayOutstanding}</td>
+                <td style="color: var(--danger); font-size: 13px; font-weight: 800; text-align: center; white-space: nowrap;">Bal: ${displayOutstanding}</td>
+                <td style="color: var(--text-muted); font-weight: normal;">-</td>
             </tr>`;
         }
         document.getElementById('tbl-foot-products').innerHTML = pFootManage;
