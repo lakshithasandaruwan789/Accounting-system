@@ -1557,6 +1557,7 @@
                     <p style="font-size:12px; color:var(--text-muted); margin-top:5px;">If ticked, staff accounts will see "***" instead of actual prices and budgets.</p>
                 </div>
                 <button class="action-btn" style="max-width:200px; margin-top:20px;" onclick="saveSystemSettings()">Save Settings</button>
+                <button class="action-btn" style="max-width:300px; margin-top:20px; background:var(--danger);" onclick="fixExistingDatabase()">⚠️ Fix Old DB Damages/Shortages</button>
 
                 <h3 style="margin-top:40px; color:var(--primary);">Data Management & Backup</h3>
                 <div style="margin-top:15px; padding: 15px; border: 1px solid var(--border); border-radius: 12px; background: rgba(99, 102, 241, 0.05);">
@@ -4829,6 +4830,72 @@
     };
     
     // --- ADVANCED REPORTS ---
+    window.fixExistingDatabase = async function() {
+        if(!confirm("Are you sure you want to recalculate and fix old Expenses and Outstanding balances in the Database?")) return;
+        try {
+            console.log("Running DB Migration...");
+            const pSnap = await db.collection('products').get();
+            let products = pSnap.docs.map(d => ({id: d.id, ...d.data()}));
+            
+            const eSnap = await db.collection('expenses').get();
+            let expenses = eSnap.docs.map(d => ({id: d.id, ...d.data()}));
+            
+            const oSnap = await db.collection('outstandings').get();
+            let outstandings = oSnap.docs.map(d => ({id: d.id, ...d.data()}));
+            
+            let batch = db.batch();
+            let count = 0;
+            
+            expenses.forEach(e => {
+                const eMonth = e.month || (e.date ? e.date.substring(0,7) : null);
+                const weekProducts = products.filter(p => p.week === e.week && p.date && eMonth && p.date.substring(0, 7) === eMonth);
+                const trueProductCost = weekProducts.reduce((sum, p) => {
+                    const nQty = (parseInt(p.qty) || 0) - (parseInt(p.damagedQty) || 0) - (parseInt(p.shortageQty) || 0);
+                    return sum + ((parseFloat(p.price) || 0) * nQty);
+                }, 0);
+                
+                if (parseFloat(e.productCost || 0) !== trueProductCost && trueProductCost > 0) {
+                    batch.update(db.collection('expenses').doc(e.id), { productCost: trueProductCost });
+                    count++;
+                }
+            });
+            
+            outstandings.forEach(out => {
+                if(!out.invoiceId) return;
+                const invProducts = products.filter(p => p.invoiceId === out.invoiceId);
+                if(invProducts.length > 0) {
+                    const trueTotal = invProducts.reduce((sum, p) => {
+                        const nQty = (parseInt(p.qty) || 0) - (parseInt(p.damagedQty) || 0) - (parseInt(p.shortageQty) || 0);
+                        return sum + ((parseFloat(p.price) || 0) * nQty);
+                    }, 0);
+                    
+                    const paid = parseFloat(out.amountPaid) || 0;
+                    const newBalance = trueTotal - paid;
+                    const status = newBalance <= 0 ? 'Settled' : 'Pending';
+                    
+                    if (parseFloat(out.totalAmount || 0) !== trueTotal || parseFloat(out.balance || 0) !== newBalance || out.status !== status) {
+                        batch.update(db.collection('outstandings').doc(out.id), {
+                            totalAmount: trueTotal,
+                            balance: newBalance,
+                            status: status
+                        });
+                        count++;
+                    }
+                }
+            });
+            
+            if (count > 0) {
+                await batch.commit();
+                alert(`Database Fixed successfully! ${count} records updated. Please refresh the page.`);
+            } else {
+                alert("Database is already perfectly correct! No changes needed.");
+            }
+        } catch(e) {
+            console.error("Migration error:", e);
+            alert("Error fixing database! Check console.");
+        }
+    };
+
     window.generateCustomReport = async function() {
         const start = document.getElementById('rep-start-date').value;
         const end = document.getElementById('rep-end-date').value;
