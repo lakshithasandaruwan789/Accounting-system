@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Database Audit Tool</title>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    <style>
+        body { font-family: sans-serif; padding: 20px; background: #f8fafc; color: #1e293b; }
+        h1 { color: #4f46e5; }
+        .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 20px; }
+        pre { background: #f1f5f9; padding: 15px; border-radius: 8px; overflow-x: auto; font-size: 14px; }
+        .success { color: #16a34a; font-weight: bold; }
+        .danger { color: #dc2626; font-weight: bold; }
+        .info { color: #2563eb; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <h1>Database Audit Tool</h1>
+    <p>Connecting to Firebase to trace the value <strong>35,325.00</strong>...</p>
+    
+    <div id="results">Loading...</div>
+
+    <script>
+        const firebaseConfig = {
+          apiKey: "AIzaSyBxNzd_rKWalcdHWzxUz5l0T1YTa9EMszE",
+          authDomain: "herbalcrown-system.firebaseapp.com",
+          projectId: "herbalcrown-system",
+          storageBucket: "herbalcrown-system.firebasestorage.app",
+          messagingSenderId: "638288258970",
+          appId: "1:638288258970:web:061d9e96cc4dbbed143c23",
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        async function runAudit() {
+            let html = '';
+            try {
+                // 1. Check Salaries
+                const sSnap = await db.collection('salaries').get();
+                let salaryTotal = 0;
+                let salariesList = [];
+                sSnap.forEach(doc => {
+                    const d = doc.data();
+                    if (d.week === 'Week 1') {
+                        salaryTotal += (d.netSalary || 0);
+                    }
+                    salariesList.push({ id: doc.id, ...d });
+                });
+
+                // 2. Check Packaging
+                const pkSnap = await db.collection('packaging').get();
+                let packTotal = 0;
+                let packList = [];
+                pkSnap.forEach(doc => {
+                    const d = doc.data();
+                    if (d.week === 'Week 1') {
+                        packTotal += (parseFloat(d.cost) || 0);
+                    }
+                    packList.push({ id: doc.id, ...d });
+                });
+
+                // 3. Check Purchases (products)
+                const pSnap = await db.collection('products').get();
+                let purchaseTotal = 0;
+                let purchaseList = [];
+                pSnap.forEach(doc => {
+                    const d = doc.data();
+                    if (d.week === 'Week 1') {
+                        purchaseTotal += ((d.price || 0) * (d.qty || 0));
+                    }
+                    purchaseList.push({ id: doc.id, ...d });
+                });
+
+                // 4. Check Leads
+                const lSnap = await db.collection('leads').get();
+                let leadsTotal = 0;
+                let leadsList = [];
+                lSnap.forEach(doc => {
+                    const d = doc.data();
+                    if (d.week === 'Week 1') {
+                        leadsTotal += (d.dailyBudget || 0);
+                    }
+                    leadsList.push({ id: doc.id, ...d });
+                });
+
+                // 5. Check Expenses
+                const eSnap = await db.collection('expenses').get();
+                let expensesList = [];
+                let expensesTotal = 0;
+                eSnap.forEach(doc => {
+                    const d = doc.data();
+                    if (d.week === 'Week 1') {
+                        expensesTotal += (d.received || 0);
+                    }
+                    expensesList.push({ id: doc.id, ...d });
+                });
+
+                // Search for any exact matches of 35325
+                let matches = [];
+                const collections = { salaries: salariesList, packaging: packList, products: purchaseList, leads: leadsList, expenses: expensesList };
+                
+                for (let [colName, list] of Object.entries(collections)) {
+                    list.forEach(doc => {
+                        for (let [key, val] of Object.entries(doc)) {
+                            if (val == 35325 || val == "35325") {
+                                matches.push({ collection: colName, id: doc.id, field: key, value: val, docData: doc });
+                            }
+                        }
+                    });
+                }
+
+                // Render matching findings
+                html += `<div class="card">`;
+                html += `<h2>🔍 Direct Matches for '35325' in Database</h2>`;
+                if (matches.length > 0) {
+                    html += `<p class="success">Found ${matches.length} direct match(es):</p>`;
+                    matches.forEach(m => {
+                        html += `<pre>Collection: <strong>${m.collection}</strong>\nDocument ID: ${m.id}\nField: <strong>${m.field}</strong> = ${m.value}\nFull Data: ${JSON.stringify(m.docData, null, 2)}</pre>`;
+                    });
+                } else {
+                    html += `<p class="danger">No single field in any collection has the exact value 35325.</p>`;
+                }
+                html += `</div>`;
+
+                // Render Week 1 Breakdown
+                html += `<div class="card">`;
+                html += `<h2>📊 Week 1 Totals Breakdown</h2>`;
+                html += `<ul>`;
+                html += `<li><strong>Total Staff Salaries issued in Week 1:</strong> Rs. ${salaryTotal.toLocaleString('en-US', {minimumFractionDigits: 2})}</li>`;
+                html += `<li><strong>Total Packaging & Other costs in Week 1:</strong> Rs. ${packTotal.toLocaleString('en-US', {minimumFractionDigits: 2})}</li>`;
+                html += `<li><strong>Total Product Cost (Purchases) in Week 1:</strong> Rs. ${purchaseTotal.toLocaleString('en-US', {minimumFractionDigits: 2})}</li>`;
+                html += `<li><strong>Total Facebook Ads Budget spent in Week 1:</strong> Rs. ${leadsTotal.toLocaleString('en-US', {minimumFractionDigits: 2})}</li>`;
+                html += `<li><strong>Total Expenses (Received Payment) in Week 1:</strong> Rs. ${expensesTotal.toLocaleString('en-US', {minimumFractionDigits: 2})}</li>`;
+                html += `</ul>`;
+                
+                html += `<h3>Week 1 Salary Documents:</h3>`;
+                const week1Sals = salariesList.filter(s => s.week === 'Week 1');
+                if(week1Sals.length > 0) {
+                    html += `<pre>${JSON.stringify(week1Sals, null, 2)}</pre>`;
+                } else {
+                    html += `<p>No salary documents found for Week 1.</p>`;
+                }
+
+                html += `<h3>Week 1 Packaging Documents:</h3>`;
+                const week1Packs = packList.filter(p => p.week === 'Week 1');
+                if(week1Packs.length > 0) {
+                    html += `<pre>${JSON.stringify(week1Packs, null, 2)}</pre>`;
+                } else {
+                    html += `<p>No packaging documents found for Week 1.</p>`;
+                }
+
+                html += `<h3>Week 1 Purchase (products) Documents:</h3>`;
+                const week1Prods = purchaseList.filter(p => p.week === 'Week 1');
+                if(week1Prods.length > 0) {
+                    html += `<pre>${JSON.stringify(week1Prods, null, 2)}</pre>`;
+                } else {
+                    html += `<p>No purchase documents found for Week 1.</p>`;
+                }
+
+                html += `</div>`;
+
+            } catch(e) {
+                html = `<div class="card danger">Error running audit: ${e.message}</div>`;
+            }
+            document.getElementById('results').innerHTML = html;
+        }
+
+        runAudit();
+    </script>
+</body>
+</html>
