@@ -3284,9 +3284,9 @@
             pSnap.forEach(d => {
                 const prod = d.data().productName;
                 if(catMap[prod]) {
-                    catMap[prod].purchased += (d.data().qty || 0);
-                    catMap[prod].damaged += (d.data().damagedQty || 0);
-                    catMap[prod].shortage += (d.data().shortageQty || 0);
+                    catMap[prod].purchased += (parseInt(d.data().qty) || 0);
+                    catMap[prod].damaged += (parseInt(d.data().damagedQty) || 0);
+                    catMap[prod].shortage += (parseInt(d.data().shortageQty) || 0);
                 }
             });
             
@@ -3295,7 +3295,7 @@
                 const status = (d.data().status || '').trim().toLowerCase();
                 const isExcluded = ['cancel', 'fake', 'reject', 'no ans', 'return received', 'returned'].some(s => status.includes(s));
                 if(prod && catMap[prod] && !isExcluded) {
-                    catMap[prod].dispatched += (d.data().qty || 1);
+                    catMap[prod].dispatched += (parseInt(d.data().qty) || 1);
                 }
             });
             
@@ -3368,12 +3368,12 @@
             ]);
             let catMap = {};
             cSnap.forEach(d => { catMap[d.data().name] = {purchased:0, dispatched:0}; });
-            pSnap.forEach(d => { const n = d.data().productName; if(catMap[n]) catMap[n].purchased += (d.data().qty||0); });
+            pSnap.forEach(d => { const n = d.data().productName; if(catMap[n]) catMap[n].purchased += (parseInt(d.data().qty)||0); });
             oSnap.forEach(d => {
                 const n = d.data().product;
                 const status = (d.data().status || '').trim().toLowerCase();
                 const isExcluded = ['cancel', 'fake', 'reject', 'no ans', 'return received'].some(s => status.includes(s));
-                if(n && catMap[n] && !isExcluded) catMap[n].dispatched += (d.data().qty || 1);
+                if(n && catMap[n] && !isExcluded) catMap[n].dispatched += (parseInt(d.data().qty) || 1);
             });
             
             let lowStockItems = [];
