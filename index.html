@@ -528,7 +528,7 @@
 <div id="login-screen" class="login-overlay">
     <div class="login-card">
         <h2>Lakshitha Sandaruwan</h2>
-        <p>Manager Portal v13</p>
+        <p>Manager Portal v14</p>
         <form onsubmit="performLogin(event)">
             <div class="form-group" style="text-align:left;">
                 <label>Email Address</label>
@@ -553,7 +553,7 @@
 <aside class="sidebar" id="sidebar">
     <div class="sidebar-header">
         <h2 style="font-size: 18px; line-height: 1.2;">Lakshitha Sandaruwan</h2>
-        <p>Manager Portal v13</p>
+        <p>Manager Portal v14</p>
     </div>
     <ul class="nav-menu">
 
@@ -1889,6 +1889,7 @@
     let currentLeadId = null;
     let currentCatalogId = null;
     let currentStaffId = null;
+    let currentSalaryId = null;
     let isDateFilterApplied = false;
     let currentUser = null; 
     let currentEditingInvoiceId = null;
@@ -3225,8 +3226,8 @@
                 if (shouldRender) {
                     const isSelectedClass = isDateFilterApplied && filterByDate(s.date) ? 'row-highlight' : '';
                     const actionBtns = isAdmin 
-                        ? `<button class="action-btn" style="background:var(--primary); padding:4px 8px; font-size:11px; margin:0;" onclick="printPayslip('${s.id}')">📄 Print</button><button class="btn-delete" style="margin:0; padding:4px 8px; font-size:11px;" onclick="deleteRecord('salaries', '${s.id}')">Del</button>`
-                        : `<button class="action-btn" style="background:var(--primary); padding:4px 8px; font-size:11px; margin:0;" onclick="printPayslip('${s.id}')">📄 Print</button>`;
+                        ? `<button class="action-btn" style="background:var(--primary); padding:4px 8px; font-size:11px; margin:0;" onclick="printPayslip('${s.id}')">📄 Print</button><button class="action-btn" style="background:#f59e0b; padding:4px 8px; font-size:11px; margin:0;" onclick="editSalary('${s.id}')">Edit</button><button class="btn-delete" style="margin:0; padding:4px 8px; font-size:11px;" onclick="deleteRecord('salaries', '${s.id}')">Del</button>`
+                        : `<button class="action-btn" style="background:var(--primary); padding:4px 8px; font-size:11px; margin:0;" onclick="printPayslip('${s.id}')">📄 Print</button><button class="action-btn" style="background:#f59e0b; padding:4px 8px; font-size:11px; margin:0;" onclick="editSalary('${s.id}')">Edit</button>`;
                     
                     const totalExtras = (s.bonus || 0) + (s.comm || 0) + (s.allow || 0) + (s.ot || 0) + (s.fuel || 0);
                     const totalDeduct = (s.deduct || 0) + (s.advance || 0) + (s.leave || 0);
@@ -4424,6 +4425,34 @@
         document.getElementById('sal-net').value = net.toLocaleString('en-US', {maximumFractionDigits: 2});
     }
 
+    window.editSalary = async function(id) {
+        const doc = await db.collection('salaries').doc(id).get();
+        if(!doc.exists) return notify('Record not found!', true);
+        const s = doc.data();
+        
+        currentSalaryId = id;
+        document.getElementById('btn-save-salary').textContent = 'Update Salary';
+        
+        document.getElementById('sal-employee').value = s.employee || '';
+        document.getElementById('sal-date').value = s.date || '';
+        document.getElementById('sal-basic-standard').value = s.standardBasic || 0;
+        document.getElementById('sal-month-days').value = s.monthDays || 30;
+        document.getElementById('sal-worked-days').value = s.workedDays || 0;
+        
+        if(document.getElementById('sal-ot')) document.getElementById('sal-ot').value = s.ot || 0;
+        if(document.getElementById('sal-fuel')) document.getElementById('sal-fuel').value = s.fuel || 0;
+        document.getElementById('sal-comm').value = s.comm || 0;
+        document.getElementById('sal-bonus').value = s.bonus || 0;
+        document.getElementById('sal-allow').value = s.allow || 0;
+        
+        if(document.getElementById('sal-advance')) document.getElementById('sal-advance').value = s.advance || 0;
+        if(document.getElementById('sal-leave')) document.getElementById('sal-leave').value = s.leave || 0;
+        document.getElementById('sal-deduct').value = s.deduct || 0;
+        
+        window.scrollTo({top: 0, behavior: 'smooth'});
+        calculateNetSalary();
+    };
+
     window.saveSalaryData = async function() {
         if(!navigator.onLine) return notify("No internet connection!", true);
         const btn = document.getElementById('btn-save-salary');
@@ -4489,7 +4518,7 @@
             const deduct = parseFloat(deductStr) || 0;
             const net = basic + ot + fuel + comm + bonus + allow - advance - leave - deduct;
 
-            await db.collection('salaries').add({
+            const payload = {
                 week: week,
                 date: date,
                 employee: emp,
@@ -4506,7 +4535,18 @@
                 leave: leave,
                 deduct: deduct,
                 netSalary: net
-            });
+            };
+
+            if (currentSalaryId) {
+                await db.collection('salaries').doc(currentSalaryId).update(payload);
+                notify('Salary updated successfully!');
+            } else {
+                await db.collection('salaries').add(payload);
+                notify(`Salary issued to ${emp} successfully!`);
+            }
+            
+            currentSalaryId = null;
+            if(document.getElementById('btn-save-salary')) document.getElementById('btn-save-salary').textContent = 'Save & Issue Salary';
 
             document.getElementById('sal-basic-standard').value = '';
             document.getElementById('sal-worked-days').value = '';
@@ -4523,7 +4563,6 @@
             document.getElementById('sal-employee').value = '';
             document.getElementById('sal-date').value = '';
 
-            notify(`Salary issued to ${emp} successfully!`);
             invalidateCache();
             loadAllData();
         } finally {
@@ -4542,7 +4581,7 @@
             <!-- Header Section -->
             <div style="display:flex; justify-content:space-between; align-items:center; border-bottom: 3px solid #4f46e5; padding-bottom: 30px; margin-bottom: 30px;">
                 <div style="display:flex; align-items:center; gap:25px;">
-                    <img src="logo.png" alt="Herbal Crown Logo" style="height: 100px; width: 100px; object-fit: contain;" onerror="this.style.display='none'">
+                    <img src="logo.jpg" alt="Herbal Crown Logo" style="height: 100px; width: 100px; object-fit: contain;" onerror="this.style.display='none'">
                     <div>
                         <h2 style="margin: 0; color: #0f172a; font-size: 32px; font-weight: 900; letter-spacing: -0.5px;">HERBAL CROWN</h2>
                         <p style="margin: 4px 0 0; color: #64748b; font-size: 16px; font-weight: 600; letter-spacing: 2px;">PRIVATE LIMITED</p>
